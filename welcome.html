@@ -84,7 +84,7 @@
     db.auth.updateUser({ password: p1 }).then(function(r){
       if (r.error){ btn.disabled = false; show('err', r.error.message); return; }
       show('ok','Password set — taking you in…');
-      setTimeout(function(){ window.location.href = 'portal.html'; }, 900);
+      setTimeout(function(){ window.location.href = 'home.html'; }, 900);
     });
   }
 </script>

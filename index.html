@@ -49,9 +49,9 @@
   var SUPABASE_KEY = 'sb_publishable_9m66yQmAgJwgCRMoYcU5sA_3l_XlfXr';
   var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  /* already signed in? straight to the dashboard */
+  /* already signed in? straight to the home page */
   db.auth.getSession().then(function(r){
-    if (r.data.session) window.location.href = 'portal.html';
+    if (r.data.session) window.location.href = 'home.html';
   });
 
   function show(kind, text){
@@ -67,7 +67,7 @@
     btn.disabled = true;
     db.auth.signInWithPassword({ email: email, password: password }).then(function(r){
       if (r.error) { btn.disabled = false; show('err', r.error.message === 'Invalid login credentials' ? 'Email or password is incorrect.' : r.error.message); return; }
-      window.location.href = 'portal.html';
+      window.location.href = 'home.html';
     });
   }
 
