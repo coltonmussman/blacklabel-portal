@@ -31,6 +31,7 @@
     <nav class="topnav">
       <a href="home.html" class="active">Home</a>
       <a href="portal.html">My Leads</a>
+      <a href="tracker.html">Tracker</a>
       <a href="mailto:blacklabelleads@gmail.com?subject=Portal%20support">Support</a>
     </nav>
   </div>
@@ -53,10 +54,16 @@
   </div>
 
   <div class="home-grid">
-    <div class="home-card">
+    <div class="home-card" style="grid-row:span 2">
       <h2>Latest leads</h2>
       <div id="recent"><div class="support-line">Loading…</div></div>
       <a class="home-cta" href="portal.html">View all my leads</a>
+    </div>
+    <div class="home-card">
+      <h2>Routing &amp; returns</h2>
+      <p class="support-line" id="stateLine">Leads from your licensed states route to you automatically.</p>
+      <p class="support-line" id="roiLine" style="margin-top:8px"></p>
+      <a class="home-cta" href="tracker.html" style="margin-top:12px">Open profit tracker</a>
     </div>
     <div class="home-card">
       <h2>Need a hand?</h2>
@@ -78,20 +85,32 @@
   db.auth.getSession().then(function(r){
     if (!r.data.session){ window.location.href = 'index.html'; return; }
     me = r.data.session.user;
+    var profData = {};
     db.from('agent_profiles').select('*').eq('id', me.id).single().then(function(p){
-      var prof = p.data || {};
-      var name = ((prof.first_name||'') + ' ' + (prof.last_name||'')).trim() || me.email;
+      profData = p.data || {};
+      var name = ((profData.first_name||'') + ' ' + (profData.last_name||'')).trim() || me.email;
       document.getElementById('whoami').innerHTML = '<span class="email">' + esc(name) + '</span>';
-      document.getElementById('firstName').textContent = prof.first_name || 'agent';
-      document.getElementById('statTier').textContent = prof.tier || 'Silver';
+      document.getElementById('firstName').textContent = profData.first_name || 'agent';
+      document.getElementById('statTier').textContent = profData.tier || 'Silver';
+      var states = (profData.states_licensed || '').split(/[,;/\n]+/).map(function(s){return s.trim();}).filter(Boolean);
+      document.getElementById('stateLine').textContent = states.length
+        ? 'You automatically receive leads from: ' + states.join(', ') + '. No claiming, no picking.'
+        : 'Leads from your licensed states route to you automatically.';
     });
     db.from('leads')
-      .select('first_name, last_name, state, vertical, assigned_at, created_at')
+      .select('first_name, last_name, state, vertical, assigned_at, created_at, lead_status, annual_premium, sold_at')
       .order('assigned_at', { ascending: false, nullsFirst: false })
-      .limit(50)
+      .limit(200)
       .then(function(r2){
         var leads = r2.data || [];
         var now = Date.now(), week = 7*24*60*60*1000;
+        function thisMonth(ts){ if(!ts) return false; var d=new Date(ts), n=new Date(); return d.getMonth()===n.getMonth() && d.getFullYear()===n.getFullYear(); }
+        var weekly = Number(profData.weekly_investment || 400);
+        var invested = weekly * Math.ceil(new Date().getDate()/7);
+        var written = leads.filter(function(l){ return l.lead_status==='SOLD' && l.annual_premium && thisMonth(l.sold_at||l.assigned_at); }).reduce(function(a,l){return a+Number(l.annual_premium||0);},0);
+        document.getElementById('roiLine').innerHTML = written>0
+          ? 'This month: <b style="color:var(--good)">' + '$'+Math.round(written).toLocaleString() + ' written</b> on $' + Math.round(invested).toLocaleString() + ' invested (' + (written/invested).toFixed(1) + 'x).'
+          : 'Log your first sale on My Leads to start tracking your return.';
         document.getElementById('statTotal').textContent = leads.length >= 50 ? '50+' : leads.length;
         document.getElementById('statWeek').textContent = leads.filter(function(l){
           var t = l.assigned_at || l.created_at;

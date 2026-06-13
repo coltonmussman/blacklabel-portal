@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profit Tracker — Black Label Leads</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="portal.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center">
+  <div class="brand">
+    <svg viewBox="0 0 170 170" aria-hidden="true">
+      <defs>
+        <linearGradient id="pc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="0.38" stop-color="#c4cad2"/><stop offset="0.52" stop-color="#8e959f"/><stop offset="0.66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
+        <linearGradient id="pr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset="0.5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
+      </defs>
+      <circle cx="85" cy="85" r="66" fill="#101113" stroke="url(#pr)" stroke-width="2.2"/>
+      <circle cx="85" cy="85" r="58" fill="none" stroke="#aeb4bc" stroke-width="1" opacity="0.55"/>
+      <rect x="81.5" y="33.5" width="7" height="7" transform="rotate(45 85 37)" fill="url(#pr)"/>
+      <rect x="81.5" y="129.5" width="7" height="7" transform="rotate(45 85 133)" fill="url(#pr)"/>
+      <text x="85" y="104" text-anchor="middle" font-family="'Fraunces',Georgia,serif" font-size="54" font-weight="500" letter-spacing="3" fill="url(#pc)">BL</text>
+    </svg>
+    <span>Black <span class="lbl">Label</span> Leads</span>
+  </div>
+  <nav class="topnav">
+    <a href="home.html">Home</a>
+    <a href="portal.html">My Leads</a>
+    <a href="tracker.html" class="active">Tracker</a>
+    <a href="mailto:blacklabelleads@gmail.com?subject=Portal%20support">Support</a>
+  </nav>
+  </div>
+  <div class="who">
+    <span id="whoami"></span>
+    <button class="signout" onclick="signOut()">Sign out</button>
+  </div>
+</div>
+
+<div class="shell">
+  <div class="tracker-hero">
+    <h1>Your <em>profit tracker.</em></h1>
+    <p>Every dollar you put into Black Label, and every dollar of annual premium you write off these leads — side by side. Mark a lead "Sold" on the My Leads page and log the premium; it lands here automatically.</p>
+  </div>
+
+  <div class="tg-top">
+    <div class="tg-card hero"><div class="lab">Return this month</div><div class="big roi" id="tRoi">—</div><div class="note" id="tRoiNote">written per $1 invested</div></div>
+    <div class="tg-card"><div class="lab">Invested this month</div><div class="big out" id="tInvested">—</div><div class="note" id="tInvestedNote">weekly tier &times; weeks elapsed</div></div>
+    <div class="tg-card"><div class="lab">Premium written</div><div class="big in" id="tWritten">—</div><div class="note" id="tDeals">0 deals closed</div></div>
+    <div class="tg-card"><div class="lab">Cost per policy</div><div class="big out" id="tCpp">—</div><div class="note">invested &divide; deals closed</div></div>
+  </div>
+
+  <div class="goal-panel">
+    <h2>Monthly goal</h2>
+    <p class="gp-sub">Set a target for annual premium written this month. The bar fills as you log sales.</p>
+    <div class="goalbar"><span id="tGoalBar" style="width:0%"></span></div>
+    <div class="goal-txt" id="tGoalTxt">No goal set yet.</div>
+    <div class="gp-row">
+      <label>Goal ($)</label>
+      <input type="text" id="goalInput" inputmode="numeric" placeholder="e.g. 20000">
+      <label style="margin-left:14px">My weekly tier cost ($)</label>
+      <input type="text" id="invInput" inputmode="numeric" placeholder="400">
+      <button class="gp-save" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+
+  <div class="tg-states">
+    <h2>Leads route to you automatically</h2>
+    <p class="support-line">You don't pick leads or claim states. Any lead from a state you're licensed in, in a vertical you work, is delivered straight to your portal and your inbox — no action needed.</p>
+    <div class="state-chips" id="stateChips"></div>
+    <p class="support-line" id="vertLine"></p>
+    <p class="support-line">Need to add or remove a state? Email <a href="mailto:blacklabelleads@gmail.com?subject=Update%20my%20licensed%20states">blacklabelleads@gmail.com</a> (we verify license changes before updating routing).</p>
+  </div>
+</div>
+
+<script>
+  var SUPABASE_URL = 'https://hqiyxeriugywlkbcuasu.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_9m66yQmAgJwgCRMoYcU5sA_3l_XlfXr';
+  var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  var me = null, profile = {}, leads = [];
+
+  db.auth.getSession().then(function(r){
+    if (!r.data.session){ window.location.href = 'index.html'; return; }
+    me = r.data.session.user;
+    Promise.all([
+      db.from('agent_profiles').select('*').eq('id', me.id).single(),
+      db.from('leads').select('lead_status, annual_premium, sold_at, assigned_at').order('assigned_at',{ascending:false})
+    ]).then(function(res){
+      profile = res[0].data || {};
+      leads = res[1].data || [];
+      var name = ((profile.first_name||'') + ' ' + (profile.last_name||'')).trim() || me.email;
+      document.getElementById('whoami').innerHTML = '<span class="email">' + esc(name) + '</span>';
+      document.getElementById('invInput').value = profile.weekly_investment || 400;
+      if (profile.monthly_goal) document.getElementById('goalInput').value = profile.monthly_goal;
+      renderStates();
+      renderNumbers();
+    });
+  });
+
+  function signOut(){ db.auth.signOut().then(function(){ window.location.href = 'index.html'; }); }
+  function esc(s){ var d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
+  function money(n){ return '$' + Math.round(Number(n)||0).toLocaleString(); }
+  function weeksElapsedThisMonth(){ return Math.ceil(new Date().getDate() / 7); }
+  function thisMonth(ts){ if(!ts) return false; var d=new Date(ts), n=new Date(); return d.getMonth()===n.getMonth() && d.getFullYear()===n.getFullYear(); }
+
+  function renderNumbers(){
+    var weekly = Number(profile.weekly_investment || 400);
+    var invested = weekly * weeksElapsedThisMonth();
+    var sold = leads.filter(function(l){ return l.lead_status==='SOLD' && l.annual_premium && thisMonth(l.sold_at || l.assigned_at); });
+    var written = sold.reduce(function(a,l){ return a + Number(l.annual_premium||0); }, 0);
+    var roi = invested > 0 ? written / invested : 0;
+    var cpp = sold.length > 0 ? invested / sold.length : 0;
+
+    document.getElementById('tInvested').textContent = money(invested);
+    document.getElementById('tWritten').textContent = money(written);
+    document.getElementById('tDeals').textContent = sold.length + (sold.length===1?' deal closed':' deals closed');
+    document.getElementById('tRoi').textContent = written > 0 ? roi.toFixed(1) + 'x' : '—';
+    document.getElementById('tRoiNote').textContent = written > 0 ? 'written per $1 invested' : 'log a sale to see your return';
+    document.getElementById('tCpp').textContent = sold.length > 0 ? money(cpp) : '—';
+
+    var goal = Number(profile.monthly_goal || 0);
+    var pct = goal > 0 ? Math.min(100, Math.round(written / goal * 100)) : 0;
+    document.getElementById('tGoalBar').style.width = pct + '%';
+    document.getElementById('tGoalTxt').textContent = goal > 0
+      ? money(written) + ' written toward your ' + money(goal) + ' goal — ' + pct + '%' + (pct>=100?' — goal hit!':'')
+      : 'No goal set yet.';
+  }
+
+  function renderStates(){
+    var chips = document.getElementById('stateChips');
+    var raw = (profile.states_licensed || '').split(/[,;/\n]+/).map(function(s){return s.trim();}).filter(Boolean);
+    if (!raw.length){ chips.innerHTML = '<span class="support-line">No states on file yet — they\'re set from your application.</span>'; }
+    else { chips.innerHTML = raw.map(function(s){ return '<span class="state-chip">' + esc(s) + '</span>'; }).join(''); }
+    var verts = (profile.verticals || '').trim();
+    document.getElementById('vertLine').textContent = verts ? 'Verticals you receive: ' + verts + '.' : '';
+  }
+
+  function saveSettings(){
+    var goal = parseFloat(String(document.getElementById('goalInput').value).replace(/[^0-9.]/g,''));
+    var inv = parseFloat(String(document.getElementById('invInput').value).replace(/[^0-9.]/g,''));
+    var patch = {};
+    if (!isNaN(goal)) patch.monthly_goal = goal;
+    if (!isNaN(inv)) patch.weekly_investment = inv;
+    if (!Object.keys(patch).length){ alert('Enter a goal and/or weekly cost.'); return; }
+    db.from('agent_profiles').update(patch).eq('id', me.id).then(function(r){
+      if (r.error){ alert('Couldn\'t save: ' + r.error.message); return; }
+      if (patch.monthly_goal !== undefined) profile.monthly_goal = patch.monthly_goal;
+      if (patch.weekly_investment !== undefined) profile.weekly_investment = patch.weekly_investment;
+      renderNumbers();
+    });
+  }
+</script>
+</body>
+</html>

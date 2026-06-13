@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Your Leads — Black Label Leads</title>
 <meta name="robots" content="noindex">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="portal.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -31,6 +31,7 @@
   <nav class="topnav">
     <a href="home.html">Home</a>
     <a href="portal.html" class="active">My Leads</a>
+    <a href="tracker.html">Tracker</a>
     <a href="mailto:blacklabelleads@gmail.com?subject=Portal%20support">Support</a>
   </nav>
   </div>
@@ -47,14 +48,34 @@
     <div class="stat"><div class="n" id="statTier">—</div><div class="l">Your tier</div></div>
   </div>
 
-  <div class="panel">
-    <div class="panel-head">
-      <h2>Your leads</h2>
-      <span class="hint">Newest first</span>
+  <div class="leads-layout">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Your leads</h2>
+        <span class="hint">Newest first &middot; Mark a deal sold to log the premium</span>
+      </div>
+      <div id="tableWrap">
+        <div class="empty">Loading your leads…</div>
+      </div>
     </div>
-    <div id="tableWrap">
-      <div class="empty">Loading your leads…</div>
-    </div>
+
+    <!-- always-visible profit rail -->
+    <aside class="rail">
+      <div class="rail-card feature">
+        <div class="rail-h">This month's return</div>
+        <div class="roi-big" id="railRoi">—</div>
+        <div class="roi-sub" id="railRoiSub">written per $1 invested</div>
+        <div class="rail-row"><span class="k">Invested</span><span class="v out" id="railInvested">—</span></div>
+        <div class="rail-row"><span class="k">Written</span><span class="v in" id="railWritten">—</span></div>
+        <div class="rail-row"><span class="k">Deals closed</span><span class="v" id="railDeals">—</span></div>
+      </div>
+      <div class="rail-card">
+        <div class="rail-h">Monthly goal</div>
+        <div class="goalbar"><span id="railGoalBar" style="width:0%"></span></div>
+        <div class="goal-txt" id="railGoalTxt">Set a goal on the tracker</div>
+        <button class="editlink" onclick="window.location.href='tracker.html'">Open full tracker &rarr;</button>
+      </div>
+    </aside>
   </div>
 
   <p class="foot-note">
@@ -70,9 +91,8 @@
   var SUPABASE_KEY = 'sb_publishable_9m66yQmAgJwgCRMoYcU5sA_3l_XlfXr';
   var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   var STATUSES = ['NEW','CONTACTED','NO PICKUP','APPOINTMENT','SOLD','DEAD'];
-  var me = null;
+  var me = null, profile = {}, allLeads = [];
 
-  /* gate: no session, no portal */
   db.auth.getSession().then(function(r){
     if (!r.data.session){ window.location.href = 'index.html'; return; }
     me = r.data.session.user;
@@ -80,39 +100,35 @@
     loadLeads();
   });
 
-  function signOut(){
-    db.auth.signOut().then(function(){ window.location.href = 'index.html'; });
-  }
+  function signOut(){ db.auth.signOut().then(function(){ window.location.href = 'index.html'; }); }
 
   function loadProfile(){
     db.from('agent_profiles').select('*').eq('id', me.id).single().then(function(r){
-      var p = r.data || {};
-      var name = ((p.first_name||'') + ' ' + (p.last_name||'')).trim() || me.email;
+      profile = r.data || {};
+      var name = ((profile.first_name||'') + ' ' + (profile.last_name||'')).trim() || me.email;
       document.getElementById('whoami').innerHTML = '<span class="email">' + esc(name) + '</span>';
-      document.getElementById('statTier').textContent = p.tier || 'Silver';
+      document.getElementById('statTier').textContent = profile.tier || 'Silver';
+      renderRail();
     });
   }
 
   function esc(s){ var d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
+  function money(n){ return '$' + Math.round(Number(n)||0).toLocaleString(); }
+  function fmt(ts){ if(!ts) return '—'; var d=new Date(ts); return d.toLocaleDateString([], {month:'short', day:'numeric'}) + ' ' + d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}); }
 
-  function fmt(ts){
-    if(!ts) return '—';
-    var d = new Date(ts);
-    return d.toLocaleDateString([], {month:'short', day:'numeric'}) + ' ' + d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
-  }
-
-  function within24h(ts){
-    if(!ts) return false;
-    return (Date.now() - new Date(ts).getTime()) < 24*60*60*1000;
-  }
+  /* months: invested so far = weekly tier cost x weeks elapsed this month */
+  function weeksElapsedThisMonth(){ return Math.ceil(new Date().getDate() / 7); }
+  function thisMonth(ts){ if(!ts) return false; var d=new Date(ts), n=new Date(); return d.getMonth()===n.getMonth() && d.getFullYear()===n.getFullYear(); }
 
   function loadLeads(){
     db.from('leads')
-      .select('id, first_name, last_name, phone, email, state, vertical, age, submitted_at, created_at, assigned_at, lead_status, agent_notes, refund_requested, trustedform_cert_url')
+      .select('id, first_name, last_name, phone, email, state, vertical, age, submitted_at, created_at, assigned_at, lead_status, agent_notes, annual_premium, sold_at, trustedform_cert_url')
       .order('assigned_at', { ascending: false, nullsFirst: false })
       .then(function(r){
         if (r.error){ document.getElementById('tableWrap').innerHTML = '<div class="empty">Couldn\'t load leads: ' + esc(r.error.message) + '</div>'; return; }
-        render(r.data || []);
+        allLeads = r.data || [];
+        render(allLeads);
+        renderRail();
       });
   }
 
@@ -121,8 +137,7 @@
     var now = Date.now(), week = 7*24*60*60*1000;
     document.getElementById('statTotal').textContent = leads.length;
     document.getElementById('statWeek').textContent = leads.filter(function(l){
-      var t = l.assigned_at || l.created_at;
-      return t && (now - new Date(t).getTime()) < week;
+      var t = l.assigned_at || l.created_at; return t && (now - new Date(t).getTime()) < week;
     }).length;
 
     if (!leads.length){
@@ -130,10 +145,11 @@
       return;
     }
 
-    var html = '<table><thead><tr><th>Lead</th><th>Contact</th><th>Where / What</th><th>Delivered</th><th>Status</th><th>Notes</th></tr></thead><tbody>';
+    var html = '<table><thead><tr><th>Lead</th><th>Contact</th><th>Where / What</th><th>Delivered</th><th>Status</th><th>Premium</th><th>Notes</th></tr></thead><tbody>';
     leads.forEach(function(l){
       var delivered = l.assigned_at || l.created_at;
       var statusClass = 's-' + String(l.lead_status||'NEW').replace(' ','');
+      var sold = l.lead_status === 'SOLD';
       html += '<tr>'
         + '<td><div class="nm">' + esc((l.first_name||'') + ' ' + (l.last_name||'')) + '</div>'
         +   '<div class="sub2">' + (l.age ? 'Age ' + esc(l.age) : '') + '</div>'
@@ -148,6 +164,12 @@
         + '<td><select class="status ' + statusClass + '" onchange="setStatus(\'' + l.id + '\', this)">'
         +   STATUSES.map(function(s){ return '<option' + (s===l.lead_status?' selected':'') + '>' + s + '</option>'; }).join('')
         + '</select></td>'
+        + '<td>' + (sold && l.annual_premium
+              ? '<span class="premium-tag">' + money(l.annual_premium) + '</span> <button class="notesbtn" onclick="editPremium(\'' + l.id + '\')">edit</button>'
+              : (sold
+                  ? '<button class="sellbtn" onclick="editPremium(\'' + l.id + '\')">Log premium</button>'
+                  : '<span class="sub2">—</span>'))
+        + '</td>'
         + '<td><button class="notesbtn" onclick="editNotes(\'' + l.id + '\', this)" data-notes="' + esc(l.agent_notes||'') + '">' + (l.agent_notes ? 'view / edit' : 'add') + '</button></td>'
         + '</tr>';
     });
@@ -155,16 +177,55 @@
     wrap.innerHTML = html;
   }
 
-  function prettyVertical(v){
-    var map = { final_expense:'Final Expense', mortgage_protection:'Mortgage Protection', iul:'IUL', annuity:'Annuity' };
-    return map[v] || (v || '—');
+  function renderRail(){
+    var weekly = Number(profile.weekly_investment || 400);
+    var invested = weekly * weeksElapsedThisMonth();
+    var soldThisMonth = allLeads.filter(function(l){ return l.lead_status==='SOLD' && l.annual_premium && thisMonth(l.sold_at || l.assigned_at); });
+    var written = soldThisMonth.reduce(function(a,l){ return a + Number(l.annual_premium||0); }, 0);
+    var roi = invested > 0 ? (written / invested) : 0;
+
+    document.getElementById('railInvested').textContent = money(invested);
+    document.getElementById('railWritten').textContent = money(written);
+    document.getElementById('railDeals').textContent = soldThisMonth.length;
+    document.getElementById('railRoi').textContent = written > 0 ? roi.toFixed(1) + 'x' : '—';
+    document.getElementById('railRoiSub').textContent = written > 0 ? 'written per $1 invested' : 'log a sale to see your return';
+
+    var goal = Number(profile.monthly_goal || 0);
+    var pct = goal > 0 ? Math.min(100, Math.round(written / goal * 100)) : 0;
+    document.getElementById('railGoalBar').style.width = pct + '%';
+    document.getElementById('railGoalTxt').textContent = goal > 0
+      ? money(written) + ' of ' + money(goal) + ' (' + pct + '%)'
+      : 'Set a goal on the tracker';
   }
+
+  function prettyVertical(v){ var m={final_expense:'Final Expense',mortgage_protection:'Mortgage Protection',iul:'IUL',annuity:'Annuity'}; return m[v]||(v||'—'); }
 
   function setStatus(id, sel){
     var v = sel.value;
     sel.className = 'status s-' + v.replace(' ','');
-    db.from('leads').update({ lead_status: v }).eq('id', id).then(function(r){
-      if (r.error){ alert('Couldn\'t save the status: ' + r.error.message); loadLeads(); }
+    var patch = { lead_status: v };
+    if (v === 'SOLD'){ patch.sold_at = new Date().toISOString(); }
+    db.from('leads').update(patch).eq('id', id).then(function(r){
+      if (r.error){ alert('Couldn\'t save the status: ' + r.error.message); loadLeads(); return; }
+      var lead = allLeads.filter(function(l){return l.id===id;})[0];
+      if (lead){ lead.lead_status = v; if(v==='SOLD') lead.sold_at = patch.sold_at; }
+      if (v === 'SOLD' && (!lead || !lead.annual_premium)){ editPremium(id); }
+      else { loadLeads(); }
+    });
+  }
+
+  function editPremium(id){
+    var lead = allLeads.filter(function(l){return l.id===id;})[0] || {};
+    var current = lead.annual_premium ? String(lead.annual_premium) : '';
+    var v = prompt('Annual premium written on this policy?\n(just the number, e.g. 1450)', current);
+    if (v === null) return;
+    var num = parseFloat(String(v).replace(/[^0-9.]/g,''));
+    if (isNaN(num) || num < 0){ alert('Enter a dollar amount, e.g. 1450'); return; }
+    var patch = { annual_premium: num, lead_status: 'SOLD' };
+    if (!lead.sold_at) patch.sold_at = new Date().toISOString();
+    db.from('leads').update(patch).eq('id', id).then(function(r){
+      if (r.error){ alert('Couldn\'t save the premium: ' + r.error.message); return; }
+      loadLeads();
     });
   }
 
@@ -176,21 +237,6 @@
       if (r.error){ alert('Couldn\'t save notes: ' + r.error.message); return; }
       btn.setAttribute('data-notes', v);
       btn.textContent = v ? 'view / edit' : 'add';
-    });
-  }
-
-  function flagRefund(id, btn){
-    var reason = prompt('What\'s wrong with this lead?\n(disconnected/wrong number · outside your filters · duplicate · no memory of requesting info)');
-    if (reason === null) return;
-    if (!reason.trim()){ alert('A quick reason is required — it goes straight to Black Label.'); return; }
-    btn.disabled = true;
-    db.from('leads').update({
-      refund_requested: true,
-      refund_reason: reason.trim(),
-      refund_requested_at: new Date().toISOString()
-    }).eq('id', id).then(function(r){
-      if (r.error){ btn.disabled = false; alert('Couldn\'t flag this lead: ' + r.error.message); return; }
-      loadLeads();
     });
   }
 </script>
