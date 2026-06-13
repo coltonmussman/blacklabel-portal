@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Sign In — Black Label Leads</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="portal.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <svg viewBox="0 0 170 170" aria-hidden="true">
+        <defs>
+          <linearGradient id="pc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="0.38" stop-color="#c4cad2"/><stop offset="0.52" stop-color="#8e959f"/><stop offset="0.66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
+          <linearGradient id="pr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset="0.5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
+        </defs>
+        <circle cx="85" cy="85" r="66" fill="#101113" stroke="url(#pr)" stroke-width="2.2"/>
+        <circle cx="85" cy="85" r="58" fill="none" stroke="#aeb4bc" stroke-width="1" opacity="0.55"/>
+        <rect x="81.5" y="33.5" width="7" height="7" transform="rotate(45 85 37)" fill="url(#pr)"/>
+        <rect x="81.5" y="129.5" width="7" height="7" transform="rotate(45 85 133)" fill="url(#pr)"/>
+        <text x="85" y="104" text-anchor="middle" font-family="'Fraunces',Georgia,serif" font-size="54" font-weight="500" letter-spacing="3" fill="url(#pc)">BL</text>
+      </svg>
+      <div class="wordmark">Black <span class="lbl">Label</span> Leads</div>
+      <div class="tag">Agent Portal</div>
+    </div>
+
+    <h1>Sign in</h1>
+    <p class="sub">Approved agents only. Your account was created when your application was accepted.</p>
+
+    <form id="loginForm" onsubmit="return false;">
+      <div class="field"><label>Email</label><input type="email" id="email" autocomplete="email" required></div>
+      <div class="field"><label>Password</label><input type="password" id="password" autocomplete="current-password" required></div>
+      <button class="btn" id="loginBtn" onclick="signIn()">Sign in</button>
+    </form>
+    <p class="msg" id="msg"></p>
+    <p class="auth-foot"><a onclick="forgot()">Forgot your password?</a></p>
+    <p class="auth-foot">Not approved yet? <a href="https://blacklabelleads.app/apply.html">Apply for access</a></p>
+  </div>
+</div>
+
+<script>
+  var SUPABASE_URL = 'https://hqiyxeriugywlkbcuasu.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_9m66yQmAgJwgCRMoYcU5sA_3l_XlfXr';
+  var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  /* already signed in? straight to the dashboard */
+  db.auth.getSession().then(function(r){
+    if (r.data.session) window.location.href = 'portal.html';
+  });
+
+  function show(kind, text){
+    var m = document.getElementById('msg');
+    m.className = 'msg ' + kind; m.textContent = text;
+  }
+
+  function signIn(){
+    var btn = document.getElementById('loginBtn');
+    var email = document.getElementById('email').value.trim();
+    var password = document.getElementById('password').value;
+    if(!email || !password){ show('err','Enter your email and password.'); return; }
+    btn.disabled = true;
+    db.auth.signInWithPassword({ email: email, password: password }).then(function(r){
+      if (r.error) { btn.disabled = false; show('err', r.error.message === 'Invalid login credentials' ? 'Email or password is incorrect.' : r.error.message); return; }
+      window.location.href = 'portal.html';
+    });
+  }
+
+  function forgot(){
+    var email = document.getElementById('email').value.trim();
+    if(!email){ show('err','Type your email above first, then click "Forgot your password?" again.'); return; }
+    db.auth.resetPasswordForEmail(email, { redirectTo: 'https://portal.blacklabelleads.app/welcome.html' }).then(function(r){
+      if (r.error) { show('err', r.error.message); return; }
+      show('ok','Reset link sent — check your email.');
+    });
+  }
+
+  document.getElementById('password').addEventListener('keydown', function(e){ if(e.key==='Enter') signIn(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Set Your Password — Black Label Leads</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="portal.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <svg viewBox="0 0 170 170" aria-hidden="true">
+        <defs>
+          <linearGradient id="pc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="0.38" stop-color="#c4cad2"/><stop offset="0.52" stop-color="#8e959f"/><stop offset="0.66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
+          <linearGradient id="pr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset="0.5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
+        </defs>
+        <circle cx="85" cy="85" r="66" fill="#101113" stroke="url(#pr)" stroke-width="2.2"/>
+        <circle cx="85" cy="85" r="58" fill="none" stroke="#aeb4bc" stroke-width="1" opacity="0.55"/>
+        <rect x="81.5" y="33.5" width="7" height="7" transform="rotate(45 85 37)" fill="url(#pr)"/>
+        <rect x="81.5" y="129.5" width="7" height="7" transform="rotate(45 85 133)" fill="url(#pr)"/>
+        <text x="85" y="104" text-anchor="middle" font-family="'Fraunces',Georgia,serif" font-size="54" font-weight="500" letter-spacing="3" fill="url(#pc)">BL</text>
+      </svg>
+      <div class="wordmark">Black <span class="lbl">Label</span> Leads</div>
+      <div class="tag">Agent Portal</div>
+    </div>
+
+    <h1 id="title">Welcome aboard.</h1>
+    <p class="sub" id="sub">You've been approved. Set a password to finish creating your account.</p>
+
+    <div id="form" style="display:none">
+      <div class="field"><label>New password</label><input type="password" id="pw1" autocomplete="new-password" required></div>
+      <div class="field"><label>Repeat it</label><input type="password" id="pw2" autocomplete="new-password" required></div>
+      <button class="btn" id="setBtn" onclick="setPassword()">Set password &amp; enter portal</button>
+    </div>
+    <p class="msg" id="msg"></p>
+    <p class="auth-foot" id="foot" style="display:none"><a href="index.html">Back to sign in</a></p>
+  </div>
+</div>
+
+<script>
+  var SUPABASE_URL = 'https://hqiyxeriugywlkbcuasu.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_9m66yQmAgJwgCRMoYcU5sA_3l_XlfXr';
+  var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  function show(kind, text){
+    var m = document.getElementById('msg');
+    m.className = 'msg ' + kind; m.textContent = text;
+  }
+
+  /* The invite / reset link in the email carries a one-time token.
+     supabase-js reads it automatically; once a session exists, show the form. */
+  var shown = false;
+  function ready(){
+    if (shown) return; shown = true;
+    document.getElementById('form').style.display = 'block';
+  }
+  db.auth.onAuthStateChange(function(event, session){
+    if (session) ready();
+  });
+  db.auth.getSession().then(function(r){
+    if (r.data.session) { ready(); return; }
+    /* give the URL token a moment to process; if still nothing, the link is bad/expired */
+    setTimeout(function(){
+      if (!shown){
+        document.getElementById('title').textContent = 'This link has expired.';
+        document.getElementById('sub').textContent = 'Invite and reset links are single-use. Use "Forgot your password?" on the sign-in page to get a fresh one.';
+        document.getElementById('foot').style.display = 'block';
+      }
+    }, 2500);
+  });
+
+  function setPassword(){
+    var p1 = document.getElementById('pw1').value;
+    var p2 = document.getElementById('pw2').value;
+    if (p1.length < 8){ show('err','Use at least 8 characters.'); return; }
+    if (p1 !== p2){ show('err','Those don\'t match.'); return; }
+    var btn = document.getElementById('setBtn'); btn.disabled = true;
+    db.auth.updateUser({ password: p1 }).then(function(r){
+      if (r.error){ btn.disabled = false; show('err', r.error.message); return; }
+      show('ok','Password set — taking you in…');
+      setTimeout(function(){ window.location.href = 'portal.html'; }, 900);
+    });
+  }
+</script>
+</body>
+</html>
