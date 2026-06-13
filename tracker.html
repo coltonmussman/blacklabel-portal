@@ -56,9 +56,30 @@
 
   <div class="goal-panel">
     <h2>Monthly goal</h2>
-    <p class="gp-sub">Set a target for annual premium written this month. The bar fills as you log sales.</p>
-    <div class="goalbar"><span id="tGoalBar" style="width:0%"></span></div>
-    <div class="goal-txt" id="tGoalTxt">No goal set yet.</div>
+    <p class="gp-sub">Set a target for annual premium written this month. The ring fills as you log sales.</p>
+    <div class="ring-wrap">
+      <div class="ring" id="goalRing">
+        <svg viewBox="0 0 210 210">
+          <defs>
+            <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#e9ecef"/><stop offset="0.5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#f4f6f8"/>
+            </linearGradient>
+          </defs>
+          <circle class="track" cx="105" cy="105" r="86"/>
+          <circle class="arc" id="ringArc" cx="105" cy="105" r="86" stroke-dasharray="540.35" stroke-dashoffset="540.35"/>
+        </svg>
+        <div class="ctr">
+          <div class="pct" id="ringPct">—</div>
+          <div class="lbl2">of monthly goal</div>
+          <div class="hit-badge">Goal hit!</div>
+        </div>
+      </div>
+      <div class="ring-side">
+        <div class="togo" id="ringTogo">Set a goal below to start tracking.</div>
+        <div class="breakdown" id="ringBreak"></div>
+        <div class="milestones" id="ringMs"></div>
+      </div>
+    </div>
     <div class="gp-row">
       <label>Goal ($)</label>
       <input type="text" id="goalInput" inputmode="numeric" placeholder="e.g. 20000">
@@ -68,12 +89,21 @@
     </div>
   </div>
 
-  <div class="tg-states">
-    <h2>Leads route to you automatically</h2>
-    <p class="support-line">You don't pick leads or claim states. Any lead from a state you're licensed in, in a vertical you work, is delivered straight to your portal and your inbox — no action needed.</p>
-    <div class="state-chips" id="stateChips"></div>
-    <p class="support-line" id="vertLine"></p>
-    <p class="support-line">Need to add or remove a state? Email <a href="mailto:blacklabelleads@gmail.com?subject=Update%20my%20licensed%20states">blacklabelleads@gmail.com</a> (we verify license changes before updating routing).</p>
+  <div class="prefs">
+    <h2>Where do you want leads?</h2>
+    <p class="pf-sub">You're licensed in the states below. Leave a state on to receive its leads, or switch it off to pause it — handy if you only want to write in a few of the states you hold. Same for verticals. Changes apply to new leads right away.</p>
+    <div class="pf-label">States (only ones you're licensed in)</div>
+    <div class="toggle-row" id="stateToggles"></div>
+    <div class="pf-label">Verticals</div>
+    <div class="toggle-row" id="vertToggles">
+      <span class="toggle" data-v="Final Expense">Final Expense</span>
+      <span class="toggle" data-v="Mortgage Protection">Mortgage Protection</span>
+      <span class="toggle" data-v="IUL">IUL</span>
+      <span class="toggle" data-v="Annuity">Annuity</span>
+    </div>
+    <button class="gp-save" onclick="savePrefs()">Save routing preferences</button>
+    <p class="pf-note" id="prefNote"></p>
+    <p class="pf-note" style="margin-top:10px">Need to add or remove a <b>licensed</b> state? Email <a href="mailto:blacklabelleads@gmail.com?subject=Update%20my%20licensed%20states">blacklabelleads@gmail.com</a> — we verify license changes before updating routing.</p>
   </div>
 </div>
 
@@ -122,21 +152,92 @@
     document.getElementById('tRoiNote').textContent = written > 0 ? 'written per $1 invested' : 'log a sale to see your return';
     document.getElementById('tCpp').textContent = sold.length > 0 ? money(cpp) : '—';
 
-    var goal = Number(profile.monthly_goal || 0);
-    var pct = goal > 0 ? Math.min(100, Math.round(written / goal * 100)) : 0;
-    document.getElementById('tGoalBar').style.width = pct + '%';
-    document.getElementById('tGoalTxt').textContent = goal > 0
-      ? money(written) + ' written toward your ' + money(goal) + ' goal — ' + pct + '%' + (pct>=100?' — goal hit!':'')
-      : 'No goal set yet.';
+    renderRing(written, Number(profile.monthly_goal || 0), sold.length);
   }
 
+  /* ===== GOAL RING (goal-gradient effect: progress, proximity, reward) ===== */
+  var CIRC = 2 * Math.PI * 86;  // circumference of r=86
+  function renderRing(written, goal, deals){
+    var arc = document.getElementById('ringArc');
+    var ring = document.getElementById('goalRing');
+    var pctEl = document.getElementById('ringPct');
+    var togo = document.getElementById('ringTogo');
+    var brk = document.getElementById('ringBreak');
+    var ms = document.getElementById('ringMs');
+    arc.setAttribute('stroke-dasharray', CIRC);
+
+    if (!goal || goal <= 0){
+      arc.setAttribute('stroke-dashoffset', CIRC);
+      pctEl.textContent = '—';
+      ring.className = 'ring';
+      togo.textContent = 'Set a goal below to start tracking.';
+      brk.innerHTML = written > 0 ? '<b>' + money(written) + '</b> written so far this month.' : '';
+      ms.innerHTML = '';
+      return;
+    }
+
+    var p = Math.min(1, written / goal);
+    var pctInt = Math.round(p * 100);
+    arc.setAttribute('stroke-dashoffset', CIRC * (1 - p));   // animates via CSS transition
+    pctEl.textContent = pctInt + '%';
+    // proximity reward: ring lights up at 75%, celebrates at 100%
+    ring.className = 'ring' + (p >= 1 ? ' hit' : (p >= 0.75 ? ' glow' : ''));
+
+    var remaining = Math.max(0, goal - written);
+    if (p >= 1){
+      togo.innerHTML = '<span class="almost">You hit your goal.</span> ' + (written > goal ? money(written - goal) + ' past it.' : 'Right on the number.');
+    } else if (p >= 0.75){
+      togo.innerHTML = '<span class="almost">Almost there</span> — just <b>' + money(remaining) + '</b> to go.';
+    } else {
+      togo.innerHTML = '<b>' + money(remaining) + '</b> to go.';
+    }
+    brk.innerHTML = 'Written <b>' + money(written) + '</b> &middot; Goal <b>' + money(goal) + '</b> &middot; <b>' + deals + '</b> deal' + (deals===1?'':'s') + ' closed';
+
+    ms.innerHTML = [25,50,75,100].map(function(m){
+      return '<div class="ms' + (pctInt >= m ? ' done' : '') + '">' + m + '%</div>';
+    }).join('');
+  }
+
+  /* ===== ROUTING PREFERENCES ===== */
+  function splitList(s){ return (s||'').split(/[,;/\n]+/).map(function(x){return x.trim();}).filter(Boolean); }
+
   function renderStates(){
-    var chips = document.getElementById('stateChips');
-    var raw = (profile.states_licensed || '').split(/[,;/\n]+/).map(function(s){return s.trim();}).filter(Boolean);
-    if (!raw.length){ chips.innerHTML = '<span class="support-line">No states on file yet — they\'re set from your application.</span>'; }
-    else { chips.innerHTML = raw.map(function(s){ return '<span class="state-chip">' + esc(s) + '</span>'; }).join(''); }
-    var verts = (profile.verticals || '').trim();
-    document.getElementById('vertLine').textContent = verts ? 'Verticals you receive: ' + verts + '.' : '';
+    var box = document.getElementById('stateToggles');
+    var licensed = splitList(profile.states_licensed);
+    if (!licensed.length){
+      box.innerHTML = '<span class="pf-note">No states on file yet — they\'re set from your application. Email us to add your license.</span>';
+    } else {
+      // active_states null/empty = all on; otherwise only the listed ones are on
+      var activeRaw = (profile.active_states || '').trim();
+      var activeSet = activeRaw ? splitList(activeRaw).map(function(s){return s.toUpperCase();}) : null;
+      box.innerHTML = licensed.map(function(s){
+        var on = activeSet === null || activeSet.indexOf(s.toUpperCase()) > -1;
+        return '<span class="toggle' + (on?' on':'') + '" data-s="' + esc(s) + '" onclick="this.classList.toggle(\'on\')">' + esc(s) + '</span>';
+      }).join('');
+    }
+    // verticals: active_verticals null/empty = all on
+    var av = (profile.active_verticals || '').trim();
+    document.querySelectorAll('#vertToggles .toggle').forEach(function(t){
+      var on = !av || av.toLowerCase().indexOf(t.getAttribute('data-v').toLowerCase()) > -1;
+      if (on) t.classList.add('on');
+      t.onclick = function(){ t.classList.toggle('on'); };
+    });
+  }
+
+  function savePrefs(){
+    var states = [].slice.call(document.querySelectorAll('#stateToggles .toggle.on')).map(function(t){return t.getAttribute('data-s');});
+    var verts = [].slice.call(document.querySelectorAll('#vertToggles .toggle.on')).map(function(t){return t.getAttribute('data-v');});
+    var licensed = splitList(profile.states_licensed);
+    // store full list = "all on" (null), else the chosen subset
+    var stateVal = (states.length === licensed.length) ? null : states.join(', ');
+    var vertVal = (verts.length === 4) ? null : verts.join(', ');
+    var note = document.getElementById('prefNote');
+    if (states.length === 0){ note.textContent = 'Heads up: with no states on, you will not receive any leads until you turn at least one back on.'; }
+    db.from('agent_profiles').update({ active_states: stateVal, active_verticals: vertVal }).eq('id', me.id).then(function(r){
+      if (r.error){ note.textContent = 'Couldn\'t save: ' + r.error.message; return; }
+      profile.active_states = stateVal; profile.active_verticals = vertVal;
+      if (states.length > 0) note.textContent = 'Saved. New leads will follow these preferences.';
+    });
   }
 
   function saveSettings(){

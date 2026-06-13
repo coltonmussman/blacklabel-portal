@@ -33,6 +33,25 @@ a{color:var(--soft)}
 .btn{width:100%;margin-top:8px;background:var(--chrome-btn);color:var(--black);border:none;cursor:pointer;
   font-family:'Mulish',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:15px;transition:opacity .15s}
 .btn:hover{opacity:.9}
+
+/* ===== TRAVELLING SHIMMER ON SOLID SILVER BUTTONS =====
+   The chrome buttons get a band of light that sweeps across, same as the
+   text shimmer, so the BOXES glimmer too — not just the words. */
+.btn,.home-cta,.gp-save,.tier-cta.solid,.signout{position:relative;overflow:hidden}
+.btn::after,.home-cta::after,.gp-save::after,.tier-cta.solid::after{
+  content:'';position:absolute;top:0;bottom:0;left:-60%;width:55%;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,0.85) 50%,transparent);
+  transform:skewX(-20deg);pointer-events:none;
+  animation:btnSweep 4.4s ease-in-out infinite;
+}
+@keyframes btnSweep{
+  0%{left:-60%}
+  35%{left:150%}
+  100%{left:150%}
+}
+@media (prefers-reduced-motion: reduce){
+  .btn::after,.home-cta::after,.gp-save::after,.tier-cta.solid::after{animation:none;display:none}
+}
 .btn:disabled{opacity:.5;cursor:wait}
 .auth-foot{margin-top:18px;text-align:center;font-size:12.5px;color:var(--mute)}
 .auth-foot a{cursor:pointer;text-decoration:underline}
@@ -158,6 +177,50 @@ td a.tf{font-size:11.5px;color:var(--soft)}
 .gp-row input:focus{outline:none;border-color:var(--silver)}
 .gp-row label{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--soft)}
 .gp-save{background:var(--chrome-btn);color:var(--black);border:none;font-family:'Mulish',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:11px 18px;cursor:pointer}
+/* ===== GOAL RING (goal-gradient: progress + proximity + reward) ===== */
+.ring-wrap{display:flex;gap:30px;align-items:center;flex-wrap:wrap}
+.ring{position:relative;flex-shrink:0;width:210px;height:210px}
+.ring.mini{width:128px;height:128px}
+.ring svg{transform:rotate(-90deg);display:block}
+.ring .track{fill:none;stroke:var(--line-soft);stroke-width:14}
+.ring.mini .track{stroke-width:10}
+.ring .arc{fill:none;stroke:url(#ringGrad);stroke-width:14;stroke-linecap:round;
+  transition:stroke-dashoffset 1.2s cubic-bezier(.2,.75,.2,1);
+  filter:drop-shadow(0 0 0 rgba(233,236,239,0))}
+.ring.mini .arc{stroke-width:10}
+.ring.glow .arc{filter:drop-shadow(0 0 9px rgba(233,236,239,0.5))}       /* near goal: it lights up */
+.ring.hit .arc{animation:ringPulse 1.7s ease-in-out infinite}            /* goal hit: it celebrates */
+@keyframes ringPulse{0%,100%{filter:drop-shadow(0 0 7px rgba(233,236,239,0.5))}50%{filter:drop-shadow(0 0 24px rgba(233,236,239,0.95))}}
+.ring .tick{stroke:var(--black);stroke-width:3}
+.ring .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 16px}
+.ring .pct{font-family:'Fraunces',serif;font-size:42px;line-height:1;background:var(--chrome-anim);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:chromeShimmer 4.4s ease-in-out infinite}
+.ring.mini .pct{font-size:26px}
+.ring .ctr .lbl2{font-size:9.5px;letter-spacing:0.13em;text-transform:uppercase;color:var(--mute);margin-top:4px}
+.ring.mini .ctr .lbl2{font-size:8.5px;margin-top:2px}
+.ring .hit-badge{display:none;font-family:'Fraunces',serif;font-style:italic;font-size:17px;color:var(--good)}
+.ring.hit .pct,.ring.hit .lbl2{display:none}
+.ring.hit .hit-badge{display:block}
+.ring-side{flex:1;min-width:230px}
+.ring-side .togo{font-family:'Fraunces',serif;font-size:23px;color:var(--ivory);line-height:1.3;margin-bottom:6px}
+.ring-side .togo b{color:var(--good)}
+.ring-side .togo .almost{color:var(--silver-bright);font-style:italic}
+.ring-side .breakdown{font-size:13px;color:var(--mute);line-height:1.9;margin-top:8px}
+.ring-side .breakdown b{color:var(--ivory);font-weight:700}
+.milestones{display:flex;gap:6px;margin-top:14px}
+.milestones .ms{flex:1;text-align:center;font-size:9px;font-weight:700;letter-spacing:0.06em;color:var(--mute);padding-top:8px;border-top:2px solid var(--line-soft)}
+.milestones .ms.done{color:var(--silver-bright);border-top-color:var(--silver)}
+
+/* ===== ROUTING PREFERENCES (agent picks active states / verticals) ===== */
+.prefs{background:var(--card);border:1px solid var(--line-soft);padding:20px;margin-bottom:16px}
+.prefs h2{font-family:'Fraunces',serif;font-size:16px;font-weight:500;margin-bottom:6px}
+.prefs .pf-sub{font-size:13px;color:var(--mute);margin-bottom:14px;line-height:1.6}
+.toggle-row{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 16px}
+.toggle{border:1px solid var(--line-soft);color:var(--mute);font-size:12px;font-weight:700;letter-spacing:0.04em;padding:8px 14px;cursor:pointer;user-select:none;background:var(--black);transition:all .12s}
+.toggle.on{border-color:var(--silver);color:var(--silver-bright);background:var(--gold-dim,rgba(174,180,188,0.12))}
+.toggle:hover{border-color:var(--silver)}
+.pf-label{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--soft);margin-bottom:4px}
+.pf-note{font-size:11.5px;color:var(--mute);margin-top:4px}
+
 .tg-states{background:var(--card);border:1px solid var(--line-soft);padding:20px}
 .tg-states h2{font-family:'Fraunces',serif;font-size:16px;font-weight:500;margin-bottom:8px}
 .state-chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}

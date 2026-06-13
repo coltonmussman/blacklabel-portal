@@ -71,8 +71,17 @@
       </div>
       <div class="rail-card">
         <div class="rail-h">Monthly goal</div>
-        <div class="goalbar"><span id="railGoalBar" style="width:0%"></span></div>
-        <div class="goal-txt" id="railGoalTxt">Set a goal on the tracker</div>
+        <div style="display:flex;justify-content:center;margin:4px 0 10px">
+          <div class="ring mini" id="railRing">
+            <svg viewBox="0 0 210 210">
+              <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset="0.5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#f4f6f8"/></linearGradient></defs>
+              <circle class="track" cx="105" cy="105" r="86"/>
+              <circle class="arc" id="railRingArc" cx="105" cy="105" r="86" stroke-dasharray="540.35" stroke-dashoffset="540.35"/>
+            </svg>
+            <div class="ctr"><div class="pct" id="railRingPct">—</div><div class="lbl2">of goal</div><div class="hit-badge">Hit!</div></div>
+          </div>
+        </div>
+        <div class="goal-txt" id="railGoalTxt" style="text-align:center">Set a goal on the tracker</div>
         <button class="editlink" onclick="window.location.href='tracker.html'">Open full tracker &rarr;</button>
       </div>
     </aside>
@@ -191,11 +200,24 @@
     document.getElementById('railRoiSub').textContent = written > 0 ? 'written per $1 invested' : 'log a sale to see your return';
 
     var goal = Number(profile.monthly_goal || 0);
-    var pct = goal > 0 ? Math.min(100, Math.round(written / goal * 100)) : 0;
-    document.getElementById('railGoalBar').style.width = pct + '%';
-    document.getElementById('railGoalTxt').textContent = goal > 0
-      ? money(written) + ' of ' + money(goal) + ' (' + pct + '%)'
-      : 'Set a goal on the tracker';
+    var CIRC = 2 * Math.PI * 86;
+    var arc = document.getElementById('railRingArc');
+    var ring = document.getElementById('railRing');
+    var pctEl = document.getElementById('railRingPct');
+    var txt = document.getElementById('railGoalTxt');
+    arc.setAttribute('stroke-dasharray', CIRC);
+    if (goal > 0){
+      var p = Math.min(1, written / goal), pctInt = Math.round(p * 100);
+      arc.setAttribute('stroke-dashoffset', CIRC * (1 - p));
+      pctEl.textContent = pctInt + '%';
+      ring.className = 'ring mini' + (p >= 1 ? ' hit' : (p >= 0.75 ? ' glow' : ''));
+      txt.innerHTML = p >= 1 ? '<b style="color:var(--good)">Goal hit!</b>' : money(written) + ' of ' + money(goal);
+    } else {
+      arc.setAttribute('stroke-dashoffset', CIRC);
+      pctEl.textContent = '—';
+      ring.className = 'ring mini';
+      txt.textContent = 'Set a goal on the tracker';
+    }
   }
 
   function prettyVertical(v){ var m={final_expense:'Final Expense',mortgage_protection:'Mortgage Protection',iul:'IUL',annuity:'Annuity'}; return m[v]||(v||'—'); }
