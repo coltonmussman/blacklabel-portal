@@ -61,6 +61,11 @@
   <div id="dash" style="display:none">
     <div class="owner-grid" id="metrics"></div>
 
+    <div class="opanel" id="refundsPanel" style="display:none">
+      <h2>Refund / replacement requests</h2>
+      <div id="refundsWrap"></div>
+    </div>
+
     <div class="opanel">
       <h2>Vault — leads waiting for an agent</h2>
       <div id="vaultWrap"><div class="owarn muted">Loading…</div></div>
@@ -104,7 +109,7 @@
       }
       document.getElementById('dash').style.display = 'block';
       renderMetrics(r.data);
-      loadVault(); loadAgents().then(loadLeads);
+      loadVault(); loadRefunds(); loadAgents().then(loadLeads);
     });
   }
 
@@ -122,6 +127,39 @@
     document.getElementById('metrics').innerHTML = cards.map(function(c){
       return '<div class="ostat"><div class="n ' + c[2] + '">' + esc(c[1]) + '</div><div class="l">' + esc(c[0]) + '</div></div>';
     }).join('');
+  }
+
+  function loadRefunds(){
+    db.rpc('bl_owner_refunds').then(function(r){
+      var panel = document.getElementById('refundsPanel');
+      var w = document.getElementById('refundsWrap');
+      if(r.error){ panel.style.display = 'none'; return; }
+      var rows = r.data || [];
+      if(!rows.length){ panel.style.display = 'none'; return; }
+      panel.style.display = 'block';
+      var html = '<table class="otable"><thead><tr><th>Lead</th><th>State / Vertical</th><th>Agent</th><th>Reason</th><th>Flagged</th><th>Resolve</th></tr></thead><tbody>';
+      rows.forEach(function(l){
+        var name = ((l.first_name||'')+' '+(l.last_name||'')).trim() || '—';
+        html += '<tr>'
+          + '<td><b>'+esc(name)+'</b><div class="muted">'+esc(l.phone||'')+'</div></td>'
+          + '<td>'+esc(l.state||'—')+'<div class="muted">'+esc(pretty(l.vertical))+'</div></td>'
+          + '<td>'+esc(l.agent_name||'—')+'</td>'
+          + '<td class="muted">'+esc(l.refund_reason||'—')+'</td>'
+          + '<td class="muted">'+fmt(l.refund_requested_at)+'</td>'
+          + '<td><button class="obtn" onclick="resolveRefund(\''+l.id+'\',\'credited\')">Credit</button> '
+          +     '<button class="obtn" onclick="resolveRefund(\''+l.id+'\',\'denied\')">Deny</button></td>'
+          + '</tr>';
+      });
+      w.innerHTML = html + '</tbody></table>';
+    });
+  }
+
+  function resolveRefund(id, resolution){
+    if(!confirm('Mark this request as "'+resolution+'"? (This only clears the flag — issue any actual Stripe credit yourself.)')) return;
+    db.rpc('bl_owner_resolve_refund', { p_lead: id, p_resolution: resolution }).then(function(r){
+      if(r.error){ alert("Couldn't resolve: " + r.error.message); return; }
+      loadRefunds();
+    });
   }
 
   function loadVault(){
@@ -143,7 +181,7 @@
       if(r.error){ w.innerHTML = '<div class="owarn muted">'+esc(r.error.message)+'</div>'; return; }
       agents = r.data || [];
       if(!agents.length){ w.innerHTML = '<div class="owarn muted">No agents yet.</div>'; return; }
-      var html = '<table class="otable"><thead><tr><th>Agent</th><th>States</th><th>Tier</th><th>This week</th><th>Status</th><th>Controls</th></tr></thead><tbody>';
+      var html = '<table class="otable"><thead><tr><th>Agent</th><th>States</th><th>Tier</th><th>This week</th><th>Status</th><th>Billing</th><th>Controls</th></tr></thead><tbody>';
       agents.forEach(function(a){
         var name = ((a.first_name||'')+' '+(a.last_name||'')).trim() || a.email || '—';
         html += '<tr>'
@@ -152,12 +190,24 @@
           + '<td>'+esc(a.tier||'Silver')+'</td>'
           + '<td>'+(a.received_this_week||0)+' / '+(a.weekly_cap||0)+'</td>'
           + '<td><span class="pill '+(a.status==='active'?'active':'paused')+'">'+esc(a.status||'—')+'</span></td>'
+          + '<td>'+billingPill(a.subscription_status, a.current_period_end)+'</td>'
           + '<td><button class="obtn" onclick="toggleAgent(\''+a.id+'\',\''+(a.status==='active'?'paused':'active')+'\')">'+(a.status==='active'?'Pause':'Activate')+'</button> '
           +     '<button class="obtn" onclick="setCap(\''+a.id+'\','+(a.weekly_cap||0)+')">Cap</button></td>'
           + '</tr>';
       });
       w.innerHTML = html + '</tbody></table>';
     });
+  }
+
+  function billingPill(s, periodEnd){
+    s = String(s||'none').toLowerCase();
+    if (s==='active' || s==='trialing'){
+      var renew = periodEnd ? '<div class="muted">renews '+esc(new Date(periodEnd).toLocaleDateString([],{month:'short',day:'numeric'}))+'</div>' : '';
+      return '<span class="pill active">Paid</span>'+renew;
+    }
+    if (s==='past_due' || s==='unpaid') return '<span class="pill paused">Past due</span>';
+    if (s==='canceled') return '<span class="pill paused">Canceled</span>';
+    return '<span class="muted">No card</span>';
   }
 
   function agentOptions(selectedId){
@@ -178,7 +228,7 @@
       r.data.forEach(function(l){
         var name = ((l.first_name||'')+' '+(l.last_name||'')).trim() || '—';
         html += '<tr>'
-          + '<td><b>'+esc(name)+'</b><div class="muted">'+esc(l.phone||'')+'</div></td>'
+          + '<td><b>'+esc(name)+'</b>'+(l.quality_flag?' <span class="pill paused" title="Possibly bad contact info — review this lead">⚠ '+esc(l.quality_flag)+'</span>':'')+'<div class="muted">'+esc(l.phone||'')+'</div></td>'
           + '<td>'+esc(l.state||'—')+'<div class="muted">'+esc(pretty(l.vertical))+'</div></td>'
           + '<td>'+esc(l.lead_status)+'</td>'
           + '<td>'+(l.annual_premium?money(l.annual_premium):'<span class="muted">—</span>')+'</td>'
@@ -209,7 +259,7 @@
   function reassign(leadId, agentId){
     db.rpc('bl_owner_reassign_lead', { p_lead:leadId, p_agent: agentId||null }).then(function(r){
       if(r.error){ alert(r.error.message); loadLeads(); return; }
-      loadVault(); loadAgents().then(loadLeads);
+      loadVault(); loadRefunds(); loadAgents().then(loadLeads);
     });
   }
 </script>

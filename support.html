@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support — Black Label Leads Portal</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="portal.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  .sp-search{width:100%;margin:6px 0 18px;padding:14px 16px;background:var(--card);border:1px solid var(--line);color:var(--ivory);font-family:'Mulish',sans-serif;font-size:14px}
+  .sp-search::placeholder{color:var(--mute)}
+  .faq{border:1px solid var(--line-soft);background:var(--card);margin-bottom:10px}
+  .faq summary{cursor:pointer;padding:16px 18px;font-weight:700;font-size:14px;color:var(--ivory);list-style:none;display:flex;justify-content:space-between;align-items:center}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:'+';color:var(--silver);font-size:18px;margin-left:12px}
+  .faq[open] summary::after{content:'\2212'}
+  .faq .a{padding:0 18px 16px;color:var(--soft);font-size:13.5px;line-height:1.6}
+  .sp-hide{display:none !important}
+  .sp-form label{display:block;font-size:10.5px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--mute);margin:14px 0 6px}
+  .sp-form select,.sp-form textarea{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--ivory);font-family:'Mulish',sans-serif;font-size:14px;padding:12px 14px}
+  .sp-form textarea{min-height:120px;resize:vertical}
+  .sp-note{font-size:13px;color:var(--mute);margin-top:10px}
+  .sp-ok{color:var(--good)} .sp-err{color:var(--bad)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center">
+    <div class="brand">
+      <svg viewBox="0 0 170 170" aria-hidden="true">
+        <defs>
+          <linearGradient id="pc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="0.38" stop-color="#c4cad2"/><stop offset="0.52" stop-color="#8e959f"/><stop offset="0.66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
+          <linearGradient id="pr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset="0.5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
+        </defs>
+        <circle cx="85" cy="85" r="66" fill="#101113" stroke="url(#pr)" stroke-width="2.2"/>
+        <circle cx="85" cy="85" r="58" fill="none" stroke="#aeb4bc" stroke-width="1" opacity="0.55"/>
+        <rect x="81.5" y="33.5" width="7" height="7" transform="rotate(45 85 37)" fill="url(#pr)"/>
+        <rect x="81.5" y="129.5" width="7" height="7" transform="rotate(45 85 133)" fill="url(#pr)"/>
+        <text x="85" y="104" text-anchor="middle" font-family="'Fraunces',Georgia,serif" font-size="54" font-weight="500" letter-spacing="3" fill="url(#pc)">BL</text>
+      </svg>
+      <span>Black <span class="lbl">Label</span> Leads</span>
+    </div>
+    <nav class="topnav">
+      <a href="home.html">Home</a>
+      <a href="portal.html">My Leads</a>
+      <a href="tracker.html">Tracker</a>
+      <a href="support.html" class="active">Support</a>
+    </nav>
+  </div>
+  <div class="who">
+    <span id="whoami"></span>
+    <button class="signout" onclick="signOut()">Sign out</button>
+  </div>
+</div>
+
+<div class="shell">
+  <div class="home-hero">
+    <h1>How can we <em>help?</em></h1>
+    <p>Search the common questions below, or send us a note. You'll get a reply from a licensed agent — not a ticket queue.</p>
+  </div>
+
+  <input class="sp-search" id="faqSearch" type="text" placeholder="Search help — e.g. &quot;replacement&quot;, &quot;states&quot;, &quot;billing&quot;…" oninput="filterFaq()">
+
+  <div class="home-card" style="margin-bottom:22px">
+    <h2>Common questions</h2>
+    <div id="faqList">
+      <details class="faq"><summary>How are leads delivered to me?</summary><div class="a">Leads from the states and verticals you're licensed in and have switched on route to you automatically — no claiming, no racing. Each one shows up on your <a href="portal.html">My Leads</a> page and in your email within about two minutes of the customer hitting submit. Every lead is yours alone: one lead, one agent, forever.</div></details>
+      <details class="faq"><summary>What's the replacement / credit policy on a bad lead?</summary><div class="a">We hold a 24-hour replace-or-credit standard for genuinely bad leads — disconnected or wrong number, fake contact info, or someone who clearly never asked for a quote. Open the lead in My Leads and use the flag option to request a credit; we review every flag personally. It's not for "they didn't answer yet" — it's for leads that were never reachable.</div></details>
+      <details class="faq"><summary>How do I turn states or verticals on and off?</summary><div class="a">Head to the <a href="tracker.html">Tracker</a> page. Under "Where do you want leads?" you can switch any licensed state or vertical on or off — handy if you only want to write in a few of the states you hold. Changes apply to new leads right away. (Turning everything off pauses your leads until you turn something back on.)</div></details>
+      <details class="faq"><summary>How do I add or remove a licensed state?</summary><div class="a">Email us and we'll update it. Because routing is tied to where you're actually licensed, we verify license changes against your record before turning a new state on — it keeps everyone compliant.</div></details>
+      <details class="faq"><summary>How does billing work?</summary><div class="a">Silver is $400/week on the card you put on file. It bills automatically each week. If a payment fails or you cancel, your lead flow pauses right away and picks back up the moment your payment is current again — you never pay for a week of leads you didn't get.</div></details>
+      <details class="faq"><summary>Why am I not receiving leads right now?</summary><div class="a">Three quick things to check: (1) your states and verticals are switched on under the <a href="tracker.html">Tracker</a>; (2) you haven't hit your weekly cap yet; and (3) your subscription is active. If all three look right and it's still quiet, your state may just be between leads — send us a note and we'll look.</div></details>
+      <details class="faq"><summary>When do my numbers reset?</summary><div class="a">Your weekly lead count resets every Monday. The profit tracker — invested, premium written, deals, and your goal ring — resets on the 1st of each month so every month starts fresh. Your monthly goal target carries over so you don't have to re-enter it.</div></details>
+      <details class="faq"><summary>How do I log a sale so it shows in my tracker?</summary><div class="a">On <a href="portal.html">My Leads</a>, set the lead's status to "Sold" and enter the annual premium. It flows straight into your <a href="tracker.html">Profit Tracker</a> — return, cost per policy, and the goal ring all update automatically.</div></details>
+    </div>
+    <p class="sp-note sp-hide" id="noFaq">No matches. Try a different word, or just send us a note below.</p>
+  </div>
+
+  <div class="home-card" style="margin-bottom:22px">
+    <h2>Still need a hand?</h2>
+    <p class="support-line">Send us the details and we'll get back to you. For anything about a specific lead, mention the lead's name.</p>
+    <div class="sp-form">
+      <label for="spTopic">Topic</label>
+      <select id="spTopic">
+        <option>A specific lead</option>
+        <option>Billing &amp; subscription</option>
+        <option>Licensed states / routing</option>
+        <option>I'm not getting leads</option>
+        <option>Something's broken</option>
+        <option>Other</option>
+      </select>
+      <label for="spMsg">Message</label>
+      <textarea id="spMsg" placeholder="Tell us what's going on…"></textarea>
+      <a class="home-cta" style="margin-top:14px;cursor:pointer" onclick="sendSupport()" id="spSend">Send to support</a>
+      <p class="sp-note" id="spStatus"></p>
+    </div>
+  </div>
+
+  <div class="home-card">
+    <h2>Prefer email?</h2>
+    <p class="support-line">Reach us any time at <a href="mailto:blacklabelleads@gmail.com?subject=Portal%20support">blacklabelleads@gmail.com</a>. We typically reply the same day.</p>
+    <p class="sp-note" style="margin-top:10px">An instant AI assistant for quick answers is on the way — for now the questions above cover the most common ones.</p>
+  </div>
+</div>
+
+<script>
+  var SUPABASE_URL = 'https://hqiyxeriugywlkbcuasu.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_9m66yQmAgJwgCRMoYcU5sA_3l_XlfXr';
+  var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  var me = null;
+
+  db.auth.getSession().then(function(r){
+    if (!r.data.session){ window.location.href = 'index.html'; return; }
+    me = r.data.session.user;
+    db.from('agent_profiles').select('first_name, last_name').eq('id', me.id).single().then(function(p){
+      var d = p.data || {};
+      var name = ((d.first_name||'') + ' ' + (d.last_name||'')).trim() || me.email;
+      document.getElementById('whoami').innerHTML = '<span class="email">' + esc(name) + '</span>';
+    });
+  });
+
+  function filterFaq(){
+    var q = (document.getElementById('faqSearch').value || '').toLowerCase().trim();
+    var items = document.querySelectorAll('#faqList .faq');
+    var shown = 0;
+    items.forEach(function(it){
+      var hit = !q || it.textContent.toLowerCase().indexOf(q) > -1;
+      it.classList.toggle('sp-hide', !hit);
+      if (hit) shown++;
+      if (q && hit) it.setAttribute('open',''); else if (q) it.removeAttribute('open');
+    });
+    document.getElementById('noFaq').classList.toggle('sp-hide', shown !== 0);
+  }
+
+  function sendSupport(){
+    var topic = document.getElementById('spTopic').value;
+    var msg = (document.getElementById('spMsg').value || '').trim();
+    var status = document.getElementById('spStatus');
+    var btn = document.getElementById('spSend');
+    if (msg.length < 5){ status.className = 'sp-note sp-err'; status.textContent = 'Add a little more detail so we can help.'; return; }
+    btn.style.pointerEvents = 'none'; btn.style.opacity = '0.6';
+    status.className = 'sp-note'; status.textContent = 'Sending…';
+    db.from('support_requests').insert({ agent_id: me.id, agent_email: me.email, topic: topic, message: msg }).then(function(r){
+      btn.style.pointerEvents = ''; btn.style.opacity = '';
+      if (r.error){ status.className = 'sp-note sp-err'; status.textContent = "Couldn't send: " + r.error.message; return; }
+      status.className = 'sp-note sp-ok'; status.textContent = 'Got it — we\'ll be in touch shortly. You can close this page.';
+      document.getElementById('spMsg').value = '';
+    });
+  }
+
+  function esc(s){ var d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
+  function signOut(){ db.auth.signOut().then(function(){ window.location.href = 'index.html'; }); }
+</script>
+</body>
+</html>
