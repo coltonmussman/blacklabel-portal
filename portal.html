@@ -131,7 +131,7 @@
 
   function loadLeads(){
     db.from('leads')
-      .select('id, first_name, last_name, phone, email, state, vertical, age, submitted_at, created_at, assigned_at, lead_status, agent_notes, annual_premium, sold_at, trustedform_cert_url')
+      .select('id, first_name, last_name, phone, email, state, vertical, age, coverage_amount, tobacco, best_time, income_band, intent, submitted_at, created_at, assigned_at, lead_status, agent_notes, annual_premium, sold_at, trustedform_cert_url')
       .order('assigned_at', { ascending: false, nullsFirst: false })
       .then(function(r){
         if (r.error){ document.getElementById('tableWrap').innerHTML = '<div class="empty">Couldn\'t load leads: ' + esc(r.error.message) + '</div>'; return; }
@@ -166,7 +166,7 @@
         + '</td>'
         + '<td><div><a href="tel:' + esc(l.phone||'') + '">' + esc(l.phone||'—') + '</a></div>'
         +   '<div class="sub2">' + esc(l.email||'') + '</div></td>'
-        + '<td><div>' + esc(l.state||'—') + '</div><div class="sub2">' + esc(prettyVertical(l.vertical)) + '</div></td>'
+        + '<td><div>' + esc(l.state||'—') + '</div><div class="sub2">' + esc(prettyVertical(l.vertical)) + '</div>' + leadDetailsHtml(l) + '</td>'
         + '<td><div>' + fmt(delivered) + '</div>'
         +   (l.submitted_at ? '<div class="sub2">submitted ' + fmt(l.submitted_at) + '</div>' : '')
         + '</td>'
@@ -221,6 +221,32 @@
   }
 
   function prettyVertical(v){ var m={final_expense:'Final Expense',mortgage_protection:'Mortgage Protection',iul:'IUL',annuity:'Annuity'}; return m[v]||(v||'—'); }
+
+  /* The detail that matters changes by product: a mortgage lead's balance, a
+     final-expense lead's desired coverage, an annuity lead's savings, etc.
+     Pull only the fields that are real (skip blanks and "Not provided"). */
+  function leadDetails(l){
+    var v = l.vertical, out = [];
+    function add(label, val){
+      if (val == null) return;
+      var s = String(val).trim();
+      if (!s || s.toLowerCase() === 'not provided') return;
+      out.push([label, s]);
+    }
+    if (v === 'mortgage_protection'){ add('Mortgage', l.coverage_amount); add('Tobacco', l.tobacco); }
+    else if (v === 'final_expense'){ add('Coverage', l.coverage_amount); add('Tobacco', l.tobacco); add('Best time', l.best_time); }
+    else if (v === 'annuity'){ add('Savings', l.income_band); add('Start', l.intent); }
+    else if (v === 'iul'){ add('Income', l.income_band); add('Goal', l.intent); }
+    else { add('Coverage', l.coverage_amount); add('Tobacco', l.tobacco); }
+    return out;
+  }
+  function leadDetailsHtml(l){
+    var d = leadDetails(l);
+    if (!d.length) return '';
+    return '<div class="lead-extras">' + d.map(function(x){
+      return '<span class="lx"><span class="lxk">' + esc(x[0]) + '</span> ' + esc(x[1]) + '</span>';
+    }).join('') + '</div>';
+  }
 
   function setStatus(id, sel){
     var v = sel.value;
