@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Owner Command Center — Black Label Leads</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="portal.css">
+<style>
+  .owner-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+  .ostat{background:var(--card);border:1px solid var(--line-soft);padding:16px 18px}
+  .ostat .n{font-family:'Fraunces',serif;font-size:26px;color:var(--ivory)}
+  .ostat .n.good{color:var(--good,#7fe0a8)}
+  .ostat .l{font-size:10px;font-weight:700;letter-spacing:0.13em;text-transform:uppercase;color:var(--mute);margin-top:3px}
+  .opanel{background:var(--card);border:1px solid var(--line);margin-bottom:20px}
+  .opanel h2{font-family:'Fraunces',serif;font-size:17px;font-weight:500;padding:14px 18px;border-bottom:1px solid var(--line-soft);margin:0}
+  .otable{width:100%;border-collapse:collapse;font-size:12.5px}
+  .otable th{text-align:left;padding:9px 14px;font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);border-bottom:1px solid var(--line-soft)}
+  .otable td{padding:9px 14px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+  .otable tr:last-child td{border-bottom:none}
+  .pill{font-size:10px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;padding:2px 8px;border-radius:3px;border:1px solid var(--line-soft)}
+  .pill.active{color:#7fe0a8;border-color:rgba(127,224,168,0.4)}
+  .pill.paused{color:#e0b07f;border-color:rgba(224,176,127,0.4)}
+  .obtn{font-family:'Mulish',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;background:var(--black);color:var(--ivory);border:1px solid var(--line-soft);cursor:pointer;border-radius:3px}
+  .obtn:hover{border-color:var(--silver)}
+  .osel{background:var(--black);color:var(--ivory);border:1px solid var(--line-soft);font-size:11.5px;padding:4px 6px;border-radius:3px;max-width:170px}
+  .owarn{padding:60px 20px;text-align:center;color:var(--soft)}
+  .muted{color:var(--mute)}
+  .waitbig{font-family:'Fraunces',serif;color:var(--silver-bright)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center">
+    <div class="brand">
+      <svg viewBox="0 0 170 170" aria-hidden="true">
+        <defs>
+          <linearGradient id="pc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="0.38" stop-color="#c4cad2"/><stop offset="0.52" stop-color="#8e959f"/><stop offset="0.66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
+          <linearGradient id="pr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset="0.5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
+        </defs>
+        <circle cx="85" cy="85" r="66" fill="#101113" stroke="url(#pr)" stroke-width="2.2"/>
+        <text x="85" y="104" text-anchor="middle" font-family="'Fraunces',Georgia,serif" font-size="54" font-weight="500" letter-spacing="3" fill="url(#pc)">BL</text>
+      </svg>
+      <span>Black <span class="lbl">Label</span> Leads</span>
+    </div>
+  </div>
+  <div class="who">
+    <span id="whoami"></span>
+    <button class="signout" onclick="signOut()">Sign out</button>
+  </div>
+</div>
+
+<div class="shell">
+  <div class="tracker-hero"><h1>Owner <em>command center</em></h1><p>Everything in one place: what's flowing, who's getting it, and what's waiting in the vault.</p></div>
+
+  <div id="gate"></div>
+  <div id="dash" style="display:none">
+    <div class="owner-grid" id="metrics"></div>
+
+    <div class="opanel">
+      <h2>Vault — leads waiting for an agent</h2>
+      <div id="vaultWrap"><div class="owarn muted">Loading…</div></div>
+    </div>
+
+    <div class="opanel">
+      <h2>Agents</h2>
+      <div id="agentsWrap"><div class="owarn muted">Loading…</div></div>
+    </div>
+
+    <div class="opanel">
+      <h2>Leads</h2>
+      <div id="leadsWrap"><div class="owarn muted">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var SUPABASE_URL = 'https://hqiyxeriugywlkbcuasu.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_9m66yQmAgJwgCRMoYcU5sA_3l_XlfXr';
+  var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  var agents = [];
+
+  function esc(s){ var d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
+  function money(n){ return '$' + Math.round(Number(n)||0).toLocaleString(); }
+  function fmt(ts){ if(!ts) return '—'; var d=new Date(ts); return d.toLocaleDateString([], {month:'short', day:'numeric'}); }
+  function pretty(v){ var m={final_expense:'Final Expense',mortgage_protection:'Mortgage Protection',iul:'IUL',annuity:'Annuity'}; return m[v]||(v||'—'); }
+  function signOut(){ db.auth.signOut().then(function(){ window.location.href='index.html'; }); }
+
+  db.auth.getSession().then(function(r){
+    if(!r.data.session){ window.location.href='index.html'; return; }
+    document.getElementById('whoami').innerHTML = '<span class="email">' + esc(r.data.session.user.email) + '</span>';
+    boot();
+  });
+
+  function boot(){
+    db.rpc('bl_owner_metrics').then(function(r){
+      if(r.error){
+        document.getElementById('gate').innerHTML = '<div class="owarn"><b>This account isn\'t the owner.</b><br>The command center is owner-only. If this is your business account, make sure you\'re signed in with the owner email.</div>';
+        return;
+      }
+      document.getElementById('dash').style.display = 'block';
+      renderMetrics(r.data);
+      loadVault(); loadAgents().then(loadLeads);
+    });
+  }
+
+  function renderMetrics(m){
+    var cards = [
+      ['Leads (total)', m.total_leads, ''],
+      ['Assigned', m.assigned, ''],
+      ['Waiting in vault', m.vaulted, ''],
+      ['Sold', m.sold, 'good'],
+      ['Premium written', money(m.premium), 'good'],
+      ['Active agents', m.agents_active + ' / ' + m.agents_total, ''],
+      ['Applicants', m.applicants, ''],
+      ['Unassigned %', m.total_leads ? Math.round(100*m.vaulted/m.total_leads)+'%' : '0%', '']
+    ];
+    document.getElementById('metrics').innerHTML = cards.map(function(c){
+      return '<div class="ostat"><div class="n ' + c[2] + '">' + esc(c[1]) + '</div><div class="l">' + esc(c[0]) + '</div></div>';
+    }).join('');
+  }
+
+  function loadVault(){
+    db.rpc('bl_owner_vault').then(function(r){
+      var w = document.getElementById('vaultWrap');
+      if(r.error){ w.innerHTML = '<div class="owarn muted">'+esc(r.error.message)+'</div>'; return; }
+      if(!r.data.length){ w.innerHTML = '<div class="owarn muted">Vault is empty — every paid lead has an agent.</div>'; return; }
+      var html = '<table class="otable"><thead><tr><th>State</th><th>Vertical</th><th>Waiting</th><th>Oldest</th></tr></thead><tbody>';
+      r.data.forEach(function(v){
+        html += '<tr><td><b>'+esc(v.state)+'</b></td><td>'+esc(pretty(v.vertical))+'</td><td><span class="waitbig">'+v.waiting+'</span></td><td class="muted">'+v.oldest_days+' day'+(v.oldest_days==1?'':'s')+'</td></tr>';
+      });
+      w.innerHTML = html + '</tbody></table>';
+    });
+  }
+
+  function loadAgents(){
+    return db.rpc('bl_owner_agents').then(function(r){
+      var w = document.getElementById('agentsWrap');
+      if(r.error){ w.innerHTML = '<div class="owarn muted">'+esc(r.error.message)+'</div>'; return; }
+      agents = r.data || [];
+      if(!agents.length){ w.innerHTML = '<div class="owarn muted">No agents yet.</div>'; return; }
+      var html = '<table class="otable"><thead><tr><th>Agent</th><th>States</th><th>Tier</th><th>This week</th><th>Status</th><th>Controls</th></tr></thead><tbody>';
+      agents.forEach(function(a){
+        var name = ((a.first_name||'')+' '+(a.last_name||'')).trim() || a.email || '—';
+        html += '<tr>'
+          + '<td><b>'+esc(name)+'</b><div class="muted">'+esc(a.email||'')+'</div></td>'
+          + '<td>'+esc(a.states_licensed||'—')+(a.active_states?'<div class="muted">active: '+esc(a.active_states)+'</div>':'')+'</td>'
+          + '<td>'+esc(a.tier||'Silver')+'</td>'
+          + '<td>'+(a.received_this_week||0)+' / '+(a.weekly_cap||0)+'</td>'
+          + '<td><span class="pill '+(a.status==='active'?'active':'paused')+'">'+esc(a.status||'—')+'</span></td>'
+          + '<td><button class="obtn" onclick="toggleAgent(\''+a.id+'\',\''+(a.status==='active'?'paused':'active')+'\')">'+(a.status==='active'?'Pause':'Activate')+'</button> '
+          +     '<button class="obtn" onclick="setCap(\''+a.id+'\','+(a.weekly_cap||0)+')">Cap</button></td>'
+          + '</tr>';
+      });
+      w.innerHTML = html + '</tbody></table>';
+    });
+  }
+
+  function agentOptions(selectedId){
+    var opts = '<option value="">(vault — unassigned)</option>';
+    agents.forEach(function(a){
+      var name = ((a.first_name||'')+' '+(a.last_name||'')).trim() || a.email;
+      opts += '<option value="'+a.id+'"'+(a.id===selectedId?' selected':'')+'>'+esc(name)+'</option>';
+    });
+    return opts;
+  }
+
+  function loadLeads(){
+    db.rpc('bl_owner_leads', { p_limit: 200 }).then(function(r){
+      var w = document.getElementById('leadsWrap');
+      if(r.error){ w.innerHTML = '<div class="owarn muted">'+esc(r.error.message)+'</div>'; return; }
+      if(!r.data.length){ w.innerHTML = '<div class="owarn muted">No leads yet.</div>'; return; }
+      var html = '<table class="otable"><thead><tr><th>Lead</th><th>State / Vertical</th><th>Status</th><th>Premium</th><th>Delivered</th><th>Assigned to</th></tr></thead><tbody>';
+      r.data.forEach(function(l){
+        var name = ((l.first_name||'')+' '+(l.last_name||'')).trim() || '—';
+        html += '<tr>'
+          + '<td><b>'+esc(name)+'</b><div class="muted">'+esc(l.phone||'')+'</div></td>'
+          + '<td>'+esc(l.state||'—')+'<div class="muted">'+esc(pretty(l.vertical))+'</div></td>'
+          + '<td>'+esc(l.lead_status)+'</td>'
+          + '<td>'+(l.annual_premium?money(l.annual_premium):'<span class="muted">—</span>')+'</td>'
+          + '<td class="muted">'+fmt(l.assigned_at||l.submitted_at)+'</td>'
+          + '<td><select class="osel" onchange="reassign(\''+l.id+'\', this.value)">'+agentOptions(l.assigned_agent_id)+'</select></td>'
+          + '</tr>';
+      });
+      w.innerHTML = html + '</tbody></table>';
+    });
+  }
+
+  function toggleAgent(id, status){
+    db.rpc('bl_owner_set_agent_status', { p_agent:id, p_status:status }).then(function(r){
+      if(r.error){ alert(r.error.message); return; }
+      loadAgents().then(loadLeads); loadVault();
+    });
+  }
+  function setCap(id, current){
+    var v = prompt('Weekly lead cap for this agent:', current);
+    if(v===null) return;
+    var n = parseInt(String(v).replace(/[^0-9]/g,''),10);
+    if(isNaN(n)){ alert('Enter a number.'); return; }
+    db.rpc('bl_owner_set_agent_cap', { p_agent:id, p_cap:n }).then(function(r){
+      if(r.error){ alert(r.error.message); return; }
+      loadAgents();
+    });
+  }
+  function reassign(leadId, agentId){
+    db.rpc('bl_owner_reassign_lead', { p_lead:leadId, p_agent: agentId||null }).then(function(r){
+      if(r.error){ alert(r.error.message); loadLeads(); return; }
+      loadVault(); loadAgents().then(loadLeads);
+    });
+  }
+</script>
+</body>
+</html>
