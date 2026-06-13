@@ -116,7 +116,11 @@
       profile = r.data || {};
       var name = ((profile.first_name||'') + ' ' + (profile.last_name||'')).trim() || me.email;
       document.getElementById('whoami').innerHTML = '<span class="email">' + esc(name) + '</span>';
-      document.getElementById('statTier').textContent = profile.tier || 'Silver';
+      var tierEl = document.getElementById('statTier');
+      tierEl.textContent = profile.tier || 'Silver';
+      var isBL = String(profile.tier||'').toLowerCase().indexOf('black label') > -1;
+      tierEl.classList.toggle('bl-tier', isBL);
+      if (tierEl.parentElement) tierEl.parentElement.classList.toggle('bl-stat', isBL);
       renderRail();
     });
   }

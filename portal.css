@@ -106,6 +106,18 @@ a{color:var(--soft)}
 .support-line a{color:var(--silver-bright)}
 @media (max-width:860px){.home-grid{grid-template-columns:1fr}}
 .stat .l{font-size:10.5px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--mute);margin-top:4px}
+/* Black Label tier: the stat card goes near-black and the word glows black,
+   matching the Black Label tier on the pricing page */
+.stat.bl-stat{background:radial-gradient(120% 90% at 50% 0%, #15171b 0%, #050506 78%);border-color:rgba(140,150,162,0.20)}
+.stat .n.bl-tier{
+  background:none;color:#0a0a0b;-webkit-text-fill-color:#0a0a0b;
+  text-shadow:0 0 6px rgba(150,160,172,0.44),0 0 13px rgba(128,138,150,0.28);
+  animation:blTierGlow 3.6s ease-in-out infinite;
+}
+@keyframes blTierGlow{
+  0%,100%{text-shadow:0 0 5px rgba(146,156,168,0.36),0 0 11px rgba(124,134,146,0.22)}
+  50%{text-shadow:0 0 8px rgba(166,176,188,0.52),0 0 16px rgba(138,148,160,0.32)}
+}
 
 /* leads table */
 .panel{background:var(--card);border:1px solid var(--line)}
