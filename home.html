@@ -84,10 +84,16 @@
   var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   var me = null;
 
-  // ⬇⬇ PASTE YOUR STRIPE PAYMENT LINK URL HERE (use the TEST link first, then swap to live).
-  //    It looks like:  https://buy.stripe.com/xxxxxxxxxxxxxxxx
-  //    While this is blank the Activate button stays disabled — no broken links go out.
-  var PAYMENT_LINK = 'https://buy.stripe.com/test_28EcN6dYn9mXgb6ep6gQE00';
+  // ⬇⬇ STRIPE PAYMENT LINKS per tier (TEST links now; swap to live when you go live).
+  var PAYMENT_LINKS = {
+    silver:     { url: 'https://buy.stripe.com/test_28EcN6dYn9mXgb6ep6gQE00', weekly: 400 },
+    gold:       { url: 'https://buy.stripe.com/test_aFaeVe7zZ8iT6AwcgYgQE01', weekly: 600 },
+    blacklabel: { url: 'https://buy.stripe.com/test_3cI5kE4nN7eP4softagQE02', weekly: 1250 }
+  };
+  function tierPlan(tier){
+    var t = String(tier||'silver').toLowerCase().replace(/[^a-z]/g,'');
+    return PAYMENT_LINKS[t] || PAYMENT_LINKS.silver;
+  }
 
   db.auth.getSession().then(function(r){
     if (!r.data.session){ window.location.href = 'index.html'; return; }
@@ -147,6 +153,8 @@
     if (!el || !me) return;
     var status = String((p && p.subscription_status) || 'none').toLowerCase();
     var good = (status === 'active' || status === 'trialing');
+    var plan = tierPlan(p && p.tier);
+    var wk = '$' + plan.weekly + '/week';
 
     if (good){
       var renew = p.current_period_end ? (' · renews ' + fmtDate(p.current_period_end)) : '';
@@ -165,23 +173,23 @@
     var head, sub;
     if (status === 'canceled'){
       head = 'Your subscription is canceled';
-      sub  = 'Your leads are paused. Reactivate to start receiving your exclusive leads again — $400/week, cancel anytime.';
+      sub  = 'Your leads are paused. Reactivate to start receiving your exclusive leads again — ' + wk + ', cancel anytime.';
     } else if (status === 'past_due' || status === 'unpaid'){
       head = 'Payment needs attention';
       sub  = "Your last weekly payment didn't go through, so your leads are paused. Update your card and they resume right away.";
     } else { // 'none' or anything unset
       head = 'Activate your lead subscription';
-      sub  = 'Put a card on file to start receiving your exclusive leads — $400/week, billed automatically, cancel anytime.';
+      sub  = 'Put a card on file to start receiving your exclusive leads — ' + wk + ', billed automatically, cancel anytime.';
     }
-    var btnLabel = (status === 'none') ? 'Activate — $400/week' : 'Update payment';
+    var btnLabel = (status === 'none') ? ('Activate — ' + wk) : 'Update payment';
 
     el.style.display = 'block';
     el.style.borderColor = (status === 'none') ? 'rgba(210,169,106,0.55)' : 'rgba(201,138,138,0.6)';
     var inner = '<h2 style="margin-bottom:6px">' + esc(head) + '</h2>'
       + '<p class="support-line" style="margin:0 0 14px">' + esc(sub) + '</p>';
-    if (PAYMENT_LINK){
-      var sep = PAYMENT_LINK.indexOf('?') > -1 ? '&' : '?';
-      var href = PAYMENT_LINK + sep + 'client_reference_id=' + encodeURIComponent(me.id)
+    if (plan.url){
+      var sep = plan.url.indexOf('?') > -1 ? '&' : '?';
+      var href = plan.url + sep + 'client_reference_id=' + encodeURIComponent(me.id)
                + '&prefilled_email=' + encodeURIComponent(me.email || '');
       inner += '<a class="home-cta" style="margin-top:0" href="' + href + '">' + esc(btnLabel) + '</a>';
     } else {

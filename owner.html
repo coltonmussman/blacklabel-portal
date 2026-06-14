@@ -61,6 +61,22 @@
   <div id="dash" style="display:none">
     <div class="owner-grid" id="metrics"></div>
 
+    <div class="opanel" id="profitPanel">
+      <h2>Profit tracker</h2>
+      <div style="padding:16px 18px">
+        <div class="owner-grid" id="profitStats" style="margin-bottom:14px"></div>
+        <form id="adForm" onsubmit="addAdSpend(event)" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:8px">
+          <div><label style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:3px">Ad spend ($)</label><input id="as-amt" class="osel" type="number" min="0" step="0.01" placeholder="100" style="max-width:110px" required></div>
+          <div><label style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:3px">Date</label><input id="as-date" class="osel" type="date"></div>
+          <div><label style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:3px">Platform</label><select id="as-plat" class="osel"><option>Meta</option><option>Google</option><option>YouTube</option><option>TikTok</option><option>Other</option></select></div>
+          <div><label style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:3px">Vertical</label><select id="as-vert" class="osel"><option value="">All / mixed</option><option value="final_expense">Final Expense</option><option value="mortgage_protection">Mortgage</option><option value="iul">IUL</option><option value="annuity">Annuity</option></select></div>
+          <button class="obtn" type="submit" style="padding:7px 14px">Add spend</button>
+        </form>
+        <div class="muted" style="font-size:11px;margin-bottom:14px">Log your ad cost here. Revenue is pulled automatically from active agent subscriptions, and profit updates live. (Built so this can auto-import from Meta later.)</div>
+        <div id="adRecent"></div>
+      </div>
+    </div>
+
     <div class="opanel" id="refundsPanel" style="display:none">
       <h2>Refund / replacement requests</h2>
       <div id="refundsWrap"></div>
@@ -109,7 +125,7 @@
       }
       document.getElementById('dash').style.display = 'block';
       renderMetrics(r.data);
-      loadVault(); loadRefunds(); loadAgents().then(loadLeads);
+      loadProfit(); loadVault(); loadRefunds(); loadAgents().then(loadLeads);
     });
   }
 
@@ -260,6 +276,48 @@
     db.rpc('bl_owner_reassign_lead', { p_lead:leadId, p_agent: agentId||null }).then(function(r){
       if(r.error){ alert(r.error.message); loadLeads(); return; }
       loadVault(); loadRefunds(); loadAgents().then(loadLeads);
+    });
+  }
+
+  function loadProfit(){
+    db.rpc('bl_owner_profit').then(function(r){
+      if(r.error){ document.getElementById('profitPanel').style.display='none'; return; }
+      var p = r.data || {};
+      var cards = [
+        ['Revenue / week', money(p.weekly_revenue), 'good'],
+        ['Ad spend / week', money(p.week_spend), ''],
+        ['Profit / week', money(p.week_profit), (Number(p.week_profit)>=0?'good':'')],
+        ['Profit / month (est.)', money(p.month_profit), (Number(p.month_profit)>=0?'good':'')]
+      ];
+      document.getElementById('profitStats').innerHTML = cards.map(function(c){
+        return '<div class="ostat"><div class="n '+c[2]+'">'+esc(c[1])+'</div><div class="l">'+esc(c[0])+'</div></div>';
+      }).join('');
+      var rec = p.recent || [];
+      if(!rec.length){ document.getElementById('adRecent').innerHTML = '<div class="muted" style="font-size:12px">No ad spend logged yet — add your first entry above.</div>'; return; }
+      var html = '<table class="otable"><thead><tr><th>Date</th><th>Platform</th><th>Vertical</th><th>Amount</th><th>Notes</th><th></th></tr></thead><tbody>';
+      rec.forEach(function(a){
+        html += '<tr><td>'+esc(a.date)+'</td><td>'+esc(a.platform)+'</td><td>'+esc(a.vertical?pretty(a.vertical):'All')+'</td><td><b>'+money(a.amount)+'</b></td><td class="muted">'+esc(a.notes||'')+'</td><td><button class="obtn" onclick="delAdSpend(\''+a.id+'\')">Remove</button></td></tr>';
+      });
+      document.getElementById('adRecent').innerHTML = html + '</tbody></table>';
+    });
+  }
+  function addAdSpend(e){
+    if(e) e.preventDefault();
+    var amt = parseFloat(document.getElementById('as-amt').value);
+    if(isNaN(amt) || amt < 0){ alert('Enter an ad-spend amount.'); return; }
+    var payload = { p_amount: amt, p_platform: document.getElementById('as-plat').value };
+    var d = document.getElementById('as-date').value; if(d) payload.p_date = d;
+    var v = document.getElementById('as-vert').value; if(v) payload.p_vertical = v;
+    db.rpc('bl_owner_add_ad_spend', payload).then(function(r){
+      if(r.error){ alert(r.error.message); return; }
+      document.getElementById('as-amt').value=''; loadProfit();
+    });
+  }
+  function delAdSpend(id){
+    if(!confirm('Remove this ad-spend entry?')) return;
+    db.rpc('bl_owner_delete_ad_spend', { p_id:id }).then(function(r){
+      if(r.error){ alert(r.error.message); return; }
+      loadProfit();
     });
   }
 </script>
