@@ -49,6 +49,11 @@
 
   <div id="billingBanner" class="home-card" style="display:none;margin-bottom:22px"></div>
 
+  <div class="home-card" id="poolCard" style="display:none;margin-bottom:22px;border-color:rgba(127,184,154,0.35)">
+    <h2>The Black Label pool</h2>
+    <p class="support-line" id="poolLine">Loading the collective numbers…</p>
+  </div>
+
   <div class="stats">
     <div class="stat"><div class="n" id="statWeek">—</div><div class="l">Leads this week</div></div>
     <div class="stat"><div class="n" id="statTotal">—</div><div class="l">Total leads</div></div>
@@ -98,6 +103,7 @@
   db.auth.getSession().then(function(r){
     if (!r.data.session){ window.location.href = 'index.html'; return; }
     me = r.data.session.user;
+    loadPool();
     var profData = {};
     db.from('agent_profiles').select('*').eq('id', me.id).single().then(function(p){
       profData = p.data || {};
@@ -207,6 +213,21 @@
       var url = r && r.data && r.data.url;
       if ((r && r.error) || !url){ alert("Couldn't open billing right now — email blacklabelleads@gmail.com and we'll sort it out."); return; }
       window.location.href = url;
+    });
+  }
+
+  // Agents-only collective pool: the COMBINED total across all agents, never individual numbers.
+  function loadPool(){
+    db.rpc('bl_agent_pool_total').then(function(r){
+      if (r.error || !r.data) return;
+      var d = r.data;
+      var prem = '$' + Math.round(Number(d.total_premium_written)||0).toLocaleString();
+      document.getElementById('poolLine').innerHTML =
+        'Black Label agents have written <b style="color:var(--good)">' + prem + '</b> in premium across '
+        + (d.total_deals||0) + ' polic' + ((d.total_deals==1)?'y':'ies') + ', from ' + (d.total_leads_worked||0)
+        + ' leads worked by ' + (d.active_agents||0) + ' active agent' + ((d.active_agents==1)?'':'s')
+        + '. You are part of this. Your own numbers stay private to you.';
+      document.getElementById('poolCard').style.display = 'block';
     });
   }
 

@@ -29,6 +29,7 @@
   .owarn{padding:60px 20px;text-align:center;color:var(--soft)}
   .muted{color:var(--mute)}
   .waitbig{font-family:'Fraunces',serif;color:var(--silver-bright)}
+  .giftl{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:3px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -77,6 +78,29 @@
       </div>
     </div>
 
+    <div class="opanel" id="plPanel">
+      <h2>Business P&amp;L — my take</h2>
+      <div style="padding:16px 18px"><div class="owner-grid" id="plStats"></div>
+      <div class="muted" style="font-size:11px;margin-top:10px">Subscription revenue is summed from active agents by tier (Silver $400, Gold $600, Black Label $1,250/wk). Ad spend comes from the tracker above.</div></div>
+    </div>
+
+    <div class="opanel" id="agentProfitPanel">
+      <h2>Agent profit — who's producing</h2>
+      <div id="agentProfitWrap"><div class="owarn muted">Loading...</div></div>
+    </div>
+
+    <div class="opanel" id="giftPanel">
+      <h2>Give leads to an agent</h2>
+      <div style="padding:16px 18px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+        <div><label class="giftl">Agent</label><select id="gift-agent" class="osel"></select></div>
+        <div><label class="giftl">How many</label><input id="gift-count" class="osel" type="number" min="1" max="100" value="1" style="max-width:90px"></div>
+        <div><label class="giftl">State (optional)</label><input id="gift-state" class="osel" placeholder="TX" style="max-width:90px"></div>
+        <div><label class="giftl">Vertical (optional)</label><select id="gift-vert" class="osel"><option value="">Any</option><option value="Final Expense">Final Expense</option><option value="Mortgage Protection">Mortgage Protection</option><option value="IUL">IUL</option><option value="Annuity">Annuity</option></select></div>
+        <button class="obtn" style="padding:7px 14px" onclick="giftLeads()">Assign from vault</button>
+      </div>
+      <div class="muted" style="font-size:11px;padding:0 18px 14px">Hand-pick leads out of the vault for a specific agent. Pulls the oldest matching unassigned leads and overrides normal routing.</div>
+    </div>
+
     <div class="opanel" id="refundsPanel" style="display:none">
       <h2>Refund / replacement requests</h2>
       <div id="refundsWrap"></div>
@@ -95,6 +119,13 @@
     <div class="opanel">
       <h2>Leads</h2>
       <div id="leadsWrap"><div class="owarn muted">Loading…</div></div>
+    </div>
+
+    <div id="agentDetail" style="display:none"></div>
+
+    <div class="opanel" id="actionLogPanel">
+      <h2>Action log</h2>
+      <div id="actionLogWrap"><div class="owarn muted">Loading...</div></div>
     </div>
   </div>
 </div>
@@ -125,7 +156,7 @@
       }
       document.getElementById('dash').style.display = 'block';
       renderMetrics(r.data);
-      loadProfit(); loadVault(); loadRefunds(); loadAgents().then(loadLeads);
+      loadProfit(); loadBusinessPL(); loadAgentProfit(); loadVault(); loadRefunds(); loadAgents().then(loadLeads); loadActionLog();
     });
   }
 
@@ -162,7 +193,8 @@
           + '<td>'+esc(l.agent_name||'—')+'</td>'
           + '<td class="muted">'+esc(l.refund_reason||'—')+'</td>'
           + '<td class="muted">'+fmt(l.refund_requested_at)+'</td>'
-          + '<td><button class="obtn" onclick="resolveRefund(\''+l.id+'\',\'credited\')">Credit</button> '
+          + '<td><button class="obtn" onclick="refundReplace(\''+l.id+'\')">Credit + replace</button> '
+          +     '<button class="obtn" onclick="resolveRefund(\''+l.id+'\',\'credited\')">Credit only</button> '
           +     '<button class="obtn" onclick="resolveRefund(\''+l.id+'\',\'denied\')">Deny</button></td>'
           + '</tr>';
       });
@@ -196,6 +228,7 @@
       var w = document.getElementById('agentsWrap');
       if(r.error){ w.innerHTML = '<div class="owarn muted">'+esc(r.error.message)+'</div>'; return; }
       agents = r.data || [];
+      fillGiftAgents();
       if(!agents.length){ w.innerHTML = '<div class="owarn muted">No agents yet.</div>'; return; }
       var html = '<table class="otable"><thead><tr><th>Agent</th><th>States</th><th>Tier</th><th>This week</th><th>Status</th><th>Billing</th><th>Controls</th></tr></thead><tbody>';
       agents.forEach(function(a){
@@ -208,7 +241,8 @@
           + '<td><span class="pill '+(a.status==='active'?'active':'paused')+'">'+esc(a.status||'—')+'</span></td>'
           + '<td>'+billingPill(a.subscription_status, a.current_period_end)+'</td>'
           + '<td><button class="obtn" onclick="toggleAgent(\''+a.id+'\',\''+(a.status==='active'?'paused':'active')+'\')">'+(a.status==='active'?'Pause':'Activate')+'</button> '
-          +     '<button class="obtn" onclick="setCap(\''+a.id+'\','+(a.weekly_cap||0)+')">Cap</button></td>'
+          +     '<button class="obtn" onclick="setCap(\''+a.id+'\','+(a.weekly_cap||0)+')">Cap</button> '
+          +     '<button class="obtn" onclick="viewAgent(\''+a.id+'\')">View</button></td>'
           + '</tr>';
       });
       w.innerHTML = html + '</tbody></table>';
@@ -318,6 +352,109 @@
     db.rpc('bl_owner_delete_ad_spend', { p_id:id }).then(function(r){
       if(r.error){ alert(r.error.message); return; }
       loadProfit();
+    });
+  }
+
+  // ---- Owner command center v2 ----
+  function loadBusinessPL(){
+    db.rpc('bl_owner_business_pl').then(function(r){
+      if(r.error){ document.getElementById('plPanel').style.display='none'; return; }
+      var p=r.data||{};
+      var cards=[
+        ['Subscription rev / mo', money(p.monthly_subscription_revenue), 'good'],
+        ['Ad spend / mo', money(p.ad_spend_this_month), ''],
+        ['Business profit / mo', money(p.business_gross_profit_month), (Number(p.business_gross_profit_month)>=0?'good':'')],
+        ['Agent premium written', money(p.agent_premium_written_total), 'good']
+      ];
+      document.getElementById('plStats').innerHTML=cards.map(function(c){return '<div class="ostat"><div class="n '+c[2]+'">'+esc(c[1])+'</div><div class="l">'+esc(c[0])+'</div></div>';}).join('');
+    });
+  }
+
+  function loadAgentProfit(){
+    db.rpc('bl_owner_agent_profit').then(function(r){
+      var w=document.getElementById('agentProfitWrap');
+      if(r.error){ document.getElementById('agentProfitPanel').style.display='none'; return; }
+      var d=r.data||{}; var rows=d.agents||[];
+      var head='<div style="padding:12px 18px;border-bottom:1px solid var(--line-soft)" class="muted">Total premium written by all agents: <span class="waitbig">'+money(d.total_premium_written)+'</span> across '+(d.total_deals||0)+' deal'+(d.total_deals==1?'':'s')+'.</div>';
+      if(!rows.length){ w.innerHTML=head+'<div class="owarn muted">No agent production yet.</div>'; return; }
+      var html=head+'<table class="otable"><thead><tr><th>Agent</th><th>Tier</th><th>Leads</th><th>Deals</th><th>Premium written</th><th></th></tr></thead><tbody>';
+      rows.forEach(function(a){
+        html+='<tr><td><b>'+esc(a.name||'—')+'</b></td><td>'+esc(a.tier||'Silver')+'</td><td>'+(a.leads_received||0)+'</td><td>'+(a.deals||0)+'</td><td><b>'+money(a.premium_written)+'</b></td><td><button class="obtn" onclick="viewAgent(\''+a.id+'\')">View</button></td></tr>';
+      });
+      w.innerHTML=html+'</tbody></table>';
+    });
+  }
+
+  function fillGiftAgents(){
+    var sel=document.getElementById('gift-agent'); if(!sel) return;
+    sel.innerHTML=agents.map(function(a){var name=((a.first_name||'')+' '+(a.last_name||'')).trim()||a.email; return '<option value="'+a.id+'">'+esc(name)+'</option>';}).join('');
+  }
+  function giftLeads(){
+    var agent=document.getElementById('gift-agent').value;
+    if(!agent){ alert('Pick an agent first.'); return; }
+    var count=parseInt(document.getElementById('gift-count').value,10)||1;
+    var st=document.getElementById('gift-state').value.trim();
+    var vt=document.getElementById('gift-vert').value;
+    var args={ p_agent:agent, p_count:count }; if(st) args.p_state=st; if(vt) args.p_vertical=vt;
+    db.rpc('bl_owner_assign_leads', args).then(function(r){
+      if(r.error){ alert(r.error.message); return; }
+      alert('Assigned '+((r.data&&r.data.assigned)||0)+' lead(s) from the vault.');
+      loadVault(); loadRefunds(); loadAgents().then(loadLeads); loadActionLog();
+    });
+  }
+
+  function refundReplace(id){
+    if(!confirm('Credit this lead AND auto-assign a replacement from the vault to the same agent?')) return;
+    db.rpc('bl_owner_refund_replace', { p_lead:id, p_resolution:'credited' }).then(function(r){
+      if(r.error){ alert(r.error.message); return; }
+      alert((r.data&&r.data.replacement_assigned)?'Credited, and a replacement lead was assigned to the agent.':'Credited. No matching replacement was waiting in the vault.');
+      loadRefunds(); loadVault(); loadAgents().then(loadLeads); loadActionLog();
+    });
+  }
+
+  function viewAgent(id){
+    db.rpc('bl_owner_agent_detail', { p_agent:id }).then(function(r){
+      var box=document.getElementById('agentDetail');
+      if(r.error){ box.innerHTML='<div class="owarn muted">'+esc(r.error.message)+'</div>'; box.style.display='block'; return; }
+      var d=r.data||{}; var p=d.profile||{}; var s=d.stats||{};
+      var name=((p.first_name||'')+' '+(p.last_name||'')).trim()||p.email||'Agent';
+      var html='<div class="opanel"><h2>'+esc(name)+' — detail</h2><div style="padding:14px 18px">'
+        +'<div class="owner-grid">'
+        +'<div class="ostat"><div class="n">'+(s.leads_received||0)+'</div><div class="l">Leads received</div></div>'
+        +'<div class="ostat"><div class="n">'+(s.worked||0)+'</div><div class="l">Worked</div></div>'
+        +'<div class="ostat"><div class="n good">'+(s.deals||0)+'</div><div class="l">Deals</div></div>'
+        +'<div class="ostat"><div class="n good">'+money(s.premium_written)+'</div><div class="l">Premium written</div></div>'
+        +'</div>'
+        +'<div class="muted" style="font-size:12px;margin:10px 0">'+esc(p.email||'')+' &middot; '+esc(p.tier||'Silver')+' &middot; states: '+esc(p.states_licensed||'—')+' &middot; billing: '+esc(p.subscription_status||'none')+'</div>'
+        +'<div style="margin:8px 0"><button class="obtn" onclick="setTier(\''+p.id+'\')">Change tier</button> <button class="obtn" onclick="document.getElementById(\'agentDetail\').style.display=\'none\'">Close</button></div>';
+      var rl=d.recent_leads||[];
+      if(rl.length){ html+='<table class="otable"><thead><tr><th>Lead</th><th>State / Vertical</th><th>Status</th><th>Premium</th></tr></thead><tbody>';
+        rl.forEach(function(l){ html+='<tr><td>'+esc(((l.first_name||'')+' '+(l.last_name||'')).trim()||'—')+'</td><td>'+esc(l.state||'—')+' / '+esc(pretty(l.vertical))+'</td><td>'+esc(l.lead_status)+'</td><td>'+(l.annual_premium?money(l.annual_premium):'—')+'</td></tr>'; });
+        html+='</tbody></table>'; }
+      html+='</div></div>';
+      box.innerHTML=html; box.style.display='block'; box.scrollIntoView({behavior:'smooth',block:'center'});
+    });
+  }
+
+  function setTier(id){
+    var t=prompt('Set tier (Silver, Gold, or Black Label):','Silver');
+    if(t===null) return; t=t.trim();
+    if(['Silver','Gold','Black Label'].indexOf(t)<0){ alert('Enter exactly: Silver, Gold, or Black Label.'); return; }
+    db.rpc('bl_owner_set_agent_tier', { p_agent:id, p_tier:t }).then(function(r){
+      if(r.error){ alert(r.error.message); return; }
+      loadAgents(); loadBusinessPL(); loadAgentProfit(); viewAgent(id);
+    });
+  }
+
+  function loadActionLog(){
+    db.rpc('bl_owner_action_log', { p_limit: 30 }).then(function(r){
+      var w=document.getElementById('actionLogWrap'); if(!w) return;
+      if(r.error){ document.getElementById('actionLogPanel').style.display='none'; return; }
+      var rows=r.data||[];
+      if(!rows.length){ w.innerHTML='<div class="owarn muted">No owner actions logged yet.</div>'; return; }
+      var html='<table class="otable"><thead><tr><th>When</th><th>Action</th><th>Detail</th></tr></thead><tbody>';
+      rows.forEach(function(a){ html+='<tr><td class="muted">'+esc(new Date(a.at).toLocaleString())+'</td><td>'+esc(a.action)+'</td><td class="muted">'+esc(JSON.stringify(a.detail||{}))+'</td></tr>'; });
+      w.innerHTML=html+'</tbody></table>';
     });
   }
 </script>
