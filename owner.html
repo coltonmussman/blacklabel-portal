@@ -60,6 +60,46 @@
 
   <div id="gate"></div>
   <div id="dash" style="display:none">
+
+    <div id="commandCenter">
+      <div id="ccBar" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:18px">
+        <div><label class="giftl">Window</label><select id="cc-window" class="osel" onchange="ccWindowChanged()"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select></div>
+        <button class="obtn" style="padding:7px 14px" onclick="ccLoadAll()">Refresh</button>
+        <label style="font-size:11.5px;color:var(--soft);display:flex;align-items:center;gap:6px;cursor:pointer"><input id="cc-auto" type="checkbox" onchange="ccToggleAuto()"> Auto-refresh (60s)</label>
+        <span id="cc-autonote" class="muted" style="font-size:10.5px"></span>
+      </div>
+
+      <div class="opanel" id="ccAlertsPanel">
+        <h2>Alerts <span id="ccAlertBadges"></span></h2>
+        <div id="ccAlertsWrap"><div class="owarn muted">Loading…</div></div>
+      </div>
+
+      <div class="opanel" id="ccFlowPanel">
+        <h2>Lead flow</h2>
+        <div id="ccFlowWrap"><div class="owarn muted">Loading…</div></div>
+      </div>
+
+      <div class="opanel" id="ccLandingPanel">
+        <h2>Landing page performance</h2>
+        <div id="ccLandingWrap" style="overflow-x:auto"><div class="owarn muted">Loading…</div></div>
+      </div>
+
+      <div class="opanel" id="ccDeliveryPanel">
+        <h2>Agent delivery</h2>
+        <div id="ccDeliveryWrap" style="overflow-x:auto"><div class="owarn muted">Loading…</div></div>
+      </div>
+
+      <div class="opanel" id="ccQualityPanel">
+        <h2>Lead quality</h2>
+        <div id="ccQualityWrap"><div class="owarn muted">Loading…</div></div>
+      </div>
+
+      <div class="opanel" id="ccBillingPanel">
+        <h2>Billing health</h2>
+        <div id="ccBillingWrap"><div class="owarn muted">Loading…</div></div>
+      </div>
+    </div>
+
     <div class="owner-grid" id="metrics"></div>
 
     <div class="opanel" id="profitPanel">
@@ -157,6 +197,7 @@
       document.getElementById('dash').style.display = 'block';
       renderMetrics(r.data);
       loadProfit(); loadBusinessPL(); loadAgentProfit(); loadVault(); loadRefunds(); loadAgents().then(loadLeads); loadActionLog();
+      ccLoadAll();
     });
   }
 
@@ -455,6 +496,259 @@
       var html='<table class="otable"><thead><tr><th>When</th><th>Action</th><th>Detail</th></tr></thead><tbody>';
       rows.forEach(function(a){ html+='<tr><td class="muted">'+esc(new Date(a.at).toLocaleString())+'</td><td>'+esc(a.action)+'</td><td class="muted">'+esc(JSON.stringify(a.detail||{}))+'</td></tr>'; });
       w.innerHTML=html+'</tbody></table>';
+    });
+  }
+
+  // ---- Owner command center v3 ----
+  var ccAutoTimer = null;
+
+  function ccWindow(){ var s=document.getElementById('cc-window'); return s ? parseInt(s.value,10)||30 : 30; }
+  function ccPct(part, whole){ whole=Number(whole)||0; if(!whole) return 0; return Math.round(100*(Number(part)||0)/whole); }
+  function ccRel(ts){
+    if(!ts) return '—';
+    var then=new Date(ts).getTime(); if(isNaN(then)) return '—';
+    var s=Math.floor((Date.now()-then)/1000);
+    if(s<60) return 'just now';
+    var m=Math.floor(s/60); if(m<60) return m+'m ago';
+    var h=Math.floor(m/60); if(h<24) return h+'h ago';
+    var d=Math.floor(h/24); if(d<7) return d+'d ago';
+    return fmt(ts);
+  }
+  function ccStatCards(cards){
+    return cards.map(function(c){
+      return '<div class="ostat"><div class="n '+(c[2]||'')+'">'+esc(c[1])+'</div><div class="l">'+esc(c[0])+'</div></div>';
+    }).join('');
+  }
+  function ccBar(pct, color){
+    pct=Math.max(0,Math.min(100,Number(pct)||0));
+    var c=color||'var(--silver)';
+    return '<div style="background:var(--line-soft);height:8px;border-radius:4px;overflow:hidden;min-width:60px"><div style="width:'+pct+'%;height:100%;background:'+c+'"></div></div>';
+  }
+
+  function ccLoadAll(){
+    ccLoadAlertSummary(); ccLoadAlerts();
+    ccLoadFlow(); ccLoadLanding(); ccLoadDelivery(); ccLoadQuality(); ccLoadBilling();
+  }
+  // Windowed RPCs only
+  function ccLoadWindowed(){ ccLoadFlow(); ccLoadLanding(); ccLoadQuality(); }
+  function ccWindowChanged(){ ccLoadWindowed(); }
+
+  function ccToggleAuto(){
+    var on=document.getElementById('cc-auto').checked;
+    var note=document.getElementById('cc-autonote');
+    if(ccAutoTimer){ clearInterval(ccAutoTimer); ccAutoTimer=null; }
+    if(on){
+      ccAutoTimer=setInterval(ccLoadAll, 60000);
+      if(note) note.textContent='on — refreshing every 60s';
+    } else {
+      if(note) note.textContent='';
+    }
+  }
+
+  function ccLoadAlertSummary(){
+    db.rpc('bl_owner_alert_summary').then(function(r){
+      var el=document.getElementById('ccAlertBadges'); if(!el) return;
+      if(r.error){ el.innerHTML=''; return; }
+      var d=r.data||{};
+      var open=Number(d.open)||0, crit=Number(d.critical)||0, warn=Number(d.warn)||0;
+      var info=Math.max(0, open-crit-warn);
+      function badge(label, count, color){
+        return '<span class="pill" style="margin-left:6px;color:'+color+';border-color:'+color+'">'+esc(count)+' '+esc(label)+'</span>';
+      }
+      var html=badge('open', open, '#cfd4da');
+      if(crit) html+=badge('critical', crit, '#e08a8a');
+      if(warn) html+=badge('warn', warn, '#e0b07f');
+      if(info) html+=badge('info', info, 'var(--mute)');
+      el.innerHTML=html;
+    });
+  }
+
+  function ccSevColor(sev){
+    sev=String(sev||'info').toLowerCase();
+    if(sev==='critical') return '#e08a8a';
+    if(sev==='warn') return '#e0b07f';
+    return 'var(--mute)';
+  }
+
+  function ccLoadAlerts(){
+    db.rpc('bl_owner_alerts', { p_include_resolved:false, p_limit:100 }).then(function(r){
+      var w=document.getElementById('ccAlertsWrap');
+      if(r.error){ w.innerHTML='<div class="owarn muted">'+esc(r.error.message)+'</div>'; return; }
+      var rows=(r.data||[]).slice();
+      rows.sort(function(a,b){ return new Date(b.created_at)-new Date(a.created_at); });
+      if(!rows.length){ w.innerHTML='<div class="owarn muted">No open alerts — all clear.</div>'; return; }
+      var html='';
+      rows.forEach(function(a){
+        var color=ccSevColor(a.severity);
+        var auto=a.auto_action ? '<span class="pill" style="margin-left:8px;color:#7fe0a8;border-color:rgba(127,224,168,0.4)">auto-fixed</span>' : '';
+        html+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line-soft);border-left:3px solid '+color+'">'
+          + '<div style="min-width:0">'
+          +   '<div><b style="color:'+color+'">'+esc(a.subject||a.type||'Alert')+'</b>'+auto+'</div>'
+          +   (a.detail?'<div class="muted" style="font-size:11.5px;margin-top:2px">'+esc(a.detail)+'</div>':'')
+          +   '<div class="muted" style="font-size:10.5px;margin-top:3px">'+esc(String(a.type||''))+' · '+esc(ccRel(a.created_at))+'</div>'
+          + '</div>'
+          + '<button class="obtn" onclick="ccResolveAlert(\''+a.id+'\')">Resolve</button>'
+          + '</div>';
+      });
+      w.innerHTML=html;
+    });
+  }
+
+  function ccResolveAlert(id){
+    db.rpc('bl_owner_resolve_alert', { p_id:id }).then(function(r){
+      if(r.error){ alert(r.error.message); return; }
+      ccLoadAlerts(); ccLoadAlertSummary();
+    });
+  }
+
+  function ccLoadFlow(){
+    db.rpc('bl_owner_lead_flow', { p_days: ccWindow() }).then(function(r){
+      var w=document.getElementById('ccFlowWrap');
+      if(r.error){ w.innerHTML='<div class="owarn muted">'+esc(r.error.message)+'</div>'; return; }
+      var d=r.data||{};
+      var html='<div style="padding:16px 18px">';
+      html+='<div class="owner-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:18px">'
+        + ccStatCards([
+            ['Today', Number(d.today)||0, 'good'],
+            ['This week', Number(d.this_week)||0, ''],
+            ['This month', Number(d.this_month)||0, '']
+          ])
+        + '</div>';
+
+      // by_day bar chart
+      var byDay=d.by_day||[];
+      if(byDay.length){
+        var maxDay=0; byDay.forEach(function(x){ var v=Number(x.leads)||0; if(v>maxDay) maxDay=v; });
+        html+='<div class="l" style="color:var(--mute);margin-bottom:6px">Leads per day (last '+esc(d.window_days||ccWindow())+')</div>';
+        html+='<div style="display:flex;align-items:flex-end;gap:2px;height:90px;border-bottom:1px solid var(--line-soft);padding-bottom:2px;margin-bottom:16px">';
+        byDay.forEach(function(x){
+          var v=Number(x.leads)||0;
+          var h=maxDay? Math.round(100*v/maxDay) : 0;
+          html+='<div title="'+esc(x.day)+': '+v+'" style="flex:1;min-width:2px;height:'+h+'%;background:var(--silver);opacity:0.85"></div>';
+        });
+        html+='</div>';
+      }
+
+      // proportional lists
+      function propList(title, items, labelKey){
+        var max=0; items.forEach(function(x){ var v=Number(x.leads)||0; if(v>max) max=v; });
+        var out='<div style="flex:1;min-width:220px"><div class="l" style="color:var(--mute);margin-bottom:6px">'+esc(title)+'</div>';
+        if(!items.length){ return out+'<div class="muted" style="font-size:11.5px">No data.</div></div>'; }
+        items.forEach(function(x){
+          var v=Number(x.leads)||0;
+          var lbl=labelKey==='vertical' ? pretty(x.vertical) : (x[labelKey]||'—');
+          out+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px">'
+            + '<div style="width:120px;color:var(--ivory)">'+esc(lbl)+'</div>'
+            + '<div style="flex:1">'+ccBar(max?100*v/max:0)+'</div>'
+            + '<div class="muted" style="width:34px;text-align:right">'+v+'</div>'
+            + '</div>';
+        });
+        return out+'</div>';
+      }
+      html+='<div style="display:flex;flex-wrap:wrap;gap:24px">';
+      html+=propList('By vertical', d.by_vertical||[], 'vertical');
+      html+=propList('By state', d.by_state||[], 'state');
+      html+='</div>';
+
+      html+='</div>';
+      w.innerHTML=html;
+    });
+  }
+
+  function ccLoadLanding(){
+    db.rpc('bl_owner_landing_performance', { p_days: ccWindow() }).then(function(r){
+      var w=document.getElementById('ccLandingWrap');
+      if(r.error){ w.innerHTML='<div class="owarn muted">'+esc(r.error.message)+'</div>'; return; }
+      var rows=(r.data||[]).slice();
+      rows.sort(function(a,b){ return (Number(b.leads)||0)-(Number(a.leads)||0); });
+      if(!rows.length){ w.innerHTML='<div class="owarn muted">No landing-page traffic in this window.</div>'; return; }
+      var html='<table class="otable"><thead><tr><th>Source</th><th>Vertical</th><th>Leads</th><th>Billable</th><th>Billable %</th><th>Assigned</th><th>Sold</th></tr></thead><tbody>';
+      rows.forEach(function(x){
+        var leads=Number(x.leads)||0;
+        var billPct=ccPct(x.billable, leads);
+        html+='<tr>'
+          + '<td><b>'+esc(x.source||'—')+'</b></td>'
+          + '<td>'+esc(pretty(x.vertical))+'</td>'
+          + '<td>'+leads+'</td>'
+          + '<td>'+(Number(x.billable)||0)+'</td>'
+          + '<td>'+billPct+'%</td>'
+          + '<td>'+(Number(x.assigned)||0)+'</td>'
+          + '<td>'+(Number(x.sold)||0)+'</td>'
+          + '</tr>';
+      });
+      w.innerHTML=html+'</tbody></table>';
+    });
+  }
+
+  function ccLoadDelivery(){
+    db.rpc('bl_owner_agent_delivery').then(function(r){
+      var w=document.getElementById('ccDeliveryWrap');
+      if(r.error){ w.innerHTML='<div class="owarn muted">'+esc(r.error.message)+'</div>'; return; }
+      var rows=r.data||[];
+      if(!rows.length){ w.innerHTML='<div class="owarn muted">No agents yet.</div>'; return; }
+      var html='<table class="otable"><thead><tr><th>Agent</th><th>Tier</th><th>This week</th><th>Days since last</th><th>Billing</th></tr></thead><tbody>';
+      rows.forEach(function(a){
+        var paused=String(a.status||'')==='paused';
+        var rowStyle=paused?' style="background:rgba(224,138,138,0.08)"':'';
+        var cap=Number(a.weekly_cap)||0;
+        var got=Number(a.received_this_week)||0;
+        var pct=(a.pct_of_cap!=null)?(Number(a.pct_of_cap)||0):ccPct(got, cap);
+        var barColor=paused?'#e08a8a':'var(--silver)';
+        var days=(a.days_since_last==null)?'—':((Number(a.days_since_last)||0)+'d');
+        html+='<tr'+rowStyle+'>'
+          + '<td><b'+(paused?' style="color:#e08a8a"':'')+'>'+esc(a.name||'—')+'</b></td>'
+          + '<td>'+esc(a.tier||'Silver')+'</td>'
+          + '<td><div style="display:flex;align-items:center;gap:8px">'+ccBar(pct, barColor)+'<span class="muted" style="white-space:nowrap">'+got+'/'+cap+' · '+Math.round(pct)+'%</span></div></td>'
+          + '<td class="muted">'+days+'</td>'
+          + '<td>'+esc(String(a.subscription_status||'none'))+'</td>'
+          + '</tr>';
+      });
+      w.innerHTML=html+'</tbody></table>';
+    });
+  }
+
+  function ccLoadQuality(){
+    db.rpc('bl_owner_quality', { p_days: ccWindow() }).then(function(r){
+      var w=document.getElementById('ccQualityWrap');
+      if(r.error){ w.innerHTML='<div class="owarn muted">'+esc(r.error.message)+'</div>'; return; }
+      var d=r.data||{};
+      var total=Number(d.total)||0;
+      var billRate=ccPct(d.billable, total);
+      var html='<div style="padding:16px 18px">';
+      html+='<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:16px">'
+        + '<span class="waitbig" style="font-size:34px">'+billRate+'%</span>'
+        + '<span class="muted" style="font-size:12px">billable rate · '+(Number(d.billable)||0)+' of '+total+' leads (last '+esc(d.window_days||ccWindow())+'d)</span>'
+        + '</div>';
+      html+='<div class="owner-grid">'
+        + ccStatCards([
+            ['Missing cert', Number(d.missing_cert)||0, ''],
+            ['No consent', Number(d.no_consent)||0, ''],
+            ['Unassigned', Number(d.unassigned)||0, ''],
+            ['Refund requested', Number(d.refund_requested)||0, ''],
+            ['Sold', Number(d.sold)||0, 'good']
+          ])
+        + '</div>';
+      html+='</div>';
+      w.innerHTML=html;
+    });
+  }
+
+  function ccLoadBilling(){
+    db.rpc('bl_owner_billing_health').then(function(r){
+      var w=document.getElementById('ccBillingWrap');
+      if(r.error){ w.innerHTML='<div class="owarn muted">'+esc(r.error.message)+'</div>'; return; }
+      var d=r.data||{};
+      var pastDue=Number(d.past_due)||0;
+      var html='<div style="padding:16px 18px"><div class="owner-grid">';
+      var pdColor=pastDue>0?'#e08a8a':'var(--mute)';
+      html+='<div class="ostat"><div class="n good">'+esc(Number(d.active_subs)||0)+'</div><div class="l">Active subs</div></div>'
+        + '<div class="ostat"><div class="n good">'+esc(money(d.weekly_recurring))+'</div><div class="l">Weekly recurring</div></div>'
+        + '<div class="ostat"><div class="n good">'+esc(money(d.mrr_est))+'</div><div class="l">MRR (est.)</div></div>'
+        + '<div class="ostat"><div class="n" style="color:'+pdColor+'">'+esc(pastDue)+'</div><div class="l">Past due</div></div>'
+        + '<div class="ostat"><div class="n">'+esc(Number(d.renewals_7d)||0)+'</div><div class="l">Renewals (7d)</div></div>'
+        + '<div class="ostat"><div class="n">'+esc(Number(d.active_no_sub)||0)+'</div><div class="l">Active, no sub</div></div>';
+      html+='</div></div>';
+      w.innerHTML=html;
     });
   }
 </script>
