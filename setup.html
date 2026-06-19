@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Set up your Drops — Black Label Leads</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="portal.css">
+<style>
+  .wiz{max-width:620px;margin:0 auto}
+  .dots{display:flex;gap:8px;justify-content:center;margin:0 0 24px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--line-soft);transition:background .2s}
+  .dot.on{background:var(--silver-bright,#c4cad2)}
+  .dot.done{background:var(--good,#7fe0a8)}
+  .step{display:none}
+  .step.show{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .step h1{font-family:'Fraunces',serif;font-size:26px;color:var(--ivory);margin:0 0 8px}
+  .step .sub{color:var(--soft);font-size:14px;margin:0 0 22px;line-height:1.55}
+  .opts{display:flex;flex-direction:column;gap:10px;margin-bottom:8px}
+  .opt{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--line-soft);border-radius:8px;background:var(--card);cursor:pointer;transition:border-color .15s,background .15s}
+  .opt:hover{border-color:var(--silver)}
+  .opt.sel{border-color:var(--silver-bright,#c4cad2);background:rgba(196,202,210,0.06)}
+  .opt .box{width:20px;height:20px;border-radius:5px;border:1px solid var(--line-soft);flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;color:#0a0b0d}
+  .opt.sel .box{background:var(--silver-bright,#c4cad2);border-color:var(--silver-bright,#c4cad2)}
+  .opt .t{font-size:14px;color:var(--ivory)}
+  .opt .d{font-size:12px;color:var(--mute)}
+  .days{display:flex;flex-wrap:wrap;gap:8px}
+  .day{padding:10px 0;width:62px;text-align:center;border:1px solid var(--line-soft);border-radius:8px;background:var(--card);cursor:pointer;font-size:12.5px;color:var(--soft);user-select:none}
+  .day.sel{border-color:var(--silver-bright,#c4cad2);background:rgba(196,202,210,0.08);color:var(--ivory)}
+  .tzrow{margin-top:18px}
+  .tzrow label{display:block;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--mute);margin-bottom:6px}
+  .tzrow select{width:100%;max-width:320px;background:var(--black);color:var(--ivory);border:1px solid var(--line-soft);border-radius:6px;padding:9px 10px;font-size:14px}
+  .navrow{display:flex;justify-content:space-between;align-items:center;margin-top:28px;gap:12px}
+  .ghost{background:none;border:1px solid var(--line-soft);color:var(--soft);padding:11px 18px;border-radius:6px;font-family:'Mulish',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+  .ghost:hover{border-color:var(--silver);color:var(--ivory)}
+  .ghost[disabled]{opacity:0;pointer-events:none}
+  .rev{border:1px solid var(--line-soft);border-radius:8px;padding:4px 0;margin-bottom:8px}
+  .rev .row{display:flex;justify-content:space-between;gap:16px;padding:12px 16px;border-bottom:1px solid var(--line-soft);font-size:13.5px}
+  .rev .row:last-child{border-bottom:none}
+  .rev .k{color:var(--mute)}
+  .rev .v{color:var(--ivory);text-align:right}
+  .note{font-size:12px;color:var(--mute);margin-top:14px;line-height:1.5}
+  .err{color:#e08a8a;font-size:13px;margin-top:10px;min-height:1px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center">
+    <div class="brand">
+      <svg viewBox="0 0 170 170" aria-hidden="true">
+        <defs>
+          <linearGradient id="pc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="0.38" stop-color="#c4cad2"/><stop offset="0.52" stop-color="#8e959f"/><stop offset="0.66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
+          <linearGradient id="pr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset="0.5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
+        </defs>
+        <circle cx="85" cy="85" r="66" fill="#101113" stroke="url(#pr)" stroke-width="2.2"/>
+        <text x="85" y="104" text-anchor="middle" font-family="'Fraunces',Georgia,serif" font-size="54" font-weight="500" letter-spacing="3" fill="url(#pc)">BL</text>
+      </svg>
+      <span>Black <span class="lbl">Label</span> Leads</span>
+    </div>
+  </div>
+  <div class="who">
+    <span id="whoami"></span>
+    <button class="signout" onclick="signOut()">Sign out</button>
+  </div>
+</div>
+
+<div class="shell">
+  <div class="wiz">
+    <div class="dots" id="dots"></div>
+    <div id="loading" class="support-line" style="text-align:center">Loading your setup…</div>
+
+    <div id="wizBody" style="display:none">
+      <!-- 1: Welcome -->
+      <section class="step" data-step="0">
+        <h1>Let's set up your <em>Drops</em>.</h1>
+        <p class="sub">A Drop is a lead delivered to you the moment a consumer hits submit — exclusively yours, on the days you choose to work. This takes about two minutes and tells the system exactly where, what, and when to send you leads.</p>
+        <div class="navrow"><span></span><button class="home-cta" style="margin:0" onclick="next()">Get started</button></div>
+      </section>
+
+      <!-- 2: States -->
+      <section class="step" data-step="1">
+        <h1>Which states do you want leads from?</h1>
+        <p class="sub">These are the states your license covers. Pick the ones you want to actively receive Drops from. Licensed somewhere new? Add it on your profile once the license clears.</p>
+        <div class="opts" id="stateOpts"></div>
+        <div class="err" id="stateErr"></div>
+        <div class="navrow"><button class="ghost" onclick="back()">Back</button><button class="home-cta" style="margin:0" onclick="next()">Continue</button></div>
+      </section>
+
+      <!-- 3: Verticals -->
+      <section class="step" data-step="2">
+        <h1>What do you want to write?</h1>
+        <p class="sub">Pick the product lines you want leads for. Final Expense is the most common; choose any that fit how you sell.</p>
+        <div class="opts" id="vertOpts"></div>
+        <div class="err" id="vertErr"></div>
+        <div class="navrow"><button class="ghost" onclick="back()">Back</button><button class="home-cta" style="margin:0" onclick="next()">Continue</button></div>
+      </section>
+
+      <!-- 4: Drop days + tz -->
+      <section class="step" data-step="3">
+        <h1>Which days do you want Drops?</h1>
+        <p class="sub">Leads only come on the days you pick. The Drop is about speed — choose the days you're actually working and ready to call back fast.</p>
+        <div class="days" id="dayOpts"></div>
+        <div class="tzrow">
+          <label>Your time zone</label>
+          <select id="tzSel">
+            <option value="America/New_York">Eastern (New York)</option>
+            <option value="America/Chicago">Central (Chicago)</option>
+            <option value="America/Denver">Mountain (Denver)</option>
+            <option value="America/Phoenix">Arizona (no DST)</option>
+            <option value="America/Los_Angeles">Pacific (Los Angeles)</option>
+            <option value="America/Anchorage">Alaska</option>
+            <option value="Pacific/Honolulu">Hawaii</option>
+          </select>
+        </div>
+        <div class="err" id="dayErr"></div>
+        <div class="navrow"><button class="ghost" onclick="back()">Back</button><button class="home-cta" style="margin:0" onclick="next()">Continue</button></div>
+      </section>
+
+      <!-- 5: Review -->
+      <section class="step" data-step="4">
+        <h1>You're set. Review and go.</h1>
+        <p class="sub">Here's how your Drops will work. You can change any of this later on your profile.</p>
+        <div class="rev" id="review"></div>
+        <p class="note">Texting isn't on yet — for now your Drop alerts come by email the moment a lead lands. We'll add text alerts later.</p>
+        <div class="err" id="finErr"></div>
+        <div class="navrow"><button class="ghost" onclick="back()">Back</button><button class="home-cta" style="margin:0" id="finishBtn" onclick="finish()">Start my Drops</button></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+  var SUPABASE_URL = 'https://hqiyxeriugywlkbcuasu.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_9m66yQmAgJwgCRMoYcU5sA_3l_XlfXr';
+  var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  var me = null, prof = {};
+  var STEPS = 5;
+  var step = 0;
+  var DAYS = [['Mon',1],['Tue',2],['Wed',3],['Thu',4],['Fri',5],['Sat',6],['Sun',7]];
+  var VERTS = [
+    ['Final Expense','Simple whole life / burial. The default for most agents.'],
+    ['Mortgage Protection','Term coverage tied to the mortgage.'],
+    ['IUL','Indexed universal life / cash value.'],
+    ['Annuity','Retirement income / rollovers.']
+  ];
+  // working selections
+  var selStates = {}, selVerts = {}, selDays = {}, tz = 'America/Chicago';
+
+  function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+  function signOut(){ db.auth.signOut().then(function(){ window.location.href='index.html'; }); }
+  function tokens(s){ return String(s||'').split(/[,;/\n]+/).map(function(x){return x.trim();}).filter(Boolean); }
+
+  db.auth.getSession().then(function(r){
+    if(!r.data.session){ window.location.href='index.html'; return; }
+    me = r.data.session.user;
+    db.from('agent_profiles').select('*').eq('id', me.id).single().then(function(p){
+      prof = p.data || {};
+      if(prof.setup_complete === true){ window.location.href='home.html'; return; }  // already done
+      document.getElementById('whoami').innerHTML = '<span class="email">'+esc((prof.first_name||'')+' '+(prof.last_name||'')).trim()+'</span>' || esc(me.email);
+      initSelections();
+      buildStates(); buildVerts(); buildDays();
+      document.getElementById('tzSel').value = (prof.agent_tz || 'America/Chicago');
+      step = Math.min(Math.max(Number(prof.setup_step)||0, 0), STEPS-1);
+      document.getElementById('loading').style.display='none';
+      document.getElementById('wizBody').style.display='block';
+      render();
+    });
+  });
+
+  function initSelections(){
+    var lic = tokens(prof.states_licensed);
+    var act = prof.active_states ? tokens(prof.active_states) : lic.slice();   // default: all licensed
+    selStates = {}; lic.forEach(function(s){ selStates[s] = act.indexOf(s) > -1; });
+    var av = prof.active_verticals ? prof.active_verticals : 'Final Expense';   // default Final Expense
+    selVerts = {}; VERTS.forEach(function(v){ selVerts[v[0]] = av.toLowerCase().indexOf(v[0].toLowerCase()) > -1; });
+    var dd = Array.isArray(prof.drop_days) ? prof.drop_days : [1,2,3,4,5,6,7];
+    selDays = {}; DAYS.forEach(function(d){ selDays[d[1]] = dd.indexOf(d[1]) > -1; });
+    tz = prof.agent_tz || 'America/Chicago';
+  }
+
+  function buildStates(){
+    var lic = tokens(prof.states_licensed);
+    var box = document.getElementById('stateOpts');
+    if(!lic.length){ box.innerHTML = '<p class="support-line">No licensed states are on file yet. Email blacklabelleads@gmail.com and we\'ll add them.</p>'; return; }
+    box.innerHTML = lic.map(function(s){
+      return '<div class="opt'+(selStates[s]?' sel':'')+'" data-st="'+esc(s)+'" onclick="tog(\'st\',\''+esc(s)+'\')"><span class="box">'+(selStates[s]?'✓':'')+'</span><span class="t">'+esc(s)+'</span></div>';
+    }).join('');
+  }
+  function buildVerts(){
+    document.getElementById('vertOpts').innerHTML = VERTS.map(function(v){
+      return '<div class="opt'+(selVerts[v[0]]?' sel':'')+'" onclick="tog(\'vt\',\''+esc(v[0])+'\')"><span class="box">'+(selVerts[v[0]]?'✓':'')+'</span><span><span class="t">'+esc(v[0])+'</span><br><span class="d">'+esc(v[1])+'</span></span></div>';
+    }).join('');
+  }
+  function buildDays(){
+    document.getElementById('dayOpts').innerHTML = DAYS.map(function(d){
+      return '<div class="day'+(selDays[d[1]]?' sel':'')+'" onclick="tog(\'dy\',\''+d[1]+'\')">'+d[0]+'</div>';
+    }).join('');
+  }
+  function tog(kind, key){
+    if(kind==='st'){ selStates[key]=!selStates[key]; buildStates(); }
+    else if(kind==='vt'){ selVerts[key]=!selVerts[key]; buildVerts(); }
+    else if(kind==='dy'){ var k=Number(key); selDays[k]=!selDays[k]; buildDays(); }
+  }
+
+  function chosen(map){ return Object.keys(map).filter(function(k){ return map[k]; }); }
+  function chosenDays(){ return DAYS.map(function(d){return d[1];}).filter(function(n){ return selDays[n]; }); }
+
+  function render(){
+    document.getElementById('dots').innerHTML = '';
+    for(var i=0;i<STEPS;i++){
+      var c = i<step ? 'dot done' : (i===step ? 'dot on' : 'dot');
+      document.getElementById('dots').innerHTML += '<span class="'+c+'"></span>';
+    }
+    var secs = document.querySelectorAll('.step');
+    for(var j=0;j<secs.length;j++){ secs[j].classList.toggle('show', Number(secs[j].getAttribute('data-step'))===step); }
+    if(step===4) buildReview();
+  }
+
+  function buildReview(){
+    var states = chosen(selStates); var verts = chosen(selVerts); var days = chosenDays();
+    var dayNames = DAYS.filter(function(d){return selDays[d[1]];}).map(function(d){return d[0];});
+    var tzLabel = document.getElementById('tzSel').options[document.getElementById('tzSel').selectedIndex].text;
+    document.getElementById('review').innerHTML =
+      row('States', states.length ? states.join(', ') : '—') +
+      row('Products', verts.length ? verts.join(', ') : '—') +
+      row('Drop days', dayNames.length ? dayNames.join(', ') : '—') +
+      row('Time zone', tzLabel);
+  }
+  function row(k,v){ return '<div class="row"><span class="k">'+esc(k)+'</span><span class="v">'+esc(v)+'</span></div>'; }
+
+  function validate(){
+    if(step===1 && !chosen(selStates).length){ document.getElementById('stateErr').textContent='Pick at least one state.'; return false; }
+    if(step===2 && !chosen(selVerts).length){ document.getElementById('vertErr').textContent='Pick at least one product.'; return false; }
+    if(step===3 && !chosenDays().length){ document.getElementById('dayErr').textContent='Pick at least one day.'; return false; }
+    return true;
+  }
+
+  function payload(){
+    return {
+      active_states: chosen(selStates).join(', '),
+      active_verticals: chosen(selVerts).join(', '),
+      drop_days: chosenDays(),
+      agent_tz: document.getElementById('tzSel').value,
+      setup_step: step
+    };
+  }
+
+  function next(){
+    ['stateErr','vertErr','dayErr'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=''; });
+    if(!validate()) return;
+    var goingTo = Math.min(step+1, STEPS-1);
+    var p = payload(); p.setup_step = goingTo;
+    db.from('agent_profiles').update(p).eq('id', me.id).then(function(){});  // save progress (resume), fire-and-forget
+    step = goingTo; render(); window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function back(){ step = Math.max(step-1, 0); render(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+  function finish(){
+    var btn = document.getElementById('finishBtn');
+    btn.disabled = true; btn.style.opacity='0.6'; btn.textContent='Setting up…';
+    var p = payload(); p.setup_step = 6;
+    db.from('agent_profiles').update(p).eq('id', me.id).then(function(res){
+      if(res.error){ fail(res.error.message); return; }
+      db.rpc('bl_finish_setup').then(function(r2){
+        if(r2.error){ fail(r2.error.message); return; }
+        window.location.href='home.html';
+      });
+    });
+  }
+  function fail(msg){
+    var btn=document.getElementById('finishBtn'); btn.disabled=false; btn.style.opacity='1'; btn.textContent='Start my Drops';
+    document.getElementById('finErr').textContent = 'Something went wrong: '+msg+' — try again, or email blacklabelleads@gmail.com.';
+  }
+</script>
+</body>
+</html>
