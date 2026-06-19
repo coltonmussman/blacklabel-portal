@@ -98,6 +98,16 @@
         <h2>Billing health</h2>
         <div id="ccBillingWrap"><div class="owarn muted">Loading…</div></div>
       </div>
+
+      <div class="opanel" id="ccMarketsPanel">
+        <h2>Markets <span class="muted" style="font-size:11px;font-weight:400">&mdash; states you're running ads in</span></h2>
+        <div id="ccMarketsWrap" style="overflow-x:auto"><div class="owarn muted">Loading…</div></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:0 18px 16px">
+          <input id="mkState" class="osel" placeholder="State (e.g. TX)" style="max-width:140px">
+          <select id="mkVert" class="osel"><option value="Final Expense">Final Expense</option><option value="Mortgage Protection">Mortgage Protection</option><option value="IUL">IUL</option><option value="Annuity">Annuity</option></select>
+          <button class="obtn" onclick="ccSetMarket(document.getElementById('mkState').value, document.getElementById('mkVert').value, true)">Open this market</button>
+        </div>
+      </div>
     </div>
 
     <div class="owner-grid" id="metrics"></div>
@@ -527,7 +537,7 @@
 
   function ccLoadAll(){
     ccLoadAlertSummary(); ccLoadAlerts();
-    ccLoadFlow(); ccLoadLanding(); ccLoadDelivery(); ccLoadQuality(); ccLoadBilling();
+    ccLoadFlow(); ccLoadLanding(); ccLoadDelivery(); ccLoadQuality(); ccLoadBilling(); ccLoadMarkets();
   }
   // Windowed RPCs only
   function ccLoadWindowed(){ ccLoadFlow(); ccLoadLanding(); ccLoadQuality(); }
@@ -761,6 +771,35 @@
         + '<div class="ostat"><div class="n">'+esc(Number(d.active_no_sub)||0)+'</div><div class="l">Active, no sub</div></div>';
       html+='</div></div>';
       w.innerHTML=html;
+    });
+  }
+  function ccLoadMarkets(){
+    db.rpc('bl_owner_markets').then(function(r){
+      var w=document.getElementById('ccMarketsWrap'); if(!w) return;
+      if(r.error){ w.innerHTML='<div class="owarn muted">'+esc(r.error.message)+'</div>'; return; }
+      var rows=r.data||[];
+      if(!rows.length){ w.innerHTML='<div class="owarn muted">No markets yet. Open one below to start delivering reserved agents their first Drops.</div>'; return; }
+      var html='<table class="otable"><thead><tr><th>State</th><th>Vertical</th><th>Status</th><th>Reserved agents</th><th></th></tr></thead><tbody>';
+      rows.forEach(function(m){
+        html+='<tr>'
+          + '<td><b>'+esc(m.state)+'</b></td>'
+          + '<td>'+esc(m.vertical)+'</td>'
+          + '<td>'+(m.is_open?'<span class="pill active">Open</span>':'<span class="pill paused">Closed</span>')+'</td>'
+          + '<td>'+(Number(m.reserved_agents)||0)+'</td>'
+          + '<td><button class="obtn" onclick="ccSetMarket(\''+esc(m.state)+'\',\''+esc(m.vertical)+'\','+(m.is_open?'false':'true')+')">'+(m.is_open?'Close':'Open')+'</button></td>'
+          + '</tr>';
+      });
+      w.innerHTML=html+'</tbody></table>';
+    });
+  }
+  function ccSetMarket(state, vertical, open){
+    state=(state||'').trim(); if(!state){ alert('Enter a state first.'); return; }
+    if(open && !confirm('Open '+state+' / '+vertical+'? This delivers waiting leads to reserved agents there and starts their billing on first Drop.')) return;
+    db.rpc('bl_owner_set_market', { p_state:state, p_vertical:vertical, p_open:open }).then(function(r){
+      if(r.error){ alert(r.error.message); return; }
+      if(open && r.data && r.data.drained){ alert('Opened. '+r.data.drained+' waiting lead(s) delivered to agents there.'); }
+      var mk=document.getElementById('mkState'); if(mk) mk.value='';
+      ccLoadMarkets();
     });
   }
 </script>

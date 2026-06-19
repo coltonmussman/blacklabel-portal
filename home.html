@@ -177,6 +177,16 @@
       return;
     }
 
+    if (status === 'reserved'){
+      el.style.display = 'block';
+      el.style.borderColor = 'rgba(127,184,154,0.45)';
+      el.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+        + '<span style="width:8px;height:8px;border-radius:50%;background:var(--good);flex:none"></span>'
+        + '<span class="support-line" style="margin:0"><b style="color:var(--ivory)">Seat reserved</b> &mdash; card on file, no charge until your first Drop. You\'ll start getting Drops as your state opens.</span>'
+        + '</div>';
+      return;
+    }
+
     var head, sub;
     if (status === 'canceled'){
       head = 'Your subscription is canceled';

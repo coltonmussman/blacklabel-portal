@@ -126,9 +126,10 @@
         <h1>You're set. Review and go.</h1>
         <p class="sub">Here's how your Drops will work. You can change any of this later on your profile.</p>
         <div class="rev" id="review"></div>
-        <p class="note">Texting isn't on yet — for now your Drop alerts come by email the moment a lead lands. We'll add text alerts later.</p>
+        <p class="note" id="reserveLine"></p>
+        <p class="note"><b style="color:var(--soft)">No charge today.</b> Your card goes on file and your first weekly payment starts the day your first lead lands — not before. Drop alerts come by email (texting comes later).</p>
         <div class="err" id="finErr"></div>
-        <div class="navrow"><button class="ghost" onclick="back()">Back</button><button class="home-cta" style="margin:0" id="finishBtn" onclick="finish()">Start my Drops</button></div>
+        <div class="navrow"><button class="ghost" onclick="back()">Back</button><button class="home-cta" style="margin:0" id="finishBtn" onclick="finish()">Reserve my seat &amp; start</button></div>
       </section>
     </div>
   </div>
@@ -149,6 +150,7 @@
     ['IUL','Indexed universal life / cash value.'],
     ['Annuity','Retirement income / rollovers.']
   ];
+  var TIERS = { silver:['Silver',400], gold:['Gold',600], blacklabel:['Black Label',1250] };
   // working selections
   var selStates = {}, selVerts = {}, selDays = {}, tz = 'America/Chicago';
 
@@ -231,6 +233,9 @@
       row('Products', verts.length ? verts.join(', ') : '—') +
       row('Drop days', dayNames.length ? dayNames.join(', ') : '—') +
       row('Time zone', tzLabel);
+    var tk = String(prof.tier||'Silver').toLowerCase().replace(/[^a-z]/g,'');
+    var ti = TIERS[tk] || TIERS.silver;
+    document.getElementById('reserveLine').innerHTML = 'Your plan: <b style="color:var(--ivory)">'+esc(ti[0])+'</b> &mdash; $'+ti[1]+'/week.';
   }
   function row(k,v){ return '<div class="row"><span class="k">'+esc(k)+'</span><span class="v">'+esc(v)+'</span></div>'; }
 
@@ -269,7 +274,13 @@
       if(res.error){ fail(res.error.message); return; }
       db.rpc('bl_finish_setup').then(function(r2){
         if(r2.error){ fail(r2.error.message); return; }
-        window.location.href='home.html';
+        // BRIEF 5: reserve the seat (card on file, no charge now) via Stripe Checkout
+        btn.textContent='Opening secure checkout…';
+        db.functions.invoke('create-reserve-checkout', { body: {} }).then(function(r3){
+          var url = r3 && r3.data && r3.data.url;
+          if(url){ window.location.href = url; return; }
+          window.location.href='home.html?reserve=pending';   // couldn't open checkout; the home banner will prompt
+        });
       });
     });
   }
