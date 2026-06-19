@@ -1,0 +1,4 @@
+# Backend source-of-record only — never part of the deployed static site.
+# Keeps the edge-function source + schema snapshot in git (canonical record)
+# without serving them publicly at portal.blacklabelleads.app.
+supabase/

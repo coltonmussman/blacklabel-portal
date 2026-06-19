@@ -1,0 +1,116 @@
+{
+  "migrations": [
+    {
+      "version": "20260613073632",
+      "name": "billing_helpers_jsonb_and_email_fallback"
+    },
+    {
+      "version": "20260613080414",
+      "name": "enable_pg_cron"
+    },
+    {
+      "version": "20260613080506",
+      "name": "owner_agents_add_subscription_and_hide_owner"
+    },
+    {
+      "version": "20260613080708",
+      "name": "support_requests_table_and_email"
+    },
+    {
+      "version": "20260613082250",
+      "name": "owner_refund_workflow"
+    },
+    {
+      "version": "20260613151951",
+      "name": "lead_quality_flag"
+    },
+    {
+      "version": "20260613152400",
+      "name": "webhook_debug_table"
+    },
+    {
+      "version": "20260616184333",
+      "name": "harden_leads_revoke_unused_anon_grants"
+    },
+    {
+      "version": "20260616201647",
+      "name": "rate_limit_and_dedup_layer"
+    },
+    {
+      "version": "20260616201944",
+      "name": "owner_command_center_v2"
+    },
+    {
+      "version": "20260618165141",
+      "name": "command_center_alerts_table"
+    },
+    {
+      "version": "20260618165200",
+      "name": "command_center_metrics_rpcs"
+    },
+    {
+      "version": "20260618165324",
+      "name": "command_center_watchdog"
+    },
+    {
+      "version": "20260618173104",
+      "name": "harden_owner_rpcs_and_vault_overview"
+    },
+    {
+      "version": "20260618181027",
+      "name": "lock_bl_drain_vault_for_agent"
+    },
+    {
+      "version": "20260619040151",
+      "name": "drop_brief3_schema"
+    },
+    {
+      "version": "20260619040915",
+      "name": "drop_brief3_routing_and_vault"
+    },
+    {
+      "version": "20260619045559",
+      "name": "drop_brief4_onboarding_gate"
+    },
+    {
+      "version": "20260619050715",
+      "name": "drop_brief5_markets_foundation"
+    },
+    {
+      "version": "20260619051116",
+      "name": "drop_brief5_activation_hook"
+    },
+    {
+      "version": "20260619051716",
+      "name": "drop_brief5_activation_retry"
+    },
+    {
+      "version": "20260619054040",
+      "name": "drop_brief5_billing_gate"
+    },
+    {
+      "version": "20260619062046",
+      "name": "drop_brief6_coverage_changes"
+    },
+    {
+      "version": "20260619062854",
+      "name": "drop_brief6_cancel_expansion"
+    },
+    {
+      "version": "20260619065956",
+      "name": "harden_cron_fns_and_table_grants"
+    },
+    {
+      "version": "20260619075710",
+      "name": "referral_phase1_schema"
+    },
+    {
+      "version": "20260619075833",
+      "name": "referral_phase1_functions"
+    },
+    {
+      "version": "20260619081728",
+      "name": "referral_phase1_my_referrals_terms"
+    }
+  ]
+}
