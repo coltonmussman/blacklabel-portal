@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile — Black Label Leads Portal</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="portal.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  /* profile-specific bits layered on top of portal.css */
+  .pf-section{ margin-bottom:22px }
+  .pf-section h2{ margin-bottom:4px }
+  .pf-sub{ color:var(--silver); font-size:14px; line-height:1.5; margin:0 0 14px }
+  .pf-field{ display:flex; justify-content:space-between; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06) }
+  .pf-field:last-child{ border-bottom:0 }
+  .pf-field .k{ color:var(--silver); font-size:13px }
+  .pf-field .v{ color:var(--ivory); font-weight:600; text-align:right }
+  .pill{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; letter-spacing:.2px }
+  .pill.good{ background:rgba(127,184,154,0.16); color:var(--good); border:1px solid rgba(127,184,154,0.4) }
+  .pill.warn{ background:rgba(210,169,106,0.16); color:#d2a96a; border:1px solid rgba(210,169,106,0.45) }
+  .pill.bad{ background:rgba(201,138,138,0.16); color:#c98a8a; border:1px solid rgba(201,138,138,0.5) }
+  .pill.neutral{ background:rgba(255,255,255,0.06); color:var(--silver); border:1px solid rgba(255,255,255,0.12) }
+  .toggle.pending{ border-color:rgba(210,169,106,0.6); color:#d2a96a; opacity:1 }
+  .toggle .sub{ display:block; font-size:10px; font-weight:600; opacity:.85; margin-top:1px }
+  .pf-label{ color:var(--ivory); font-weight:700; font-size:13px; margin:14px 0 8px; letter-spacing:.2px }
+  .day-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px }
+  .day{ padding:8px 12px; border:1px solid rgba(255,255,255,0.14); border-radius:10px; cursor:pointer; font-size:13px; color:var(--silver); user-select:none }
+  .day.on{ border-color:rgba(127,184,154,0.55); color:var(--ivory); background:rgba(127,184,154,0.12) }
+  .pf-input, .pf-select{ background:#16181c; border:1px solid rgba(255,255,255,0.16); color:var(--ivory); border-radius:10px; padding:9px 11px; font-size:14px; font-family:inherit }
+  .pf-row{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-top:6px }
+  .pf-row label{ color:var(--silver); font-size:13px }
+  .note-ok{ color:var(--good); font-size:13px; margin-top:10px }
+  .note-warn{ color:#d2a96a; font-size:13px; margin-top:10px }
+  .note-bad{ color:#c98a8a; font-size:13px; margin-top:10px }
+  .mng-link{ color:var(--silver); text-decoration:underline; cursor:pointer; font-size:13px }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center">
+    <div class="brand">
+      <svg viewBox="0 0 170 170" aria-hidden="true">
+        <defs>
+          <linearGradient id="pc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="0.38" stop-color="#c4cad2"/><stop offset="0.52" stop-color="#8e959f"/><stop offset="0.66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
+          <linearGradient id="pr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset="0.5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
+        </defs>
+        <circle cx="85" cy="85" r="66" fill="#101113" stroke="url(#pr)" stroke-width="2.2"/>
+        <circle cx="85" cy="85" r="58" fill="none" stroke="#aeb4bc" stroke-width="1" opacity="0.55"/>
+        <rect x="81.5" y="33.5" width="7" height="7" transform="rotate(45 85 37)" fill="url(#pr)"/>
+        <rect x="81.5" y="129.5" width="7" height="7" transform="rotate(45 85 133)" fill="url(#pr)"/>
+        <text x="85" y="104" text-anchor="middle" font-family="'Fraunces',Georgia,serif" font-size="54" font-weight="500" letter-spacing="3" fill="url(#pc)">BL</text>
+      </svg>
+      <span>Black <span class="lbl">Label</span> Leads</span>
+    </div>
+    <nav class="topnav">
+      <a href="home.html">Home</a>
+      <a href="portal.html">My Leads</a>
+      <a href="tracker.html">Tracker</a>
+      <a href="profile.html" class="active">Profile</a>
+      <a href="support.html">Support</a>
+    </nav>
+  </div>
+  <div class="who">
+    <span id="whoami"></span>
+    <button class="signout" onclick="signOut()">Sign out</button>
+  </div>
+</div>
+
+<div class="shell">
+  <div class="home-hero">
+    <h1>Your <em>profile.</em></h1>
+    <p>Everything about your account in one place — billing, where your Drops go, and the states and verticals you receive. Turning coverage off is instant. Adding coverage starts at the beginning of your next paid week.</p>
+  </div>
+
+  <!-- 1. ACCOUNT -->
+  <div class="home-card pf-section">
+    <h2>Account</h2>
+    <p class="pf-sub">Name and NPN come from your license on file (NIPR). To change your name, NPN, or login email, email support — we verify license details before updating them.</p>
+    <div class="pf-field"><span class="k">Name</span><span class="v" id="acctName">—</span></div>
+    <div class="pf-field"><span class="k">NPN</span><span class="v" id="acctNpn">—</span></div>
+    <div class="pf-field"><span class="k">Login email</span><span class="v" id="acctEmail">—</span></div>
+    <div class="pf-field"><span class="k">Tier</span><span class="v" id="acctTier">—</span></div>
+    <div class="pf-field"><span class="k">Billing</span><span class="v" id="acctBilling">—</span></div>
+    <div id="billingActions" style="margin-top:10px"></div>
+  </div>
+
+  <!-- 2. DROP NUMBER -->
+  <div class="home-card pf-section">
+    <h2>Drop number</h2>
+    <p class="pf-sub">The mobile number where your Drops are texted the moment a lead is delivered. Changing it requires a quick re-verify by text, so the wrong phone never receives your leads.</p>
+    <div class="pf-field"><span class="k">Verified number</span><span class="v" id="dropNumber">—</span></div>
+    <p class="note-warn" id="dropNote">Text alerts are coming online shortly. Until then every Drop still lands in your email the instant it's delivered, and shows here in the portal.</p>
+  </div>
+
+  <!-- 3. STATES -->
+  <div class="home-card pf-section">
+    <h2>States</h2>
+    <p class="pf-sub">You receive leads from the states switched on below — only states you're licensed in (NIPR). Switch a state <b>off</b> to stop its leads right away. Switch one <b>on</b> to add it; added coverage starts at the beginning of your next paid week.</p>
+    <div class="toggle-row" id="stateToggles"></div>
+    <p class="pf-note" id="stateNote"></p>
+    <p class="pf-note" style="margin-top:10px">Need to add or remove a <b>licensed</b> state itself? Email <a href="mailto:blacklabelleads@gmail.com?subject=Update%20my%20licensed%20states">blacklabelleads@gmail.com</a> — we verify license changes before updating.</p>
+  </div>
+
+  <!-- 4. VERTICALS -->
+  <div class="home-card pf-section">
+    <h2>Verticals</h2>
+    <p class="pf-sub">The product lines you want. Switch one <b>off</b> to stop those leads right away. Switch one <b>on</b> to add it; like states, added coverage starts at the beginning of your next paid week.</p>
+    <div class="toggle-row" id="vertToggles"></div>
+    <p class="pf-note" id="vertNote"></p>
+  </div>
+
+  <!-- 5. DROP DAYS + TIMEZONE -->
+  <div class="home-card pf-section">
+    <h2>Drop days &amp; timezone</h2>
+    <p class="pf-sub">The days you want to receive Drops, in your timezone. Turning a day off takes effect right away. Leave them all on to receive Drops any day.</p>
+    <div class="pf-label">Drop days</div>
+    <div class="day-row" id="dayRow"></div>
+    <div class="pf-row">
+      <label for="tzSelect">Timezone</label>
+      <select id="tzSelect" class="pf-select">
+        <option value="America/New_York">Eastern (New York)</option>
+        <option value="America/Chicago">Central (Chicago)</option>
+        <option value="America/Denver">Mountain (Denver)</option>
+        <option value="America/Phoenix">Arizona (no DST)</option>
+        <option value="America/Los_Angeles">Pacific (Los Angeles)</option>
+        <option value="America/Anchorage">Alaska</option>
+        <option value="Pacific/Honolulu">Hawaii</option>
+      </select>
+      <button class="gp-save" onclick="saveSchedule()">Save days &amp; timezone</button>
+    </div>
+    <p class="pf-note" id="schedNote"></p>
+  </div>
+
+  <!-- 6. GOALS -->
+  <div class="home-card pf-section">
+    <h2>Goals</h2>
+    <p class="pf-sub">Your monthly premium target and your weekly tier cost. These power the return numbers and the goal ring on your Tracker.</p>
+    <div class="pf-row">
+      <label for="goalInput">Monthly goal ($)</label>
+      <input type="text" id="goalInput" class="pf-input" inputmode="numeric" placeholder="e.g. 20000" style="width:140px">
+      <label for="invInput">My weekly tier cost ($)</label>
+      <input type="text" id="invInput" class="pf-input" inputmode="numeric" placeholder="400" style="width:120px">
+      <button class="gp-save" onclick="saveGoals()">Save goals</button>
+    </div>
+    <p class="pf-note" id="goalNote"></p>
+  </div>
+</div>
+
+<script>
+  var SUPABASE_URL = 'https://hqiyxeriugywlkbcuasu.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_9m66yQmAgJwgCRMoYcU5sA_3l_XlfXr';
+  var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  var me = null, profile = {}, markets = [], pending = [];
+
+  var VERTICALS = ['Final Expense','Mortgage Protection','IUL','Annuity'];
+  var TIER_WEEKLY = { silver:400, gold:600, blacklabel:1250 };
+  var DAYS = [['Mon',1],['Tue',2],['Wed',3],['Thu',4],['Fri',5],['Sat',6],['Sun',7]];
+
+  db.auth.getSession().then(function(r){
+    if (!r.data.session){ window.location.href = 'index.html'; return; }
+    me = r.data.session.user;
+    reload();
+  });
+
+  function reload(){
+    Promise.all([
+      db.from('agent_profiles').select('*').eq('id', me.id).single(),
+      db.from('markets').select('state, vertical, is_open'),
+      db.from('coverage_changes').select('change_type, value, effective_at').eq('agent_id', me.id).eq('applied', false)
+    ]).then(function(res){
+      profile = res[0].data || {};
+      if (profile && profile.setup_complete === false){ window.location.href = 'setup.html'; return; }  // onboarding gate
+      markets = (res[1] && res[1].data) || [];
+      pending = (res[2] && res[2].data) || [];
+      var name = ((profile.first_name||'') + ' ' + (profile.last_name||'')).trim() || me.email;
+      document.getElementById('whoami').innerHTML = '<span class="email">' + esc(name) + '</span>';
+      renderAccount(name);
+      renderDropNumber();
+      renderStates();
+      renderVerticals();
+      renderSchedule();
+      renderGoals();
+    });
+  }
+
+  /* ---------- helpers ---------- */
+  function esc(s){ var d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
+  function splitList(s){ return (s||'').split(/[,;/\n]+/).map(function(x){return x.trim();}).filter(Boolean); }
+  function fmtDay(ts){ if(!ts) return ''; var d=new Date(ts); return d.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'}); }
+  function fmtDate(ts){ if(!ts) return ''; var d=new Date(ts); return d.toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'}); }
+  function signOut(){ db.auth.signOut().then(function(){ window.location.href = 'index.html'; }); }
+  function tierKey(t){ return String(t||'silver').toLowerCase().replace(/[^a-z]/g,''); }
+
+  function pendingFor(type, value){
+    for (var i=0;i<pending.length;i++){
+      if (pending[i].change_type===type && String(pending[i].value).toLowerCase()===String(value).toLowerCase()) return pending[i];
+    }
+    return null;
+  }
+  // next-paid-week label, or null if there's no active cycle (then adds are immediate)
+  function nextWeekLabel(){ return profile.current_period_end ? fmtDay(profile.current_period_end) : null; }
+  // caveat only when markets is configured AND this state has no open market yet
+  function marketCaveatState(state){
+    if (!markets || !markets.length) return '';
+    var open = false;
+    for (var i=0;i<markets.length;i++){ if (markets[i].is_open && String(markets[i].state).toUpperCase()===String(state).toUpperCase()){ open=true; break; } }
+    return open ? '' : (' It will begin once ' + state + ' opens in our system.');
+  }
+
+  /* ---------- 1. account ---------- */
+  function renderAccount(name){
+    document.getElementById('acctName').textContent = name;
+    document.getElementById('acctNpn').textContent = profile.npn || 'Not on file';
+    document.getElementById('acctEmail').textContent = me.email || '—';
+    document.getElementById('acctTier').textContent = profile.tier || 'Silver';
+
+    var status = String(profile.subscription_status || 'none').toLowerCase();
+    var wk = TIER_WEEKLY[tierKey(profile.tier)] || 400;
+    var bEl = document.getElementById('acctBilling');
+    var act = document.getElementById('billingActions');
+    var pill, txt;
+    if (status === 'active' || status === 'trialing'){
+      pill = 'good'; txt = 'Active' + (profile.current_period_end ? ' · renews ' + fmtDate(profile.current_period_end) : '');
+    } else if (status === 'reserved'){
+      pill = 'good'; txt = 'Seat reserved · card on file, no charge until first Drop';
+    } else if (status === 'past_due' || status === 'unpaid'){
+      pill = 'bad'; txt = 'Payment needs attention';
+    } else if (status === 'canceled'){
+      pill = 'bad'; txt = 'Canceled · leads paused';
+    } else {
+      pill = 'warn'; txt = 'Not active · $' + wk + '/week';
+    }
+    bEl.innerHTML = '<span class="pill ' + pill + '">' + esc(txt) + '</span>';
+    // Manage billing (Stripe portal) only makes sense once there's a customer on file
+    if (profile.stripe_customer_id){
+      act.innerHTML = '<a id="mngBilling" class="mng-link" onclick="openBillingPortal(event)">Manage billing</a>';
+    } else {
+      act.innerHTML = '<a class="mng-link" href="home.html">Activate your subscription</a>';
+    }
+  }
+
+  function openBillingPortal(ev){
+    if (ev) ev.preventDefault();
+    var el = document.getElementById('mngBilling');
+    if (el){ el.textContent = 'Opening…'; el.style.pointerEvents = 'none'; }
+    db.functions.invoke('billing-portal').then(function(r){
+      if (el){ el.textContent = 'Manage billing'; el.style.pointerEvents = ''; }
+      var url = r && r.data && r.data.url;
+      if ((r && r.error) || !url){ alert("Couldn't open billing right now — email blacklabelleads@gmail.com and we'll sort it out."); return; }
+      window.location.href = url;
+    });
+  }
+
+  /* ---------- 2. drop number ---------- */
+  function renderDropNumber(){
+    var n = profile.cell_phone;
+    document.getElementById('dropNumber').textContent = n ? n : 'Not set';
+  }
+
+  /* ---------- 3. states ---------- */
+  function renderStates(){
+    var box = document.getElementById('stateToggles');
+    var note = document.getElementById('stateNote');
+    note.textContent = '';
+    var licensed = splitList(profile.states_licensed);
+    if (!licensed.length){
+      box.innerHTML = '<span class="pf-note">No states on file yet — they come from your application. Email us to add your license.</span>';
+      return;
+    }
+    var activeRaw = (profile.active_states || '').trim();
+    var activeSet = activeRaw ? splitList(activeRaw).map(function(s){return s.toUpperCase();}) : null; // null = all on
+    box.innerHTML = licensed.map(function(s){
+      var up = s.toUpperCase();
+      var pend = pendingFor('add_state', s);
+      if (pend){
+        return '<span class="toggle pending" title="Pending" onclick="cancelExpansion(\'add_state\',\'' + esc(s) + '\')">' + esc(s)
+             + '<span class="sub">starts ' + esc(fmtDay(pend.effective_at)) + ' · tap to cancel</span></span>';
+      }
+      var on = activeSet === null || activeSet.indexOf(up) > -1;
+      if (on){
+        return '<span class="toggle on" onclick="removeState(\'' + esc(s) + '\')">' + esc(s) + '<span class="sub">on · tap to remove</span></span>';
+      }
+      return '<span class="toggle" onclick="addState(\'' + esc(s) + '\')">' + esc(s) + '<span class="sub">off · tap to add</span></span>';
+    }).join('');
+  }
+
+  function currentActiveStates(){
+    var licensed = splitList(profile.states_licensed);
+    var raw = (profile.active_states || '').trim();
+    if (!raw) return licensed.slice();            // null/empty = all licensed on
+    var up = splitList(raw).map(function(s){return s.toUpperCase();});
+    return licensed.filter(function(s){ return up.indexOf(s.toUpperCase()) > -1; });
+  }
+
+  function addState(s){
+    var nw = nextWeekLabel();
+    var when = nw ? ('the start of your next paid week (' + nw + ')') : 'right away';
+    if (!confirm('Add ' + s + '?\n\n' + s + ' starts delivering at ' + when + '. You won\'t get ' + s + ' Drops before then.' + marketCaveatState(s))) return;
+    db.rpc('bl_request_expansion', { p_change_type:'add_state', p_value:s }).then(function(r){
+      var note = document.getElementById('stateNote');
+      if (r.error){ note.className='pf-note note-bad'; note.textContent = "Couldn't add " + s + ': ' + r.error.message; return; }
+      var d = r.data || {};
+      if (d.immediate){ note.className='pf-note note-ok'; note.textContent = s + ' is now on.'; }
+      else { note.className='pf-note note-warn'; note.textContent = s + ' is queued — it starts delivering ' + fmtDay(d.effective_at) + '.'; }
+      reload();
+    });
+  }
+
+  function removeState(s){
+    var active = currentActiveStates();
+    var remaining = active.filter(function(x){ return x.toUpperCase() !== s.toUpperCase(); });
+    if (!confirm('Remove ' + s + '?\n\nYou\'ll stop getting ' + s + ' leads right away.')) return;
+    var note = document.getElementById('stateNote');
+    if (remaining.length === 0 && !confirm('Heads up: ' + s + ' is your last active state. With none on you won\'t receive any leads. Remove it anyway?')) return;
+    var licensed = splitList(profile.states_licensed);
+    var val = (remaining.length === licensed.length) ? null : remaining.join(', '); // all = null
+    db.from('agent_profiles').update({ active_states: val }).eq('id', me.id).then(function(r){
+      if (r.error){ note.className='pf-note note-bad'; note.textContent = "Couldn't save: " + r.error.message; return; }
+      profile.active_states = val;
+      note.className='pf-note note-ok'; note.textContent = s + ' removed. You\'ll stop getting its leads now.';
+      reload();
+    });
+  }
+
+  /* ---------- 4. verticals ---------- */
+  function renderVerticals(){
+    var box = document.getElementById('vertToggles');
+    document.getElementById('vertNote').textContent = '';
+    var raw = (profile.active_verticals || '').trim();
+    var activeNull = !raw; // null/empty = all on
+    box.innerHTML = VERTICALS.map(function(v){
+      var pend = pendingFor('add_vertical', v);
+      if (pend){
+        return '<span class="toggle pending" onclick="cancelExpansion(\'add_vertical\',\'' + esc(v) + '\')">' + esc(v)
+             + '<span class="sub">starts ' + esc(fmtDay(pend.effective_at)) + ' · tap to cancel</span></span>';
+      }
+      var on = activeNull || raw.toLowerCase().indexOf(v.toLowerCase()) > -1;
+      if (on){
+        return '<span class="toggle on" onclick="removeVertical(\'' + esc(v) + '\')">' + esc(v) + '<span class="sub">on · tap to remove</span></span>';
+      }
+      return '<span class="toggle" onclick="addVertical(\'' + esc(v) + '\')">' + esc(v) + '<span class="sub">off · tap to add</span></span>';
+    }).join('');
+  }
+
+  function currentActiveVerticals(){
+    var raw = (profile.active_verticals || '').trim();
+    if (!raw) return VERTICALS.slice();
+    return VERTICALS.filter(function(v){ return raw.toLowerCase().indexOf(v.toLowerCase()) > -1; });
+  }
+
+  function addVertical(v){
+    var nw = nextWeekLabel();
+    var when = nw ? ('the start of your next paid week (' + nw + ')') : 'right away';
+    if (!confirm('Add ' + v + '?\n\n' + v + ' leads start at ' + when + '. You won\'t get ' + v + ' Drops before then.')) return;
+    db.rpc('bl_request_expansion', { p_change_type:'add_vertical', p_value:v }).then(function(r){
+      var note = document.getElementById('vertNote');
+      if (r.error){ note.className='pf-note note-bad'; note.textContent = "Couldn't add " + v + ': ' + r.error.message; return; }
+      var d = r.data || {};
+      if (d.immediate){ note.className='pf-note note-ok'; note.textContent = v + ' is now on.'; }
+      else { note.className='pf-note note-warn'; note.textContent = v + ' is queued — it starts delivering ' + fmtDay(d.effective_at) + '.'; }
+      reload();
+    });
+  }
+
+  function removeVertical(v){
+    var active = currentActiveVerticals();
+    var remaining = active.filter(function(x){ return x.toLowerCase() !== v.toLowerCase(); });
+    var note = document.getElementById('vertNote');
+    if (!confirm('Remove ' + v + '?\n\nYou\'ll stop getting ' + v + ' leads right away.')) return;
+    if (remaining.length === 0 && !confirm('Heads up: ' + v + ' is your last active vertical. With none on you won\'t receive any leads. Remove it anyway?')) return;
+    var val = (remaining.length === VERTICALS.length) ? null : remaining.join(', ');
+    db.from('agent_profiles').update({ active_verticals: val }).eq('id', me.id).then(function(r){
+      if (r.error){ note.className='pf-note note-bad'; note.textContent = "Couldn't save: " + r.error.message; return; }
+      profile.active_verticals = val;
+      note.className='pf-note note-ok'; note.textContent = v + ' removed. You\'ll stop getting its leads now.';
+      reload();
+    });
+  }
+
+  /* ---------- cancel a pending expansion (state or vertical) ---------- */
+  function cancelExpansion(type, value){
+    if (!confirm('Cancel the pending add of ' + value + '? It won\'t start delivering.')) return;
+    db.rpc('bl_cancel_expansion', { p_change_type:type, p_value:value }).then(function(r){
+      var note = document.getElementById(type==='add_state' ? 'stateNote' : 'vertNote');
+      if (r.error){ note.className='pf-note note-bad'; note.textContent = "Couldn't cancel: " + r.error.message; return; }
+      note.className='pf-note note-ok'; note.textContent = 'Pending ' + value + ' cancelled.';
+      reload();
+    });
+  }
+
+  /* ---------- 5. drop days + timezone ---------- */
+  function renderSchedule(){
+    var sel = profile.drop_days; // int[] ISO 1..7; null/empty handled as all-on for display
+    var set = Array.isArray(sel) ? sel.map(Number) : [];
+    var allOn = !set.length; // empty array on owner overflow accounts shows as none; agents normally have days
+    var row = document.getElementById('dayRow');
+    row.innerHTML = DAYS.map(function(d){
+      var on = set.indexOf(d[1]) > -1;
+      return '<span class="day' + (on?' on':'') + '" data-d="' + d[1] + '" onclick="this.classList.toggle(\'on\')">' + d[0] + '</span>';
+    }).join('');
+    var tz = profile.agent_tz || 'America/Chicago';
+    var tzSel = document.getElementById('tzSelect');
+    var found = false;
+    for (var i=0;i<tzSel.options.length;i++){ if (tzSel.options[i].value === tz){ tzSel.selectedIndex = i; found = true; break; } }
+    if (!found){ var o=document.createElement('option'); o.value=tz; o.textContent=tz; tzSel.appendChild(o); tzSel.value=tz; }
+  }
+
+  function saveSchedule(){
+    var days = [].slice.call(document.querySelectorAll('#dayRow .day.on')).map(function(d){ return Number(d.getAttribute('data-d')); }).sort(function(a,b){return a-b;});
+    var tz = document.getElementById('tzSelect').value;
+    var note = document.getElementById('schedNote');
+    if (!days.length && !confirm('No Drop days selected. With none on you won\'t receive Drops on any day. Save anyway?')) return;
+    db.from('agent_profiles').update({ drop_days: days, agent_tz: tz }).eq('id', me.id).then(function(r){
+      if (r.error){ note.className='pf-note note-bad'; note.textContent = "Couldn't save: " + r.error.message; return; }
+      profile.drop_days = days; profile.agent_tz = tz;
+      note.className='pf-note note-ok'; note.textContent = 'Saved. ' + (days.length ? 'Drops will come on the selected days.' : 'No days selected.');
+    });
+  }
+
+  /* ---------- 6. goals ---------- */
+  function renderGoals(){
+    document.getElementById('invInput').value = profile.weekly_investment || 400;
+    if (profile.monthly_goal) document.getElementById('goalInput').value = profile.monthly_goal;
+  }
+
+  function saveGoals(){
+    var goal = parseFloat(String(document.getElementById('goalInput').value).replace(/[^0-9.]/g,''));
+    var inv = parseFloat(String(document.getElementById('invInput').value).replace(/[^0-9.]/g,''));
+    var patch = {};
+    if (!isNaN(goal)) patch.monthly_goal = goal;
+    if (!isNaN(inv)) patch.weekly_investment = inv;
+    var note = document.getElementById('goalNote');
+    if (!Object.keys(patch).length){ note.className='pf-note note-bad'; note.textContent='Enter a goal and/or weekly cost.'; return; }
+    db.from('agent_profiles').update(patch).eq('id', me.id).then(function(r){
+      if (r.error){ note.className='pf-note note-bad'; note.textContent = "Couldn't save: " + r.error.message; return; }
+      if (patch.monthly_goal !== undefined) profile.monthly_goal = patch.monthly_goal;
+      if (patch.weekly_investment !== undefined) profile.weekly_investment = patch.weekly_investment;
+      note.className='pf-note note-ok'; note.textContent = 'Saved. Your Tracker uses these now.';
+    });
+  }
+</script>
+</body>
+</html>
