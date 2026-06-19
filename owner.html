@@ -99,6 +99,11 @@
         <div id="ccBillingWrap"><div class="owarn muted">Loading…</div></div>
       </div>
 
+      <div class="opanel" id="ccReferralsPanel">
+        <h2>Referrals <span class="muted" style="font-size:11px;font-weight:400">&mdash; program-cost monitor</span></h2>
+        <div id="ccReferralsWrap"><div class="owarn muted">Loading…</div></div>
+      </div>
+
       <div class="opanel" id="ccMarketsPanel">
         <h2>Markets <span class="muted" style="font-size:11px;font-weight:400">&mdash; states you're running ads in</span></h2>
         <div id="ccMarketsWrap" style="overflow-x:auto"><div class="owarn muted">Loading…</div></div>
@@ -537,7 +542,7 @@
 
   function ccLoadAll(){
     ccLoadAlertSummary(); ccLoadAlerts();
-    ccLoadFlow(); ccLoadLanding(); ccLoadDelivery(); ccLoadQuality(); ccLoadBilling(); ccLoadMarkets();
+    ccLoadFlow(); ccLoadLanding(); ccLoadDelivery(); ccLoadQuality(); ccLoadBilling(); ccLoadReferrals(); ccLoadMarkets();
   }
   // Windowed RPCs only
   function ccLoadWindowed(){ ccLoadFlow(); ccLoadLanding(); ccLoadQuality(); }
@@ -771,6 +776,43 @@
         + '<div class="ostat"><div class="n">'+esc(Number(d.active_no_sub)||0)+'</div><div class="l">Active, no sub</div></div>';
       html+='</div></div>';
       w.innerHTML=html;
+    });
+  }
+  function ccLoadReferrals(){
+    db.rpc('bl_owner_referrals').then(function(r){
+      var w=document.getElementById('ccReferralsWrap');
+      if(r.error){ document.getElementById('ccReferralsPanel').style.display='none'; return; }
+      var d=r.data||{};
+      function d2(c){ return money((Number(c)||0)/100); }
+      var cards=[
+        ['Net credit standing', d2(d.total_applied_cents), ''],
+        ['Welcome discounts', d2(d.welcome_discounts_cents)+' ('+(d.welcome_discounts_count||0)+')', ''],
+        ['Total accrued', d2(d.total_accrued_cents), ''],
+        ['Clawed back', d2(d.total_clawed_back_cents), ''],
+        ['Program cost (net)', d2(d.net_program_cost_cents), (Number(d.net_program_cost_cents)>0?'':'good')]
+      ];
+      var html='<div style="padding:16px 18px"><div class="owner-grid" style="margin-bottom:14px">'
+        + cards.map(function(c){ return '<div class="ostat"><div class="n '+c[2]+'">'+esc(c[1])+'</div><div class="l">'+esc(c[0])+'</div></div>'; }).join('')
+        + '</div>';
+      var rows=d.referrals||[];
+      if(!rows.length){ w.innerHTML=html+'<div class="muted" style="font-size:12px">No referrals yet.</div></div>'; return; }
+      html+='<table class="otable"><thead><tr><th>Referrer</th><th>Code</th><th>Friend</th><th>Status</th><th>Welcome</th><th>Net credit</th><th>Signed up</th></tr></thead><tbody>';
+      rows.forEach(function(x){
+        var s=String(x.status||'');
+        var pill = (s==='active'||s==='qualified') ? '<span class="pill active">'+esc(s)+'</span>'
+                 : (s==='canceled'||s==='disqualified') ? '<span class="pill paused">'+esc(s)+'</span>'
+                 : '<span class="muted">'+esc(s)+'</span>';
+        html+='<tr>'
+          + '<td><b>'+esc(x.referrer)+'</b></td>'
+          + '<td class="muted">'+esc(x.referrer_code||'')+'</td>'
+          + '<td>'+esc(x.friend)+'</td>'
+          + '<td>'+pill+'</td>'
+          + '<td>'+(x.welcome_discount_applied?'<span class="muted">applied</span>':'—')+'</td>'
+          + '<td>'+d2(x.net_cents)+'</td>'
+          + '<td class="muted">'+fmt(x.signed_up_at)+'</td>'
+          + '</tr>';
+      });
+      w.innerHTML=html+'</tbody></table></div>';
     });
   }
   function ccLoadMarkets(){
