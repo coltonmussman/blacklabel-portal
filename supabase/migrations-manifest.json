@@ -111,6 +111,10 @@
     {
       "version": "20260619081728",
       "name": "referral_phase1_my_referrals_terms"
+    },
+    {
+      "version": "20260621010320",
+      "name": "leads_add_quiz_funnel_columns"
     }
   ]
 }

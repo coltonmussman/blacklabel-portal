@@ -2372,3 +2372,15 @@ begin
   );
 end; $fn$;
 
+-- ============================================================
+-- migration: 20260621010320  leads_add_quiz_funnel_columns
+-- ============================================================
+-- Additive, nullable, no defaults/backfill (FE quiz funnel). Columns inherit the leads table RLS.
+alter table public.leads
+  add column if not exists zip               text,
+  add column if not exists coverage_purpose  text,
+  add column if not exists existing_coverage text;
+comment on column public.leads.zip               is 'Customer ZIP code (quiz funnel).';
+comment on column public.leads.coverage_purpose  is 'What the customer wants the coverage to do (quiz funnel).';
+comment on column public.leads.existing_coverage is 'Whether the customer already has life/burial coverage: Yes/No (quiz funnel).';
+
