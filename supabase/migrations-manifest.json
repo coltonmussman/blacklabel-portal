@@ -115,6 +115,10 @@
     {
       "version": "20260621010320",
       "name": "leads_add_quiz_funnel_columns"
+    },
+    {
+      "version": "20260622163118",
+      "name": "leads_add_address_column"
     }
   ]
 }

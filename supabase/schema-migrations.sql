@@ -2384,3 +2384,10 @@ comment on column public.leads.zip               is 'Customer ZIP code (quiz fun
 comment on column public.leads.coverage_purpose  is 'What the customer wants the coverage to do (quiz funnel).';
 comment on column public.leads.existing_coverage is 'Whether the customer already has life/burial coverage: Yes/No (quiz funnel).';
 
+-- ============================================================
+-- migration: 20260622163118  leads_add_address_column
+-- ============================================================
+-- Additive, nullable (optional address on the quiz funnel, esp. mortgage protection).
+alter table public.leads add column if not exists address text;
+comment on column public.leads.address is 'Customer street address (optional; quiz funnel, esp. mortgage protection).';
+

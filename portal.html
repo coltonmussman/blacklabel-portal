@@ -137,7 +137,7 @@
 
   function loadLeads(){
     db.from('leads')
-      .select('id, first_name, last_name, phone, email, state, vertical, age, coverage_amount, coverage_purpose, existing_coverage, zip, tobacco, best_time, income_band, intent, submitted_at, created_at, assigned_at, lead_status, agent_notes, annual_premium, sold_at, trustedform_cert_url')
+      .select('id, first_name, last_name, phone, email, state, vertical, age, coverage_amount, coverage_purpose, existing_coverage, zip, address, tobacco, best_time, income_band, intent, submitted_at, created_at, assigned_at, lead_status, agent_notes, annual_premium, sold_at, trustedform_cert_url')
       .order('assigned_at', { ascending: false, nullsFirst: false })
       .then(function(r){
         if (r.error){ document.getElementById('tableWrap').innerHTML = '<div class="empty">Couldn\'t load leads: ' + esc(r.error.message) + '</div>'; return; }
@@ -239,7 +239,7 @@
       if (!s || s.toLowerCase() === 'not provided') return;
       out.push([label, s]);
     }
-    if (v === 'mortgage_protection'){ add('Mortgage', l.coverage_amount); add('Tobacco', l.tobacco); }
+    if (v === 'mortgage_protection'){ add('Mortgage', l.coverage_amount); add('Purpose', l.coverage_purpose); add('Has coverage', l.existing_coverage); add('Address', l.address); add('ZIP', l.zip); add('Tobacco', l.tobacco); }
     else if (v === 'final_expense'){ add('Coverage', l.coverage_amount); add('Purpose', l.coverage_purpose); add('Has coverage', l.existing_coverage); add('ZIP', l.zip); add('Tobacco', l.tobacco); add('Best time', l.best_time); }
     else if (v === 'annuity'){ add('Savings', l.income_band); add('Start', l.intent); }
     else if (v === 'iul'){ add('Income', l.income_band); add('Goal', l.intent); }
