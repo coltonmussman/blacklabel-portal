@@ -9,6 +9,112 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="portal.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+/* ===== Notes modal + sheet buttons ===== */
+.note-badge{display:inline-block;min-width:16px;padding:0 5px;margin-left:5px;font-size:10px;font-weight:700;line-height:16px;text-align:center;color:#0a0b0d;background:var(--silver);border-radius:9px}
+.docbtn{background:none;border:1px solid var(--line);color:var(--soft);font-family:'Mulish',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:7px 10px;cursor:pointer;white-space:nowrap}
+.docbtn:hover{color:var(--ivory);border-color:var(--silver)}
+.docbtn:disabled{opacity:.5;cursor:wait}
+.sheet-cell{white-space:nowrap}
+.nm-overlay{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;background:rgba(5,6,8,0.72);padding:20px}
+.nm-overlay.open{display:flex}
+.nm-box{width:100%;max-width:520px;max-height:84vh;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,0.6)}
+.nm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:18px 20px;border-bottom:1px solid var(--line-soft)}
+.nm-title{font-family:'Fraunces',serif;font-size:18px;font-weight:500}
+.nm-sub{font-size:11.5px;color:var(--mute);margin-top:3px}
+.nm-x{background:none;border:none;color:var(--mute);font-size:26px;line-height:1;cursor:pointer;padding:0 2px}
+.nm-x:hover{color:var(--ivory)}
+.nm-list{flex:1;overflow-y:auto;padding:14px 20px;min-height:80px}
+.nm-empty{color:var(--mute);font-size:13px;text-align:center;padding:24px 0;line-height:1.6}
+.nm-note{padding:11px 0;border-bottom:1px solid var(--line-soft)}
+.nm-note:last-child{border-bottom:none}
+.nm-note.legacy{opacity:.82}
+.nm-note-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;color:var(--mute);margin-bottom:4px}
+.nm-note-body{font-size:13.5px;color:var(--ivory);line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.nm-del{background:none;border:none;color:var(--mute);font-size:17px;line-height:1;cursor:pointer;padding:0 2px;flex-shrink:0}
+.nm-del:hover{color:var(--bad)}
+.nm-compose{display:flex;gap:10px;padding:16px 20px;border-top:1px solid var(--line-soft);align-items:flex-end}
+.nm-compose textarea{flex:1;resize:vertical;min-height:46px;max-height:160px;padding:11px 13px;border:1px solid var(--line-soft);background:var(--black);color:var(--ivory);font-family:'Mulish',sans-serif;font-size:14px;line-height:1.5;border-radius:0}
+.nm-compose textarea:focus{outline:none;border-color:var(--silver)}
+.nm-add{background:var(--chrome-btn);color:var(--black);border:none;font-family:'Mulish',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:12px 16px;cursor:pointer;white-space:nowrap}
+.nm-add:disabled{opacity:.5;cursor:wait}
+
+/* ===== Lead PDF sheet (off-screen render target; html2pdf keeps this dark look) ===== */
+#pdfStage{position:fixed;left:-10000px;top:0;width:816px;z-index:-1}
+.bl-sheet{position:relative;width:816px;min-height:1056px;background:#0a0b0d;color:#eceef1;overflow:hidden;padding:54px 56px 40px;font-family:'Mulish',sans-serif}
+.bl-sheet::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#8e959f,#eef1f4 30%,#9aa1ab 55%,#dfe3e7 78%,#9ba1aa)}
+.bl-wm{position:absolute;top:-25%;left:-25%;width:150%;height:150%;z-index:1;pointer-events:none;overflow:hidden;transform:rotate(-30deg);transform-origin:center;opacity:.10;display:flex;flex-wrap:wrap;align-content:center;gap:8px 26px;justify-content:center}
+.bl-wm span{color:#fff;font-size:13px;font-weight:700;letter-spacing:.18em;white-space:nowrap}
+.bl-layer{position:relative;z-index:2}
+.bl-head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
+.bl-brand{display:flex;align-items:center;gap:14px}
+.bl-seal{width:52px;height:52px;border-radius:50%;border:1px solid #aeb4bc;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:17px;color:#e9ecef;flex-shrink:0}
+.bl-name{font-family:'Fraunces',serif;font-size:21px;letter-spacing:.16em;text-transform:uppercase;color:#eceef1;line-height:1.1}
+.bl-tag{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:#848a93;margin-top:5px}
+.bl-meta{text-align:right;flex-shrink:0}
+.bl-ey{font-size:10.5px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:#aeb4bc;margin-bottom:8px}
+.bl-row{font-size:12px;color:#c0c5cc;line-height:1.7}
+.bl-row b{color:#eceef1;font-weight:600}
+.bl-rule{height:1px;background:rgba(174,180,188,.26);margin:26px 0}
+.bl-rule.soft{background:rgba(236,238,241,.09);margin:18px 0}
+.bl-leadname{font-family:'Fraunces',serif;font-size:34px;color:#eceef1;letter-spacing:.01em;line-height:1.1}
+.bl-badges{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.bl-badge{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:6px 12px;border:1px solid rgba(174,180,188,.26);color:#e9ecef}
+.bl-badge.solid{background:#aeb4bc;color:#0a0b0d;border-color:#aeb4bc}
+.bl-sec-tag{font-size:10.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#848a93;margin-bottom:16px}
+.bl-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:rgba(236,238,241,.09);border:1px solid rgba(236,238,241,.09)}
+.bl-cell{background:#0a0b0d;padding:15px 16px}
+.bl-cell .bl-k{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#848a93;margin-bottom:7px}
+.bl-cell .bl-v{font-size:15px;color:#eceef1;font-weight:600;word-break:break-word}
+.bl-cell .bl-v.s{color:#e9ecef}
+.bl-proof{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(236,238,241,.09);border:1px solid rgba(236,238,241,.09)}
+.bl-pcell{background:#0a0b0d;padding:14px 16px;display:flex;justify-content:space-between;gap:14px;align-items:baseline}
+.bl-pcell .bl-k{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#848a93;flex-shrink:0}
+.bl-pcell .bl-v{font-size:12.5px;color:#eceef1;font-weight:600;text-align:right;word-break:break-word}
+.bl-pcell .bl-v.ok{color:#7fe0a8}
+.bl-pcell .bl-v a{color:#e9ecef;text-decoration:none}
+.bl-pcell.wide{grid-column:1 / -1}
+.bl-agent{border:1px solid rgba(174,180,188,.26);background:linear-gradient(180deg,rgba(174,180,188,.07),rgba(174,180,188,.01));padding:22px 24px;margin-top:6px}
+.bl-lbl{font-size:10.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#aeb4bc;margin-bottom:14px}
+.bl-who{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;align-items:baseline}
+.bl-nm{font-family:'Fraunces',serif;font-size:21px;color:#eceef1}
+.bl-det{font-size:12px;color:#c0c5cc;text-align:right;line-height:1.7}
+.bl-det b{color:#eceef1;font-weight:600}
+.bl-lock{margin-top:16px;padding-top:15px;border-top:1px solid rgba(236,238,241,.09);font-size:12.5px;color:#c0c5cc;line-height:1.65}
+.bl-lock b{color:#e9ecef;font-weight:700}
+.bl-foot{margin-top:30px;padding-top:16px;border-top:1px solid rgba(174,180,188,.26);display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
+.bl-fb{font-family:'Fraunces',serif;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#aeb4bc}
+.bl-fn{font-size:10.5px;color:#848a93;line-height:1.6;max-width:520px;text-align:right}
+
+/* Print path: hide the portal, show only the sheet, flip to an ink-friendly white theme.
+   The Download-PDF path renders the on-screen dark styles above, so only printing goes white. */
+@media print{
+  body:not(.sheet-print) #pdfStage{display:none !important}
+  @page{size:letter;margin:0}
+  body.sheet-print{background:#fff !important}
+  body.sheet-print > *:not(#pdfStage){display:none !important}
+  body.sheet-print #pdfStage{position:static;left:auto;top:auto;width:auto;z-index:auto}
+  body.sheet-print .bl-sheet{background:#fff !important;color:#1a1c20 !important;border:none;box-shadow:none;margin:0}
+  body.sheet-print .bl-sheet::before{background:#1a1c20 !important}
+  body.sheet-print .bl-wm span{color:#000 !important}
+  body.sheet-print .bl-name,body.sheet-print .bl-leadname,body.sheet-print .bl-nm,body.sheet-print .bl-fb{color:#0a0b0d !important}
+  body.sheet-print .bl-seal{border-color:#1a1c20 !important;color:#1a1c20 !important}
+  body.sheet-print .bl-tag,body.sheet-print .bl-ey,body.sheet-print .bl-row,body.sheet-print .bl-sec-tag,body.sheet-print .bl-cell .bl-k,body.sheet-print .bl-pcell .bl-k,body.sheet-print .bl-fn{color:#5a5f66 !important}
+  body.sheet-print .bl-row b,body.sheet-print .bl-cell .bl-v,body.sheet-print .bl-pcell .bl-v,body.sheet-print .bl-det,body.sheet-print .bl-det b,body.sheet-print .bl-cell .bl-v.s,body.sheet-print .bl-pcell .bl-v a{color:#1a1c20 !important}
+  body.sheet-print .bl-rule{background:#c9ccd2 !important}
+  body.sheet-print .bl-rule.soft{background:#e3e5e9 !important}
+  body.sheet-print .bl-badge{border-color:#c9ccd2 !important;color:#1a1c20 !important}
+  body.sheet-print .bl-badge.solid{background:#1a1c20 !important;color:#fff !important}
+  body.sheet-print .bl-grid,body.sheet-print .bl-proof{background:#e3e5e9 !important;border-color:#e3e5e9 !important}
+  body.sheet-print .bl-cell,body.sheet-print .bl-pcell{background:#fff !important}
+  body.sheet-print .bl-pcell .bl-v.ok{color:#1a7a4a !important}
+  body.sheet-print .bl-agent{background:#f5f6f8 !important;border-color:#c9ccd2 !important}
+  body.sheet-print .bl-lock{color:#5a5f66 !important}
+  body.sheet-print .bl-lock b{color:#1a1c20 !important}
+  body.sheet-print .bl-foot{border-top-color:#c9ccd2 !important}
+}
+</style>
 </head>
 <body>
 
@@ -97,12 +203,38 @@
   </p>
 </div>
 
+<!-- Notes modal -->
+<div id="notesModal" class="nm-overlay" aria-hidden="true" onclick="if(event.target===this)closeNotes()">
+  <div class="nm-box" role="dialog" aria-modal="true" aria-labelledby="nmTitle">
+    <div class="nm-head">
+      <div>
+        <div class="nm-title" id="nmTitle">Notes</div>
+        <div class="nm-sub" id="nmSub"></div>
+      </div>
+      <button class="nm-x" type="button" onclick="closeNotes()" aria-label="Close notes">&times;</button>
+    </div>
+    <div class="nm-list" id="nmList"><div class="nm-empty">Loading…</div></div>
+    <div class="nm-compose">
+      <textarea id="nmInput" rows="3" maxlength="5000" placeholder="What they wanted, what you discussed, the next step…"></textarea>
+      <button class="nm-add" id="nmAddBtn" type="button" onclick="addNote()">Add note</button>
+    </div>
+  </div>
+</div>
+
+<!-- Off-screen lead-sheet render target for Download PDF / Print -->
+<div id="pdfStage" aria-hidden="true">
+  <div class="bl-sheet" id="blSheet">
+    <div class="bl-wm" id="blWm"></div>
+    <div class="bl-layer" id="blLayer"></div>
+  </div>
+</div>
+
 <script>
   var SUPABASE_URL = 'https://hqiyxeriugywlkbcuasu.supabase.co';
   var SUPABASE_KEY = 'sb_publishable_9m66yQmAgJwgCRMoYcU5sA_3l_XlfXr';
   var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   var STATUSES = ['NEW','CONTACTED','NO PICKUP','APPOINTMENT','SOLD','DEAD'];
-  var me = null, profile = {}, allLeads = [];
+  var me = null, profile = {}, allLeads = [], noteCounts = {};
 
   db.auth.getSession().then(function(r){
     if (!r.data.session){ window.location.href = 'index.html'; return; }
@@ -137,15 +269,18 @@
 
   function loadLeads(){
     db.from('leads')
-      .select('id, first_name, last_name, phone, email, state, vertical, age, coverage_amount, coverage_purpose, existing_coverage, zip, address, tobacco, best_time, income_band, intent, submitted_at, created_at, assigned_at, lead_status, agent_notes, annual_premium, sold_at, trustedform_cert_url')
+      .select('id, first_name, last_name, phone, email, state, vertical, age, coverage_amount, coverage_purpose, existing_coverage, zip, address, tobacco, best_time, income_band, monthly_income, intent, consent_given, submitted_at, created_at, assigned_at, lead_status, agent_notes, annual_premium, sold_at, trustedform_cert_url')
       .order('assigned_at', { ascending: false, nullsFirst: false })
       .then(function(r){
         if (r.error){ document.getElementById('tableWrap').innerHTML = '<div class="empty">Couldn\'t load leads: ' + esc(r.error.message) + '</div>'; return; }
         allLeads = r.data || [];
         render(allLeads);
         renderRail();
+        loadNoteCounts();
       });
   }
+
+  function leadById(id){ return allLeads.filter(function(l){ return l.id === id; })[0]; }
 
   function render(leads){
     var wrap = document.getElementById('tableWrap');
@@ -160,7 +295,7 @@
       return;
     }
 
-    var html = '<table><thead><tr><th>Lead</th><th>Contact</th><th>Where / What</th><th>Delivered</th><th>Status</th><th>Premium</th><th>Notes</th></tr></thead><tbody>';
+    var html = '<table><thead><tr><th>Lead</th><th>Contact</th><th>Where / What</th><th>Delivered</th><th>Status</th><th>Premium</th><th>Notes</th><th>Sheet</th></tr></thead><tbody>';
     leads.forEach(function(l){
       var delivered = l.assigned_at || l.created_at;
       var statusClass = 's-' + String(l.lead_status||'NEW').replace(' ','');
@@ -168,7 +303,7 @@
       html += '<tr>'
         + '<td><div class="nm">' + esc((l.first_name||'') + ' ' + (l.last_name||'')) + '</div>'
         +   '<div class="sub2">' + (l.age ? 'Age ' + esc(l.age) : '') + '</div>'
-        +   (l.trustedform_cert_url ? '<a class="tf" href="' + esc(l.trustedform_cert_url) + '" target="_blank" rel="noopener">Consent certificate ↗</a>' : '')
+        +   (safeUrl(l.trustedform_cert_url) ? '<a class="tf" href="' + esc(safeUrl(l.trustedform_cert_url)) + '" target="_blank" rel="noopener">Consent certificate ↗</a>' : '')
         + '</td>'
         + '<td><div><a href="tel:' + esc(l.phone||'') + '">' + esc(l.phone||'—') + '</a></div>'
         +   '<div class="sub2">' + esc(l.email||'') + '</div></td>'
@@ -185,7 +320,8 @@
                   ? '<button class="sellbtn" onclick="editPremium(\'' + l.id + '\')">Log premium</button>'
                   : '<span class="sub2">—</span>'))
         + '</td>'
-        + '<td><button class="notesbtn" onclick="editNotes(\'' + l.id + '\', this)" data-notes="' + esc(l.agent_notes||'') + '">' + (l.agent_notes ? 'view / edit' : 'add') + '</button></td>'
+        + '<td><button class="notesbtn js-notes" data-id="' + l.id + '" onclick="openNotes(\'' + l.id + '\')">Notes' + ((noteCounts[l.id]||0) > 0 ? ' <span class="note-badge">' + noteCounts[l.id] + '</span>' : '') + '</button></td>'
+        + '<td class="sheet-cell"><button class="docbtn" onclick="downloadLeadPdf(\'' + l.id + '\',this)">PDF</button> <button class="docbtn" onclick="printLeadPdf(\'' + l.id + '\')">Print</button></td>'
         + '</tr>';
     });
     html += '</tbody></table>';
@@ -283,15 +419,217 @@
     });
   }
 
-  function editNotes(id, btn){
-    var current = btn.getAttribute('data-notes') || '';
-    var v = prompt('Notes for this lead (only you and Black Label can see these):', current);
-    if (v === null) return;
-    db.from('leads').update({ agent_notes: v }).eq('id', id).then(function(r){
-      if (r.error){ alert('Couldn\'t save notes: ' + r.error.message); return; }
-      btn.setAttribute('data-notes', v);
-      btn.textContent = v ? 'view / edit' : 'add';
+  /* ===== Per-lead notes (timestamped log, server-side RPCs; legacy agent_notes shown read-only) ===== */
+  var nmLeadId = null;
+
+  function loadNoteCounts(){
+    db.rpc('bl_lead_note_counts').then(function(r){
+      if (r.error || !r.data) return;
+      r.data.forEach(function(row){ noteCounts[row.lead_id] = Number(row.n) || 0; });
+      Object.keys(noteCounts).forEach(updateNoteBadge);
     });
+  }
+  function updateNoteBadge(id){
+    var btn = document.querySelector('.js-notes[data-id="' + id + '"]');
+    if (!btn) return;
+    var n = noteCounts[id] || 0;
+    btn.innerHTML = 'Notes' + (n > 0 ? ' <span class="note-badge">' + n + '</span>' : '');
+  }
+  function openNotes(id){
+    var l = leadById(id); if (!l) return;
+    nmLeadId = id;
+    document.getElementById('nmSub').textContent =
+      (((l.first_name||'') + ' ' + (l.last_name||'')).trim() || 'Lead') + ' · ' + leadCode(id);
+    document.getElementById('nmInput').value = '';
+    var modal = document.getElementById('notesModal');
+    modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    loadNotes(id);
+    document.getElementById('nmInput').focus();
+  }
+  function closeNotes(){
+    var modal = document.getElementById('notesModal');
+    modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    nmLeadId = null;
+  }
+  function loadNotes(id){
+    var list = document.getElementById('nmList');
+    list.innerHTML = '<div class="nm-empty">Loading…</div>';
+    db.rpc('bl_list_lead_notes', { p_lead_id: id }).then(function(r){
+      if (r.error){ list.innerHTML = '<div class="nm-empty">Couldn\'t load notes: ' + esc(r.error.message) + '</div>'; return; }
+      renderNotes(id, r.data || []);
+    });
+  }
+  function renderNotes(id, notes){
+    noteCounts[id] = notes.length;
+    updateNoteBadge(id);
+    var list = document.getElementById('nmList');
+    var l = leadById(id);
+    // The legacy single-column agent_notes (pre-dates this log). Keep it visible, pinned
+    // read-only at the bottom, so it never disappears once timestamped notes are added.
+    var legacy = '';
+    if (l && l.agent_notes && String(l.agent_notes).trim()){
+      legacy = '<div class="nm-note legacy"><div class="nm-note-meta">Earlier note (untimestamped)</div>'
+             + '<div class="nm-note-body">' + esc(l.agent_notes) + '</div></div>';
+    }
+    if (!notes.length && !legacy){
+      list.innerHTML = '<div class="nm-empty">No notes yet.<br>Add the first one below — only you and Black Label can see it.</div>';
+      return;
+    }
+    list.innerHTML = notes.map(function(n){
+      return '<div class="nm-note"><div class="nm-note-meta">' + esc(fmtFull(n.created_at))
+        + '<button class="nm-del" type="button" title="Delete note" onclick="deleteNote(\'' + n.id + '\',\'' + id + '\')">&times;</button></div>'
+        + '<div class="nm-note-body">' + esc(n.body) + '</div></div>';
+    }).join('') + legacy;
+  }
+  function addNote(){
+    if (!nmLeadId) return;
+    var input = document.getElementById('nmInput');
+    var body = input.value.trim();
+    if (!body){ input.focus(); return; }
+    var btn = document.getElementById('nmAddBtn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    db.rpc('bl_add_lead_note', { p_lead_id: nmLeadId, p_body: body }).then(function(r){
+      btn.disabled = false; btn.textContent = 'Add note';
+      if (r.error){ alert('Couldn\'t save the note: ' + r.error.message); return; }
+      input.value = '';
+      loadNotes(nmLeadId);
+    });
+  }
+  function deleteNote(noteId, leadId){
+    if (!confirm('Delete this note? This cannot be undone.')) return;
+    db.rpc('bl_delete_lead_note', { p_note_id: noteId }).then(function(r){
+      if (r.error){ alert('Couldn\'t delete the note: ' + r.error.message); return; }
+      loadNotes(leadId);
+    });
+  }
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && document.getElementById('notesModal').classList.contains('open')) closeNotes();
+  });
+
+  /* ===== Per-lead PDF / Print (formats data already loaded; no backend) ===== */
+  function leadCode(id){ return 'BL-' + String(id||'').replace(/-/g,'').slice(0,6).toUpperCase(); }
+  function fmtFull(ts){
+    if (!ts) return '';
+    var d = new Date(ts);
+    var date = d.toLocaleDateString([], { month:'short', day:'numeric', year:'numeric' });
+    var time = d.toLocaleTimeString([], { hour:'numeric', minute:'2-digit', timeZoneName:'short' });
+    return date + ' · ' + time;
+  }
+  function minutesBetween(a, b){
+    if (!a || !b) return null;
+    var ms = new Date(b).getTime() - new Date(a).getTime();
+    if (isNaN(ms) || ms < 0) return null;
+    return Math.round(ms / 60000);
+  }
+  function truncCert(url){
+    if (!url) return '';
+    var u = String(url).replace(/^https?:\/\//, '');
+    return (u.length <= 34) ? u : (u.slice(0,26) + '…' + u.slice(-6));
+  }
+  // Only ever put an https URL in an href — esc() encodes HTML but not the URL scheme,
+  // so without this a javascript: cert URL would execute in the agent's session on click.
+  function safeUrl(url){ var s = String(url == null ? '' : url).trim(); return /^https:\/\//i.test(s) ? s : ''; }
+  function buildLayer(l, prof, email){
+    var code = leadCode(l.id);
+    var assigned = l.assigned_at || l.created_at;
+    var name = ((l.first_name||'') + ' ' + (l.last_name||'')).trim() || 'Lead';
+    var fields = [
+      ['Age', l.age, ''], ['State', l.state, ''], ['Tobacco', l.tobacco, ''],
+      ['Coverage', l.coverage_amount, 's'], ['Income', l.income_band || l.monthly_income, ''],
+      ['Best time to call', l.best_time, ''], ['Phone', l.phone, 's'],
+      ['Email', l.email, ''], ['Intent', l.intent, '']
+    ];
+    var gridCells = fields.filter(function(f){
+      var s = (f[1] == null) ? '' : String(f[1]).trim();
+      return s && s.toLowerCase() !== 'not provided';
+    }).map(function(f){
+      return '<div class="bl-cell"><div class="bl-k">' + esc(f[0]) + '</div><div class="bl-v ' + f[2] + '">' + esc(f[1]) + '</div></div>';
+    }).join('');
+
+    var mins = minutesBetween(l.submitted_at, assigned);
+    var minsTxt = (mins == null) ? '' : (mins === 0 ? ' · under a minute after submit' : ' · ' + mins + ' min after submit');
+    var consent = (l.consent_given === true)
+      ? '<span class="bl-v ok">Given · checked</span>'
+      : '<span class="bl-v">Not on file</span>';
+    var deliveredV = assigned ? (esc(fmtFull(assigned)) + minsTxt) : '—';
+    var certUrl = safeUrl(l.trustedform_cert_url);
+    var certV = certUrl
+      ? '<a href="' + esc(certUrl) + '" target="_blank" rel="noopener">' + esc(truncCert(certUrl)) + '</a>'
+      : 'Not captured';
+
+    var agentName = ((prof.first_name||'') + ' ' + (prof.last_name||'')).trim() || email || 'Your account';
+    var det = '';
+    if (prof.npn) det += 'NPN&nbsp; <b>' + esc(prof.npn) + '</b><br>';
+    det += 'Tier&nbsp; <b>' + esc(prof.tier || 'Silver') + '</b>' + (email ? ' · ' + esc(email) : '');
+
+    return ''
+    + '<div class="bl-head"><div class="bl-brand"><div class="bl-seal">BL</div><div>'
+    +   '<div class="bl-name">Black Label Leads</div><div class="bl-tag">One Lead · One Agent · Forever</div>'
+    + '</div></div><div class="bl-meta">'
+    +   '<div class="bl-ey">Exclusive Lead</div>'
+    +   '<div class="bl-row">Lead ID&nbsp;&nbsp;<b>' + esc(code) + '</b></div>'
+    +   '<div class="bl-row">Delivered&nbsp;&nbsp;<b>' + (assigned ? esc(fmtFull(assigned)) : '—') + '</b></div>'
+    + '</div></div>'
+    + '<div class="bl-rule"></div>'
+    + '<div class="bl-leadname">' + esc(name) + '</div>'
+    + '<div class="bl-badges"><span class="bl-badge solid">' + esc(prettyVertical(l.vertical)) + '</span><span class="bl-badge">Exclusive to you</span></div>'
+    + '<div class="bl-rule"></div>'
+    + '<div class="bl-sec-tag">The Lead</div>'
+    + '<div class="bl-grid">' + gridCells + '</div>'
+    + '<div class="bl-rule soft"></div>'
+    + '<div class="bl-sec-tag">Verification — the proof</div>'
+    + '<div class="bl-proof">'
+    +   '<div class="bl-pcell"><span class="bl-k">Consent (TCPA)</span>' + consent + '</div>'
+    +   '<div class="bl-pcell"><span class="bl-k">Submitted</span><span class="bl-v">' + (l.submitted_at ? esc(fmtFull(l.submitted_at)) : '—') + '</span></div>'
+    +   '<div class="bl-pcell wide"><span class="bl-k">Delivered</span><span class="bl-v">' + deliveredV + '</span></div>'
+    +   '<div class="bl-pcell wide"><span class="bl-k">TrustedForm certificate</span><span class="bl-v">' + certV + '</span></div>'
+    + '</div>'
+    + '<div class="bl-rule soft"></div>'
+    + '<div class="bl-agent"><div class="bl-lbl">Assigned Exclusively To</div>'
+    +   '<div class="bl-who"><div class="bl-nm">' + esc(agentName) + '</div><div class="bl-det">' + det + '</div></div>'
+    +   '<div class="bl-lock">This lead was sold to <b>one agent — you</b> — and will never be sold, shared, or re-listed. <b>Resale or redistribution is prohibited.</b> This copy is watermarked to your account and lead ID.</div>'
+    + '</div>'
+    + '<div class="bl-foot"><div class="bl-fb">Black Label Leads</div>'
+    +   '<div class="bl-fn">© 2026 Black Label Leads · For licensed insurance agents only. Verify consent and timing at the TrustedForm certificate above.</div>'
+    + '</div>';
+  }
+  function populateSheet(l){
+    var code = leadCode(l.id);
+    var email = (me && me.email) || '';
+    var agentName = ((profile.first_name||'') + ' ' + (profile.last_name||'')).trim() || email || 'YOUR ACCOUNT';
+    document.getElementById('blLayer').innerHTML = buildLayer(l, profile, email);
+    var txt = 'EXCLUSIVE TO ' + agentName.toUpperCase() + ' · ' + code + ' · DO NOT RESELL';
+    var spans = '';
+    for (var i = 0; i < 60; i++){ spans += '<span>' + esc(txt) + '</span>'; }
+    document.getElementById('blWm').innerHTML = spans;
+    return code;
+  }
+  function downloadLeadPdf(id, btn){
+    var l = leadById(id); if (!l) return;
+    if (!window.html2pdf){ alert('PDF tool is still loading — give it a second and try again.'); return; }
+    var code = populateSheet(l);
+    if (btn){ btn.disabled = true; btn.textContent = '…'; }
+    function done(){ if (btn){ btn.disabled = false; btn.textContent = 'PDF'; } }
+    (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function(){
+      html2pdf().set({
+        margin: 0,
+        filename: 'BlackLabel_Lead_' + code + '.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, backgroundColor: '#0a0b0d', useCORS: true },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      }).from(document.getElementById('blSheet')).save().then(done, done);
+    }, done);
+  }
+  // Registered once. body.sheet-print only affects @media print, so even if a browser
+  // skips afterprint on cancel the on-screen UI is unaffected; the class just resets next print.
+  window.addEventListener('afterprint', function(){ document.body.classList.remove('sheet-print'); });
+  function printLeadPdf(id){
+    var l = leadById(id); if (!l) return;
+    populateSheet(l);
+    document.body.classList.add('sheet-print');
+    setTimeout(function(){ window.print(); }, 60);
   }
 </script>
 </body>
