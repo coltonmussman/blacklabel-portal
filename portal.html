@@ -321,7 +321,7 @@
                   : '<span class="sub2">—</span>'))
         + '</td>'
         + '<td><button class="notesbtn js-notes" data-id="' + l.id + '" onclick="openNotes(\'' + l.id + '\')">Notes' + ((noteCounts[l.id]||0) > 0 ? ' <span class="note-badge">' + noteCounts[l.id] + '</span>' : '') + '</button></td>'
-        + '<td class="sheet-cell"><button class="docbtn" onclick="downloadLeadPdf(\'' + l.id + '\',this)">PDF</button> <button class="docbtn" onclick="printLeadPdf(\'' + l.id + '\')">Print</button></td>'
+        + '<td class="sheet-cell"><button class="docbtn" onclick="openLeadPdf(\'' + l.id + '\',this)">PDF</button> <button class="docbtn" onclick="printLeadPdf(\'' + l.id + '\')">Print</button></td>'
         + '</tr>';
     });
     html += '</tbody></table>';
@@ -541,12 +541,17 @@
       ['Best time to call', l.best_time, ''], ['Phone', l.phone, 's'],
       ['Email', l.email, ''], ['Intent', l.intent, '']
     ];
-    var gridCells = fields.filter(function(f){
+    var shown = fields.filter(function(f){
       var s = (f[1] == null) ? '' : String(f[1]).trim();
       return s && s.toLowerCase() !== 'not provided';
-    }).map(function(f){
+    });
+    var gridCells = shown.map(function(f){
       return '<div class="bl-cell"><div class="bl-k">' + esc(f[0]) + '</div><div class="bl-v ' + f[2] + '">' + esc(f[1]) + '</div></div>';
     }).join('');
+    // Pad the last row with empty (still dark) cells so a partial row doesn't expose the
+    // lighter grid-fill background — every row stays a fully solid block.
+    var pad = (3 - (shown.length % 3)) % 3;
+    for (var pi = 0; pi < pad; pi++){ gridCells += '<div class="bl-cell"></div>'; }
 
     var mins = minutesBetween(l.submitted_at, assigned);
     var minsTxt = (mins == null) ? '' : (mins === 0 ? ' · under a minute after submit' : ' · ' + mins + ' min after submit');
@@ -606,21 +611,40 @@
     document.getElementById('blWm').innerHTML = spans;
     return code;
   }
-  function downloadLeadPdf(id, btn){
+  function openLeadPdf(id, btn){
     var l = leadById(id); if (!l) return;
     if (!window.html2pdf){ alert('PDF tool is still loading — give it a second and try again.'); return; }
+    // Reserve the tab inside the click gesture so popup blockers don't kill it; fill it once ready.
+    var tab = window.open('', '_blank');
+    if (tab && tab.document){
+      tab.document.write('<!doctype html><meta charset="utf-8"><title>Lead sheet…</title>'
+        + '<body style="margin:0;background:#15171b;color:#c0c5cc;font-family:system-ui,Arial,sans-serif">'
+        + '<p style="padding:24px;font-size:14px">Generating your lead sheet…</p></body>');
+    }
     var code = populateSheet(l);
     if (btn){ btn.disabled = true; btn.textContent = '…'; }
-    function done(){ if (btn){ btn.disabled = false; btn.textContent = 'PDF'; } }
+    function reset(){ if (btn){ btn.disabled = false; btn.textContent = 'PDF'; } }
     (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function(){
-      html2pdf().set({
+      return html2pdf().set({
         margin: 0,
         filename: 'BlackLabel_Lead_' + code + '.pdf',
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, backgroundColor: '#0a0b0d', useCORS: true },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-      }).from(document.getElementById('blSheet')).save().then(done, done);
-    }, done);
+      }).from(document.getElementById('blSheet')).outputPdf('bloburl');
+    }).then(function(url){
+      url = (typeof url === 'string') ? url : String(url);
+      if (tab){ tab.location.href = url; }                 // preview in the new tab (viewer has its own download)
+      else {                                                // popup blocked — fall back to a direct download
+        var a = document.createElement('a'); a.href = url; a.download = 'BlackLabel_Lead_' + code + '.pdf';
+        document.body.appendChild(a); a.click(); a.remove();
+      }
+      reset();
+    }, function(){
+      if (tab){ try { tab.close(); } catch(e){} }
+      alert('Could not generate the PDF — please try again.');
+      reset();
+    });
   }
   // Registered once. body.sheet-print only affects @media print, so even if a browser
   // skips afterprint on cancel the on-screen UI is unaffected; the class just resets next print.
