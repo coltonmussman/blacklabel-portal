@@ -241,8 +241,8 @@
     }
     if (v === 'mortgage_protection'){ add('Mortgage', l.coverage_amount); add('Purpose', l.coverage_purpose); add('Has coverage', l.existing_coverage); add('Address', l.address); add('ZIP', l.zip); add('Tobacco', l.tobacco); }
     else if (v === 'final_expense'){ add('Coverage', l.coverage_amount); add('Purpose', l.coverage_purpose); add('Has coverage', l.existing_coverage); add('ZIP', l.zip); add('Tobacco', l.tobacco); add('Best time', l.best_time); }
-    else if (v === 'annuity'){ add('Savings', l.income_band); add('Start', l.intent); }
-    else if (v === 'iul'){ add('Income', l.income_band); add('Goal', l.intent); }
+    else if (v === 'annuity'){ add('Savings', l.coverage_amount); add('Goal', l.coverage_purpose || l.intent); add('Savings (legacy)', l.income_band); add('ZIP', l.zip); }
+    else if (v === 'iul'){ add('Coverage', l.coverage_amount); add('Goal', l.coverage_purpose || l.intent); add('Has coverage', l.existing_coverage); add('Income (legacy)', l.income_band); add('ZIP', l.zip); }
     else { add('Coverage', l.coverage_amount); add('Tobacco', l.tobacco); }
     return out;
   }
