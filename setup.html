@@ -448,16 +448,28 @@
     var photo=document.getElementById('lcPhoto'); photo.removeAttribute('crossorigin'); photo.src=url; photo.style.display=''; document.getElementById('lcPh').style.display='none';
     ev.target.dataset.dirty='1'; document.getElementById('cardErr').textContent='';
   }
+  // Direct authenticated upload (the supabase-js storage client doesn't reliably carry the
+  // user's access token here, which trips the owner-folder RLS on storage.objects).
+  function uploadAsset(path, fileOrBlob, contentType){
+    return db.auth.getSession().then(function(s){
+      var token=(s && s.data && s.data.session && s.data.session.access_token) || SUPABASE_KEY;
+      return fetch(SUPABASE_URL + '/storage/v1/object/agent-assets/' + path, {
+        method:'POST',
+        headers:{ 'Authorization':'Bearer '+token, 'apikey':SUPABASE_KEY, 'Content-Type':contentType||'application/octet-stream' },
+        body:fileOrBlob
+      }).then(function(r){
+        if(!r.ok) return r.text().then(function(t){ throw new Error('Upload failed ('+r.status+'). '+t); });
+        return SUPABASE_URL + '/storage/v1/object/public/agent-assets/' + path;
+      });
+    });
+  }
   function uploadHeadshotIfNeeded(){
     var input=document.getElementById('lcFile');
     if(input.dataset.dirty!=='1' || !input.files || !input.files[0]) return Promise.resolve(prof.headshot_url || '');
     var f=input.files[0];
     var ext=(f.name.split('.').pop()||'png').toLowerCase().replace(/[^a-z0-9]/g,'')||'png';
     var path=me.id+'/headshot-'+Date.now()+'.'+ext;
-    return db.storage.from('agent-assets').upload(path, f, {upsert:true, contentType:f.type}).then(function(up){
-      if(up.error) throw up.error;
-      return db.storage.from('agent-assets').getPublicUrl(path).data.publicUrl;
-    });
+    return uploadAsset(path, f, f.type || ('image/'+ext));
   }
   function generateCardImage(){
     if(typeof html2canvas==='undefined') return Promise.resolve('');
@@ -465,9 +477,7 @@
       return new Promise(function(res){ canvas.toBlob(function(blob){
         if(!blob){ res(''); return; }
         var path=me.id+'/card-'+Date.now()+'.png';
-        db.storage.from('agent-assets').upload(path, blob, {upsert:true, contentType:'image/png'}).then(function(up){
-          res(up.error ? '' : db.storage.from('agent-assets').getPublicUrl(path).data.publicUrl);
-        });
+        uploadAsset(path, blob, 'image/png').then(function(url){ res(url); }).catch(function(){ res(''); });
       }, 'image/png', 0.92); });
     }).catch(function(){ return ''; });
   }

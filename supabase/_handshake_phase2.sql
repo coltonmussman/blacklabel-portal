@@ -40,22 +40,28 @@ on conflict (key) do nothing;
 
 -- ---- 2. public storage bucket for headshots + rasterized cards ----------------------------
 -- Public read is served by the public object endpoint (no RLS needed); writes are owner-folder only.
--- NOTE: no broad SELECT/listing policy (advisor: public_bucket_allows_listing) and no DELETE policy
--- (re-upload writes a new timestamped object; DELETE let an agent orphan their headshot post-gate).
+-- Policies are role-agnostic (to public) and secured by the auth.uid() owner-folder check (anon =>
+-- auth.uid() null => denied; another agent's folder => mismatch => denied). NO broad SELECT/listing
+-- policy and NO DELETE policy.
+-- IMPORTANT (final form per migration handshake_p2_storage_policy_fix 20260623032311): the portal
+-- uploads with a PLAIN INSERT (no x-upsert). x-upsert makes storage do INSERT-or-UPDATE which ALSO
+-- requires the UPDATE policy and was the cause of "new row violates row-level security policy".
+-- Paths are unique/timestamped ({uid}/headshot-<ts>.<ext>, {uid}/card-<ts>.png) so upsert is never
+-- needed. Proven live: own-folder upload 200, foreign-folder 400, anon 400, public read 200.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('agent-assets','agent-assets', true, 5242880, array['image/png','image/jpeg','image/jpg','image/webp'])
 on conflict (id) do nothing;
 
 drop policy if exists "agent_assets_owner_insert" on storage.objects;
 create policy "agent_assets_owner_insert" on storage.objects
-  for insert to authenticated
-  with check (bucket_id = 'agent-assets' and (storage.foldername(name))[1] = (select auth.uid())::text);
+  for insert to public
+  with check (bucket_id = 'agent-assets' and (storage.foldername(name))[1] = (auth.uid())::text);
 
 drop policy if exists "agent_assets_owner_update" on storage.objects;
 create policy "agent_assets_owner_update" on storage.objects
-  for update to authenticated
-  using (bucket_id = 'agent-assets' and (storage.foldername(name))[1] = (select auth.uid())::text)
-  with check (bucket_id = 'agent-assets' and (storage.foldername(name))[1] = (select auth.uid())::text);
+  for update to public
+  using (bucket_id = 'agent-assets' and (storage.foldername(name))[1] = (auth.uid())::text)
+  with check (bucket_id = 'agent-assets' and (storage.foldername(name))[1] = (auth.uid())::text);
 
 -- ---- 3. card-save RPC (only write path for the card cols) ---------------------------------
 create or replace function public.bl_save_agent_card(

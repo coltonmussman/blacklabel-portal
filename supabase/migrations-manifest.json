@@ -179,6 +179,10 @@
     {
       "version": "20260623023938",
       "name": "handshake_p2_review_fixes"
+    },
+    {
+      "version": "20260623032311",
+      "name": "handshake_p2_storage_policy_fix"
     }
   ]
 }
