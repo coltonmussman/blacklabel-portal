@@ -104,6 +104,11 @@
         <div id="ccReferralsWrap"><div class="owarn muted">Loading…</div></div>
       </div>
 
+      <div class="opanel" id="ccMakeGoodPanel">
+        <h2>Make-good <span class="muted" style="font-size:11px;font-weight:400">&mdash; short-week credit cost</span></h2>
+        <div id="ccMakeGoodWrap"><div class="owarn muted">Loading…</div></div>
+      </div>
+
       <div class="opanel" id="ccMarketsPanel">
         <h2>Markets <span class="muted" style="font-size:11px;font-weight:400">&mdash; states you're running ads in</span></h2>
         <div id="ccMarketsWrap" style="overflow-x:auto"><div class="owarn muted">Loading…</div></div>
@@ -542,7 +547,7 @@
 
   function ccLoadAll(){
     ccLoadAlertSummary(); ccLoadAlerts();
-    ccLoadFlow(); ccLoadLanding(); ccLoadDelivery(); ccLoadQuality(); ccLoadBilling(); ccLoadReferrals(); ccLoadMarkets();
+    ccLoadFlow(); ccLoadLanding(); ccLoadDelivery(); ccLoadQuality(); ccLoadBilling(); ccLoadReferrals(); ccLoadMakeGood(); ccLoadMarkets();
   }
   // Windowed RPCs only
   function ccLoadWindowed(){ ccLoadFlow(); ccLoadLanding(); ccLoadQuality(); }
@@ -810,6 +815,40 @@
           + '<td>'+(x.welcome_discount_applied?'<span class="muted">applied</span>':'—')+'</td>'
           + '<td>'+d2(x.net_cents)+'</td>'
           + '<td class="muted">'+fmt(x.signed_up_at)+'</td>'
+          + '</tr>';
+      });
+      w.innerHTML=html+'</tbody></table></div>';
+    });
+  }
+  function ccLoadMakeGood(){
+    db.rpc('bl_owner_make_good').then(function(r){
+      var w=document.getElementById('ccMakeGoodWrap');
+      if(r.error){ document.getElementById('ccMakeGoodPanel').style.display='none'; return; }
+      var d=r.data||{};
+      function d2(c){ return money((Number(c)||0)/100); }
+      var cards=[
+        ['Credited (90d)', d2(d.credited_cents_90d)+' ('+(d.credited_count_90d||0)+')', (Number(d.credited_cents_90d)>0?'':'good')],
+        ['Short weeks skipped (self-limited)', String(d.skipped_self_limit_90d||0), '']
+      ];
+      var html='<div style="padding:16px 18px"><div class="owner-grid" style="margin-bottom:14px">'
+        + cards.map(function(c){ return '<div class="ostat"><div class="n '+c[2]+'">'+esc(c[1])+'</div><div class="l">'+esc(c[0])+'</div></div>'; }).join('')
+        + '</div>';
+      var rows=d.recent||[];
+      if(!rows.length){ w.innerHTML=html+'<div class="muted" style="font-size:12px">No make-good cycles evaluated yet.</div></div>'; return; }
+      html+='<table class="otable"><thead><tr><th>Cycle end</th><th>Target</th><th>Delivered</th><th>Short</th><th>Credit</th><th>Status</th><th>Why</th></tr></thead><tbody>';
+      rows.forEach(function(x){
+        var s=String(x.status||'');
+        var pill = (s==='credited') ? '<span class="pill paused">credited</span>'
+                 : (s==='skipped_self_limit') ? '<span class="muted">self-limited</span>'
+                 : '<span class="pill active">'+esc(s)+'</span>';
+        html+='<tr>'
+          + '<td class="muted">'+fmt(x.period_end)+'</td>'
+          + '<td>'+esc(x.target)+'</td>'
+          + '<td>'+esc(x.billable_delivered)+'</td>'
+          + '<td>'+esc(x.shortfall)+'</td>'
+          + '<td>'+d2(x.amount_cents)+'</td>'
+          + '<td>'+pill+'</td>'
+          + '<td class="muted" style="font-size:11px">'+esc(x.reason||'')+'</td>'
           + '</tr>';
       });
       w.innerHTML=html+'</tbody></table></div>';

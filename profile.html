@@ -97,6 +97,7 @@
     <div class="pf-field"><span class="k">Login email</span><span class="v" id="acctEmail">—</span></div>
     <div class="pf-field"><span class="k">Tier</span><span class="v" id="acctTier">—</span></div>
     <div class="pf-field"><span class="k">Billing</span><span class="v" id="acctBilling">—</span></div>
+    <div class="pf-field"><span class="k">Short-week credits</span><span class="v" id="acctMakeGood">—</span></div>
     <div id="billingActions" style="margin-top:10px"></div>
   </div>
 
@@ -198,6 +199,7 @@
       renderVerticals();
       renderSchedule();
       renderGoals();
+      renderMakeGood();
     });
   }
 
@@ -502,6 +504,19 @@
       if (patch.monthly_goal !== undefined) profile.monthly_goal = patch.monthly_goal;
       if (patch.weekly_investment !== undefined) profile.weekly_investment = patch.weekly_investment;
       note.className='pf-note note-ok'; note.textContent = 'Saved. Your Tracker uses these now.';
+    });
+  }
+
+  /* ---------- short-week make-good credits ---------- */
+  function renderMakeGood(){
+    db.rpc('bl_my_make_good').then(function(r){
+      var el = document.getElementById('acctMakeGood'); if (!el) return;
+      if (r.error || !r.data){ el.textContent = '—'; return; }
+      var cents = Number(r.data.total_credited_cents || 0);
+      var rows = r.data.rows || [];
+      if (cents > 0){ el.innerHTML = '<span class="pill good">$' + (cents/100).toFixed(2) + ' credited</span>'; }
+      else { el.textContent = 'None — targets met so far'; }
+      if (rows.length && rows[0].reason){ el.title = rows[0].reason; }
     });
   }
 </script>
