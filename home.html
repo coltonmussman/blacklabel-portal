@@ -52,6 +52,12 @@
 
   <div id="billingBanner" class="home-card" style="display:none;margin-bottom:22px"></div>
 
+  <div id="cardAttention" class="home-card" style="display:none;margin-bottom:22px;border-color:rgba(210,169,106,0.45);background:rgba(210,169,106,0.10)">
+    <h2 style="color:#e3c184">Finish your agent card</h2>
+    <p class="support-line">The moment a lead is assigned to you, National Coverage Group introduces you to them by name and photo — before you ever dial. Your card isn't finished yet, so your leads don't meet you first. It takes about two minutes.</p>
+    <a class="home-cta" href="profile.html#cardSection" style="margin-top:10px">Finish my card</a>
+  </div>
+
   <div class="home-card" id="poolCard" style="display:none;margin-bottom:22px;border-color:rgba(127,184,154,0.35)">
     <h2>The Black Label pool</h2>
     <p class="support-line" id="poolLine">Loading the collective numbers…</p>
@@ -112,6 +118,8 @@
       profData = p.data || {};
       if (profData && profData.setup_complete === false){ window.location.href = 'setup.html'; return; }  // onboarding gate
       renderBilling(profData);
+      var cardDone = !!(profData.headshot_url && profData.dial_number && profData.card_status === 'active');
+      var caEl = document.getElementById('cardAttention'); if (caEl) caEl.style.display = cardDone ? 'none' : 'block';
       var name = ((profData.first_name||'') + ' ' + (profData.last_name||'')).trim() || me.email;
       document.getElementById('whoami').innerHTML = '<span class="email">' + esc(name) + '</span>';
       document.getElementById('firstName').textContent = profData.first_name || 'agent';

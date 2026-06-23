@@ -9,6 +9,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="portal.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
   /* profile-specific bits layered on top of portal.css */
   .pf-section{ margin-bottom:22px }
@@ -36,6 +37,49 @@
   .note-warn{ color:#d2a96a; font-size:13px; margin-top:10px }
   .note-bad{ color:#c98a8a; font-size:13px; margin-top:10px }
   .mng-link{ color:var(--silver); text-decoration:underline; cursor:pointer; font-size:13px }
+  /* Account-needs-attention banner */
+  .pf-banner{ display:none; background:rgba(210,169,106,0.12); border:1px solid rgba(210,169,106,0.45); border-radius:14px; padding:16px 18px; margin-bottom:22px }
+  .pf-banner h3{ color:#e3c184; font-size:15px; margin:0 0 4px }
+  .pf-banner p{ color:var(--ivory); font-size:13px; line-height:1.5; margin:0 0 10px }
+  .pf-banner a.cta{ color:#0f1113; background:#e3c184; padding:8px 14px; border-radius:9px; font-weight:700; font-size:13px; text-decoration:none; display:inline-block }
+  /* What your leads see — editor + live NCG card preview */
+  .lc-wrap{ display:flex; flex-wrap:wrap; gap:22px }
+  .lc-form{ flex:1 1 250px; min-width:240px }
+  .lc-form label{ display:block; color:var(--silver); font-size:13px; margin:13px 0 5px }
+  .lc-form label .req{ color:#d2a96a }
+  .lc-form .pf-input{ width:100%; max-width:320px }
+  .lc-up{ display:flex; align-items:center; gap:12px; margin-top:4px }
+  .lc-thumb{ width:58px; height:58px; border-radius:50%; object-fit:cover; background:#16181c; border:1px solid rgba(255,255,255,0.16); flex-shrink:0 }
+  .lc-tip{ color:var(--silver); font-size:12px; line-height:1.55; margin-top:12px }
+  .lc-tip a{ color:var(--ivory) }
+  .lc-flag{ color:#d2a96a; font-size:12px; margin-top:5px }
+  .lc-preview{ flex:1 1 320px; min-width:300px }
+  .lc-cap{ color:var(--silver); font-size:11px; margin-bottom:10px; text-transform:uppercase; letter-spacing:.09em }
+  .lc-card{ width:100%; max-width:520px; background:#fff; border-radius:14px; overflow:hidden; display:grid; grid-template-columns:148px 1fr; box-shadow:0 18px 50px rgba(19,41,75,.30); font-family:'Mulish',Arial,sans-serif }
+  .lc-left{ position:relative; background:#cfe2f3; display:flex; align-items:center; justify-content:center; min-height:232px }
+  .lc-photo{ width:100%; height:100%; min-height:232px; object-fit:cover; display:block }
+  .lc-ph{ color:#5f7fa3; font-size:11px; text-align:center; padding:10px; line-height:1.4 }
+  .lc-arc{ position:absolute; top:0; right:0; height:100%; width:9px; background:#2f6fed }
+  .lc-right{ padding:15px 17px 0; display:flex; flex-direction:column }
+  .lc-logo{ display:flex; align-items:center; gap:8px; justify-content:flex-end; margin-bottom:9px }
+  .lc-wm{ font-size:12.5px; font-weight:800; letter-spacing:.03em; color:#0f2747; line-height:1 }
+  .lc-wm span{ color:#2f6fed }
+  .lc-wm-sub{ font-size:7px; letter-spacing:.18em; color:#7a87a0; text-align:right; margin-top:2px }
+  .lc-name{ font-size:21px; font-weight:700; color:#13294b; line-height:1.05; font-family:'Fraunces',Georgia,serif }
+  .lc-title{ font-size:11.5px; font-weight:800; letter-spacing:.03em; color:#13294b; margin-top:3px; text-transform:uppercase }
+  .lc-rule{ height:2px; width:88px; background:#2f6fed; margin:8px 0 }
+  .lc-tag{ font-size:11.5px; color:#374151; line-height:1.45 }
+  .lc-spec-h{ font-size:9.5px; font-weight:800; letter-spacing:.05em; color:#13294b; margin:10px 0 7px }
+  .lc-spec{ display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; margin-bottom:11px }
+  .lc-item{ display:flex; align-items:center; gap:7px; font-size:11.5px; color:#1f2a37 }
+  .lc-chk{ width:15px; height:15px; border-radius:50%; background:#2f6fed; color:#fff; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; flex-shrink:0 }
+  .lc-bar{ margin:auto -17px 0; background:#0f2747; display:flex; align-items:center; justify-content:space-between; padding:11px 17px; gap:12px }
+  .lc-contact{ display:flex; flex-direction:column; gap:3px }
+  .lc-c{ display:flex; align-items:center; gap:8px; color:#eef3fa; font-size:11.5px }
+  .lc-c .lc-ci{ width:19px; height:19px; border-radius:50%; background:#2c4a6e; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:10px }
+  .lc-big{ font-size:14px; font-weight:800 }
+  .lc-shield{ font-size:9.5px; font-weight:800; letter-spacing:.04em; color:#7fb0ec; text-align:right; line-height:1.35; flex-shrink:0; border-left:1px solid #2c4a6e; padding-left:12px }
+  @media (max-width:560px){ .lc-card{ grid-template-columns:1fr } .lc-left{ min-height:170px } .lc-bar{ flex-direction:column; align-items:flex-start; gap:8px } .lc-shield{ border-left:0; padding-left:0 } }
 </style>
 </head>
 <body>
@@ -73,6 +117,12 @@
 </div>
 
 <div class="shell">
+  <!-- Account-needs-attention banner (card incomplete) -->
+  <div class="pf-banner" id="cardBanner">
+    <h3>Finish your agent card</h3>
+    <p>The moment a lead is assigned to you, National Coverage Group introduces you to them by name and photo — before you ever dial. Your card isn't finished yet, so your leads don't meet you first. It takes two minutes below.</p>
+    <a class="cta" href="#cardSection" onclick="document.getElementById('cardSection').scrollIntoView({behavior:'smooth'});return false;">Finish my card</a>
+  </div>
   <div class="home-hero">
     <h1>Your <em>profile.</em></h1>
     <p>Everything about your account in one place — billing, where your Drops go, and the states and verticals you receive. Turning coverage off is instant. Adding coverage starts at the beginning of your next paid week.</p>
@@ -99,6 +149,77 @@
     <div class="pf-field"><span class="k">Billing</span><span class="v" id="acctBilling">—</span></div>
     <div class="pf-field"><span class="k">Short-week credits</span><span class="v" id="acctMakeGood">—</span></div>
     <div id="billingActions" style="margin-top:10px"></div>
+  </div>
+
+  <!-- 1.5 WHAT YOUR LEADS SEE -->
+  <div class="home-card pf-section" id="cardSection">
+    <h2>What your leads see</h2>
+    <p class="pf-sub">The instant a lead is assigned to you, National Coverage Group sends them this card — your name, photo, and number — so when you call, they already know who you are. It turns a cold call into an expected one. A finished card (photo + call-from number) is required before we send you leads.</p>
+    <div class="lc-wrap">
+      <div class="lc-form">
+        <label>Your headshot <span class="req">*</span></label>
+        <div class="lc-up">
+          <img id="lcThumb" class="lc-thumb" alt="" style="display:none">
+          <div>
+            <input type="file" id="lcFile" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="onPickHeadshot(event)">
+            <button type="button" class="gp-save" onclick="document.getElementById('lcFile').click()">Upload photo</button>
+          </div>
+        </div>
+        <p class="lc-tip">A clean, professional headshot matters — it's the first thing your lead sees. No good one? AI headshots are cheap: <a href="https://www.headshotpro.com" target="_blank" rel="noopener">HeadshotPro</a> (~$29) or <a href="https://www.betterpic.io" target="_blank" rel="noopener">BetterPic</a> (~$19, 4K).</p>
+
+        <label for="lcNameIn">Display name <span style="color:var(--silver)">(optional)</span></label>
+        <input type="text" id="lcNameIn" class="pf-input" maxlength="60" placeholder="Defaults to your name on file" oninput="paintCard()">
+
+        <label for="lcTitleIn">Title</label>
+        <input type="text" id="lcTitleIn" class="pf-input" maxlength="48" placeholder="Licensed Insurance Agent" oninput="paintCard()">
+        <p class="lc-flag">Safe defaults: "Licensed Insurance Agent" or "Licensed Insurance Producer." Only use "Broker" if you're actually licensed/operating as one — some states regulate the advertised title.</p>
+
+        <label for="lcTagIn">One-line tagline <span style="color:var(--silver)">(optional)</span></label>
+        <input type="text" id="lcTagIn" class="pf-input" maxlength="160" placeholder="e.g. Helping families protect what matters most." oninput="paintCard()">
+
+        <label for="lcPhoneIn">Call-from number <span class="req">*</span></label>
+        <input type="text" id="lcPhoneIn" class="pf-input" inputmode="tel" maxlength="20" placeholder="(555) 123-4567" oninput="paintCard()">
+        <p class="lc-tip">This is the number your leads are told you'll call from — so make calls from it. If the text says one number and you ring from another, it backfires.</p>
+
+        <div style="margin-top:16px"><button class="gp-save" onclick="saveCard()">Save my card</button></div>
+        <p class="pf-note" id="cardNote"></p>
+      </div>
+
+      <div class="lc-preview">
+        <div class="lc-cap">Live preview</div>
+        <div class="lc-card" id="lcCard">
+          <div class="lc-left">
+            <img id="lcPhoto" class="lc-photo" alt="" crossorigin="anonymous" style="display:none">
+            <div class="lc-ph" id="lcPh">Your photo<br>appears here</div>
+            <div class="lc-arc"></div>
+          </div>
+          <div class="lc-right">
+            <div class="lc-logo">
+              <svg width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                <defs><clipPath id="lcsh"><path d="M16 3.2l10.5 3.6V15c0 6.9-4.6 11.8-10.5 13.6C9.6 26.8 5 21.9 5 15V6.8z"/></clipPath></defs>
+                <path d="M16 3.2l10.5 3.6V15c0 6.9-4.6 11.8-10.5 13.6C9.6 26.8 5 21.9 5 15V6.8z" fill="#0f2747"/>
+                <g clip-path="url(#lcsh)"><rect x="3" y="16" width="26" height="2.1" fill="#ffffff"/><rect x="3" y="19" width="26" height="2.1" fill="#c8322e"/><rect x="3" y="22" width="26" height="2.1" fill="#ffffff"/></g>
+                <path d="M16 7.2L16.8 9.5L19.23 9.55L17.29 11.02L18 13.35L16 11.96L14 13.35L14.71 11.02L12.77 9.55L15.2 9.5Z" fill="#ffffff"/>
+              </svg>
+              <div><div class="lc-wm">NATIONAL <span>COVERAGE</span> GROUP</div><div class="lc-wm-sub">LICENSED INSURANCE</div></div>
+            </div>
+            <div class="lc-name" id="lcName">Your Name</div>
+            <div class="lc-title" id="lcTitle">Licensed Insurance Agent</div>
+            <div class="lc-rule"></div>
+            <div class="lc-tag" id="lcTag"></div>
+            <div class="lc-spec-h">SPECIALIZING IN</div>
+            <div class="lc-spec" id="lcSpec"></div>
+            <div class="lc-bar">
+              <div class="lc-contact">
+                <div class="lc-c"><span class="lc-ci">&#9742;</span><span class="lc-big" id="lcPhone">—</span></div>
+                <div class="lc-c" id="lcNpnRow" style="display:none"><span class="lc-ci">&#10003;</span><span id="lcNpn"></span></div>
+              </div>
+              <div class="lc-shield">LICENSED &amp;<br>TRUSTED</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 2. DROP NUMBER -->
@@ -200,6 +321,8 @@
       renderSchedule();
       renderGoals();
       renderMakeGood();
+      renderCard();
+      renderCardBanner();
     });
   }
 
@@ -518,6 +641,133 @@
       else { el.textContent = 'None — targets met so far'; }
       if (rows.length && rows[0].reason){ el.title = rows[0].reason; }
     });
+  }
+
+  /* ---------- what your leads see (agent card) ---------- */
+  var lcHeadshotUrl = '';
+
+  function cardSpecialties(){
+    var raw = (profile.active_verticals && profile.active_verticals.trim())
+            || (profile.verticals && profile.verticals.trim()) || 'Final Expense';
+    return splitList(raw).slice(0,4);
+  }
+  function cardDisplayName(){
+    var dn = (document.getElementById('lcNameIn').value || '').trim();
+    if (dn) return dn;
+    return ((profile.first_name||'') + ' ' + (profile.last_name||'')).trim() || 'Your Name';
+  }
+  function renderCard(){
+    document.getElementById('lcNameIn').value  = profile.display_title || '';
+    document.getElementById('lcTitleIn').value = profile.agent_card_title || '';
+    document.getElementById('lcTagIn').value   = profile.intro_line || '';
+    document.getElementById('lcPhoneIn').value = profile.dial_number || '';
+    lcHeadshotUrl = profile.headshot_url || '';
+    var input = document.getElementById('lcFile'); if (input) input.dataset.dirty = '0';
+    var t = document.getElementById('lcThumb');
+    if (lcHeadshotUrl){ t.src = lcHeadshotUrl; t.style.display=''; } else { t.style.display='none'; }
+    paintCard();
+  }
+  function paintCard(){
+    document.getElementById('lcName').textContent  = cardDisplayName();
+    document.getElementById('lcTitle').textContent = (document.getElementById('lcTitleIn').value || '').trim() || 'Licensed Insurance Agent';
+    var tag = (document.getElementById('lcTagIn').value || '').trim();
+    var tagEl = document.getElementById('lcTag');
+    tagEl.textContent = tag; tagEl.style.display = tag ? '' : 'none';
+    var ph = (document.getElementById('lcPhoneIn').value || '').trim();
+    document.getElementById('lcPhone').textContent = ph || '—';
+    var npnRow = document.getElementById('lcNpnRow');
+    if (profile.npn){ document.getElementById('lcNpn').textContent = 'NPN ' + profile.npn; npnRow.style.display=''; }
+    else { npnRow.style.display='none'; }
+    var photo = document.getElementById('lcPhoto'), phEl = document.getElementById('lcPh');
+    if (lcHeadshotUrl){ if (photo.getAttribute('src')!==lcHeadshotUrl) photo.src = lcHeadshotUrl; photo.style.display=''; phEl.style.display='none'; }
+    else { photo.style.display='none'; phEl.style.display=''; }
+    document.getElementById('lcSpec').innerHTML = cardSpecialties().map(function(s){
+      return '<div class="lc-item"><span class="lc-chk">&#10003;</span>' + esc(s) + '</div>';
+    }).join('');
+  }
+  function onPickHeadshot(ev){
+    var f = ev.target.files && ev.target.files[0];
+    if (!f) return;
+    if (f.size > 5*1024*1024){ var n=document.getElementById('cardNote'); n.className='pf-note note-bad'; n.textContent='That image is over 5MB — please use a smaller photo.'; ev.target.value=''; return; }
+    var url = URL.createObjectURL(f);
+    var t = document.getElementById('lcThumb'); t.src = url; t.style.display='';
+    var photo = document.getElementById('lcPhoto'); photo.removeAttribute('crossorigin'); photo.src = url; photo.style.display=''; document.getElementById('lcPh').style.display='none';
+    ev.target.dataset.dirty = '1';
+    lcHeadshotUrl = lcHeadshotUrl || 'pending';  // marks "has a photo" for validation; real URL set on upload
+  }
+  function uploadHeadshotIfNeeded(){
+    var input = document.getElementById('lcFile');
+    if (input.dataset.dirty !== '1' || !input.files || !input.files[0]) return Promise.resolve(profile.headshot_url || '');
+    var f = input.files[0];
+    var ext = (f.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g,'') || 'png';
+    var path = me.id + '/headshot-' + Date.now() + '.' + ext;
+    return db.storage.from('agent-assets').upload(path, f, { upsert:true, contentType:f.type }).then(function(up){
+      if (up.error) throw up.error;
+      return db.storage.from('agent-assets').getPublicUrl(path).data.publicUrl;
+    });
+  }
+  function generateCardImage(){
+    if (typeof html2canvas === 'undefined') return Promise.resolve('');
+    var card = document.getElementById('lcCard');
+    return html2canvas(card, { useCORS:true, backgroundColor:'#ffffff', scale:2, logging:false }).then(function(canvas){
+      return new Promise(function(res){ canvas.toBlob(function(blob){
+        if (!blob){ res(''); return; }
+        var path = me.id + '/card-' + Date.now() + '.png';
+        db.storage.from('agent-assets').upload(path, blob, { upsert:true, contentType:'image/png' }).then(function(up){
+          res(up.error ? '' : db.storage.from('agent-assets').getPublicUrl(path).data.publicUrl);
+        });
+      }, 'image/png', 0.92); });
+    }).catch(function(){ return ''; });  // non-blocking: MMS falls back to text if no PNG
+  }
+  function saveCard(){
+    var note = document.getElementById('cardNote');
+    var input = document.getElementById('lcFile');
+    var hasPhoto = !!(profile.headshot_url) || input.dataset.dirty === '1';
+    var phone = (document.getElementById('lcPhoneIn').value||'').replace(/\D/g,'');
+    if (phone.length===11 && phone.charAt(0)==='1') phone = phone.slice(1);
+    if (!hasPhoto){ note.className='pf-note note-bad'; note.textContent='Add a headshot first — it is required.'; return; }
+    if (phone.length!==10){ note.className='pf-note note-bad'; note.textContent='Enter a valid 10-digit call-from number.'; return; }
+    note.className='pf-note'; note.textContent='Saving your card…';
+    uploadHeadshotIfNeeded().then(function(headUrl){
+      lcHeadshotUrl = headUrl;
+      var photo = document.getElementById('lcPhoto');
+      photo.setAttribute('crossorigin','anonymous');
+      return new Promise(function(res){
+        photo.onload = function(){ res(true); }; photo.onerror = function(){ res(false); };
+        photo.src = headUrl + (headUrl.indexOf('?')>-1?'&':'?') + 'cc=' + Date.now();
+      }).then(function(loaded){ paintCard(); if(!loaded) return ''; note.textContent='Building your card…'; return generateCardImage(); })
+        .then(function(cardImg){
+          return db.rpc('bl_save_agent_card', {
+            p_headshot_url: headUrl,
+            p_dial_number: document.getElementById('lcPhoneIn').value,
+            p_agent_card_title: document.getElementById('lcTitleIn').value,
+            p_display_name: document.getElementById('lcNameIn').value,
+            p_intro_line: document.getElementById('lcTagIn').value,
+            p_card_image_url: cardImg
+          }).then(function(r){
+            if (r.error){ note.className='pf-note note-bad'; note.textContent="Couldn't save: " + r.error.message; return; }
+            var d = r.data || {};
+            profile.headshot_url = headUrl;
+            profile.dial_number = d.dial_number || document.getElementById('lcPhoneIn').value;
+            profile.agent_card_title = d.agent_card_title || document.getElementById('lcTitleIn').value;
+            profile.display_title = (document.getElementById('lcNameIn').value||'').trim();
+            profile.intro_line = (document.getElementById('lcTagIn').value||'').trim();
+            profile.card_image_url = cardImg;
+            profile.card_status = d.card_status || 'active';
+            input.dataset.dirty = '0';
+            note.className='pf-note note-ok';
+            note.textContent = 'Saved. Your leads will meet you before you dial.' + (cardImg ? '' : ' (Card image will be generated on your next save.)');
+            renderCardBanner();
+          });
+        });
+    }).catch(function(e){
+      note.className='pf-note note-bad'; note.textContent="Couldn't save your card: " + (e && e.message ? e.message : String(e));
+    });
+  }
+  function cardComplete(){ return !!(profile.headshot_url && profile.dial_number && profile.card_status==='active'); }
+  function renderCardBanner(){
+    var b = document.getElementById('cardBanner'); if (!b) return;
+    b.style.display = cardComplete() ? 'none' : 'block';
   }
 </script>
 <script src="avail-badge.js"></script>

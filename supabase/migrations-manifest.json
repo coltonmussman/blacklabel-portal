@@ -155,6 +155,30 @@
     {
       "version": "20260623012806",
       "name": "brief7_make_good_dropdays_target"
+    },
+    {
+      "version": "20260623020006",
+      "name": "handshake_p2_cols_and_config"
+    },
+    {
+      "version": "20260623020019",
+      "name": "handshake_p2_storage_bucket"
+    },
+    {
+      "version": "20260623020200",
+      "name": "handshake_p2_rpcs_and_gate"
+    },
+    {
+      "version": "20260623020734",
+      "name": "handshake_p2_notify_trigger"
+    },
+    {
+      "version": "20260623021244",
+      "name": "handshake_p2_advisor_hardening"
+    },
+    {
+      "version": "20260623023938",
+      "name": "handshake_p2_review_fixes"
     }
   ]
 }
