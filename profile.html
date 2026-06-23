@@ -66,6 +66,7 @@
     </nav>
   </div>
   <div class="who">
+    <span id="availBadge"></span>
     <span id="whoami"></span>
     <button class="signout" onclick="signOut()">Sign out</button>
   </div>
@@ -75,6 +76,16 @@
   <div class="home-hero">
     <h1>Your <em>profile.</em></h1>
     <p>Everything about your account in one place — billing, where your Drops go, and the states and verticals you receive. Turning coverage off is instant. Adding coverage starts at the beginning of your next paid week.</p>
+  </div>
+
+  <!-- 0. AVAILABILITY -->
+  <div class="home-card pf-section" id="availCard">
+    <h2>Availability</h2>
+    <p class="pf-sub">Your live on/off switch for new Drops. Pause when you're on a call, in an appointment, or done for the day and leads route to the next available agent instead of a phone you can't answer. Resume the moment you're free and any queued leads come to you right away.</p>
+    <div class="pf-field"><span class="k">Current status</span><span class="v" id="availStatus">—</span></div>
+    <div class="pf-row" id="availControls" style="margin-top:10px"></div>
+    <p class="pf-note" id="availNote"></p>
+    <p class="pf-note" style="margin-top:12px">Your weekly target is <b id="availTarget">about 30</b> exclusive leads. Pausing your status or narrowing your states or verticals lowers what you'll receive — that's your call, and those weeks aren't counted as a shortfall. If a week ever runs short on <i>our</i> end, the difference is automatically credited toward your next week.</p>
   </div>
 
   <!-- 1. ACCOUNT -->
@@ -159,6 +170,7 @@
 
   var VERTICALS = ['Final Expense','Mortgage Protection','IUL','Annuity'];
   var TIER_WEEKLY = { silver:400, gold:600, blacklabel:1500 };
+  var TIER_TARGET = { silver:'5–8', gold:'about 12', blacklabel:'about 30' };
   var DAYS = [['Mon',1],['Tue',2],['Wed',3],['Thu',4],['Fri',5],['Sat',6],['Sun',7]];
 
   db.auth.getSession().then(function(r){
@@ -180,6 +192,7 @@
       var name = ((profile.first_name||'') + ' ' + (profile.last_name||'')).trim() || me.email;
       document.getElementById('whoami').innerHTML = '<span class="email">' + esc(name) + '</span>';
       renderAccount(name);
+      renderAvailability();
       renderDropNumber();
       renderStates();
       renderVerticals();
@@ -211,6 +224,54 @@
     for (var i=0;i<markets.length;i++){ if (markets[i].is_open && String(markets[i].state).toUpperCase()===String(state).toUpperCase()){ open=true; break; } }
     return open ? '' : (' It will begin once ' + state + ' opens in our system.');
   }
+
+  /* ---------- 0. availability ---------- */
+  function fmtTime(ts){ if(!ts) return ''; try{ return new Date(ts).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}); }catch(e){ return ''; } }
+  function effectiveAvail(){
+    if (profile.is_available) return true;
+    if (profile.available_until && new Date(profile.available_until) <= new Date()) return true; // lapsed timer reads as available
+    return false;
+  }
+  function renderAvailability(){
+    document.getElementById('availTarget').textContent = TIER_TARGET[tierKey(profile.tier)] || "your tier's volume of";
+    var eff = effectiveAvail();
+    var sEl = document.getElementById('availStatus');
+    var cEl = document.getElementById('availControls');
+    if (eff){
+      sEl.innerHTML = '<span class="pill good">Available — receiving Drops</span>';
+      cEl.innerHTML = '<span class="k" style="align-self:center">Pause for</span>'
+        + '<button class="gp-save" onclick="pauseAvail(1)">1 hour</button>'
+        + '<button class="gp-save" onclick="pauseAvail(4)">4 hours</button>'
+        + '<button class="gp-save" onclick="pauseAvail(-1)">Until I resume</button>';
+    } else {
+      var until = profile.available_until;
+      var txt = until ? ('Paused — auto-resumes ' + fmtTime(until)) : 'Paused — until you resume';
+      sEl.innerHTML = '<span class="pill warn">' + esc(txt) + '</span>';
+      cEl.innerHTML = '<button class="gp-save" onclick="resumeAvail()">Resume now</button>'
+        + '<button class="gp-save" onclick="pauseAvail(4)">Extend 4h</button>';
+    }
+  }
+  function setAvail(available, hours){
+    var note = document.getElementById('availNote');
+    note.className='pf-note'; note.textContent='Saving…';
+    db.rpc('bl_set_availability', { p_available: available, p_hours: hours }).then(function(r){
+      if (r.error){ note.className='pf-note note-bad'; note.textContent = "Couldn't update: " + r.error.message; return; }
+      var d = r.data || {};
+      profile.is_available = d.is_available;
+      profile.available_until = d.available_until;
+      renderAvailability();
+      if (window.blAvailPaint) window.blAvailPaint(profile.is_available, profile.available_until);
+      if (available){
+        note.className='pf-note note-ok';
+        note.textContent = "You're available — receiving Drops again." + (d.drained ? (' ' + d.drained + ' queued lead' + (d.drained==1?'':'s') + ' just came to you.') : '');
+      } else {
+        note.className='pf-note note-warn';
+        note.textContent = profile.available_until ? ('Paused. You will auto-resume at ' + fmtTime(profile.available_until) + '.') : 'Paused until you resume.';
+      }
+    });
+  }
+  function pauseAvail(hours){ setAvail(false, hours); }
+  function resumeAvail(){ setAvail(true, null); }
 
   /* ---------- 1. account ---------- */
   function renderAccount(name){
@@ -444,5 +505,6 @@
     });
   }
 </script>
+<script src="avail-badge.js"></script>
 </body>
 </html>

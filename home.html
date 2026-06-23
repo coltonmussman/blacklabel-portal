@@ -38,6 +38,7 @@
     </nav>
   </div>
   <div class="who">
+    <span id="availBadge"></span>
     <span id="whoami"></span>
     <button class="signout" onclick="signOut()">Sign out</button>
   </div>
@@ -246,5 +247,6 @@
 
   function signOut(){ db.auth.signOut().then(function(){ window.location.href = 'index.html'; }); }
 </script>
+<script src="avail-badge.js"></script>
 </body>
 </html>
