@@ -119,6 +119,42 @@
     {
       "version": "20260622163118",
       "name": "leads_add_address_column"
+    },
+    {
+      "version": "20260622181246",
+      "name": "lead_notes_feature"
+    },
+    {
+      "version": "20260622183719",
+      "name": "lead_note_counts_single_uid"
+    },
+    {
+      "version": "20260623003733",
+      "name": "brief7_part_a_availability"
+    },
+    {
+      "version": "20260623004345",
+      "name": "brief7_lock_auto_assign_lead_execute"
+    },
+    {
+      "version": "20260623005915",
+      "name": "brief7_part_b_make_good"
+    },
+    {
+      "version": "20260623010352",
+      "name": "brief7_part_b_make_good_fix_reduction_log"
+    },
+    {
+      "version": "20260623010538",
+      "name": "brief7_pin_active_verts_search_path"
+    },
+    {
+      "version": "20260623012504",
+      "name": "brief7_make_good_cycle_dedupe"
+    },
+    {
+      "version": "20260623012806",
+      "name": "brief7_make_good_dropdays_target"
     }
   ]
 }

@@ -5,13 +5,18 @@
 //
 // v13: MERGES referral logic onto v12 (activation + coverage promotion are UNCHANGED). Added:
 //   - invoice.paid (amount>0): accrue the referrer's credit on a qualifying friend payment.
-//     The ledger row is CLAIMED first (DB unique index = idempotency boundary); only a winning
-//     claim issues the Stripe credit, so a webhook re-delivery can never double-credit.
-//   - charge.refunded / charge.dispute.closed(status=lost): claw back PROPORTIONALLY to the actual
-//     refunded/disputed amount, capped at the original accrual. Invoice resolved via the charge's
-//     payment_intent when charge.invoice is null (Checkout first-invoice quirk).
-//   - customer.subscription.deleted: mark a referred friend's referral canceled (stop future accrual).
-// All referral work is wrapped so it can NEVER break billing (non-fatal; alert on money-move failure).
+//   - charge.refunded / charge.dispute.closed(status=lost): claw back PROPORTIONALLY.
+//   - customer.subscription.deleted: mark a referred friend's referral canceled.
+//
+// v14: MERGES Brief 7 make-good onto v13 (referral + activation + coverage promotion UNCHANGED). Added in
+//   invoice.paid (amount>0): evaluate the prior weekly cycle's supply via bl_eval_make_good; if short of the
+//   tier target (and the agent did not self-limit), record idempotently (DB ledger) and issue a Stripe account
+//   credit = shortfall * per-lead rate to the agent's own next invoice. Record-first; non-fatal.
+//
+// v15: HARDENS make-good per the Brief 7 adversarial review. Make-good now runs ONLY when
+//   inv.billing_reason === 'subscription_cycle' (true weekly renewals), so a proration/one-off/manual invoice
+//   can no longer fire a second evaluation of the same delivery week. The DB ledger also enforces a per-cycle
+//   UNIQUE(agent_id,period_start,period_end) as defense-in-depth against a same-cycle double credit.
 //
 // REQUIRED Stripe config: this endpoint's enabled events must include `charge.refunded` and
 // `charge.dispute.closed` (plus the existing invoice.paid etc.) or the clawback path never fires.
@@ -68,7 +73,6 @@ async function invoiceIdForCharge(ch: any): Promise<string | null> {
 }
 
 // REFERRAL: reverse the referrer's credit, proportional to the refunded/disputed amount. Non-fatal.
-// Records the ledger clawback FIRST (idempotency claim); only a winning claim debits Stripe.
 async function referralClawback(invoiceId: string | null, refundedCents: number, totalCents: number) {
   if (!invoiceId) { await raise("referral_clawback_unresolved", "warn", "Referral clawback: could not resolve invoice", { refundedCents, totalCents }, 6); return; }
   try {
@@ -94,7 +98,7 @@ async function referralClawback(invoiceId: string | null, refundedCents: number,
         { invoice: invoiceId, amount_cents: amt, err: String((e as Error)?.message ?? e) }, 6);
       return;
     }
-    if (plan.partial) await raise("referral_partial_clawback", "info", "Partial referral clawback — review",
+    if (plan.partial) await raise("referral_partial_clawback", "info", "Partial referral clawback - review",
       { invoice: invoiceId, amount_cents: amt }, 24);
   } catch (e) {
     console.error("referral clawback threw (non-fatal):", (e as Error)?.message ?? String(e));
@@ -141,7 +145,6 @@ Deno.serve(async (req) => {
           p_customer: idOf(sub.customer), p_subscription: sub.id, p_status: status, p_period_end: periodEndISO(sub),
         });
         if (error) throw error;
-        // REFERRAL: a referred friend canceling stops future accrual. Non-fatal.
         if (event.type === "customer.subscription.deleted") {
           try { await supabase.rpc("bl_referral_mark_canceled_by_customer", { p_customer: idOf(sub.customer) }); }
           catch (e) { console.error("referral cancel (non-fatal):", (e as Error)?.message ?? String(e)); }
@@ -165,8 +168,7 @@ Deno.serve(async (req) => {
           p_customer: idOf(inv.customer), p_subscription: idOf(inv.subscription), p_status: "active", p_period_end: pe,
         });
         if (error) throw error;
-        // BRIEF 6: a real renewal payment promotes any coverage expansions now due. Non-fatal;
-        // the hourly drop-coverage-promote cron is the backstop. Idempotent + cheap.
+        // BRIEF 6: a real renewal payment promotes any coverage expansions now due. Non-fatal.
         try {
           const { error: pErr } = await supabase.rpc("bl_promote_coverage_changes", { p_agent: null });
           if (pErr) console.error("coverage promote (non-fatal):", pErr.message);
@@ -174,7 +176,6 @@ Deno.serve(async (req) => {
           console.error("coverage promote threw (non-fatal):", (e as Error)?.message ?? String(e));
         }
         // REFERRAL: accrue the referrer's credit on a qualifying friend payment. Non-fatal.
-        // Claim the ledger row FIRST; only a winning claim issues the Stripe credit.
         try {
           const customer = idOf(inv.customer);
           const invoiceId = inv.id as string;
@@ -192,7 +193,6 @@ Deno.serve(async (req) => {
               });
               if (re) console.error("referral record (non-fatal):", re.message);
               else if (claimed === true) {
-                // negative balance = credit applied to the referrer's next invoice(s); overflow rolls forward.
                 try {
                   await stripe.customers.createBalanceTransaction(
                     plan.referrer_customer,
@@ -211,6 +211,46 @@ Deno.serve(async (req) => {
           await raise("referral_accrual_error", "warn", "Referral accrual failed on invoice.paid",
             { err: String((e as Error)?.message ?? e) }, 6);
         }
+        // BRIEF 7 (v15): make-good - ONLY on a true weekly renewal (billing_reason='subscription_cycle'),
+        // evaluate the PRIOR cycle's supply and auto-credit a supply-side shortfall to the agent's own next
+        // invoice. Record-first (DB ledger = idempotency, per-invoice AND per-cycle); only a winning claim
+        // issues the Stripe credit. Non-fatal. Gating to subscription_cycle stops proration/one-off invoices
+        // from re-evaluating (and double-crediting) the same delivery week.
+        try {
+          const customer = idOf(inv.customer);
+          const invoiceId = inv.id as string;
+          const period = inv.lines?.data?.[0]?.period;
+          const periodStart = period?.start ? new Date(period.start * 1000).toISOString() : null;
+          const periodEnd = period?.end ? new Date(period.end * 1000).toISOString() : null;
+          if (customer && invoiceId && periodStart && periodEnd && inv.billing_reason === "subscription_cycle") {
+            const { data: mg, error: mgErr } = await supabase.rpc("bl_eval_make_good", {
+              p_customer: customer, p_trigger_invoice: invoiceId,
+              p_period_start: periodStart, p_period_end: periodEnd,
+            });
+            if (mgErr) console.error("make-good eval (non-fatal):", mgErr.message);
+            else if (mg && mg.claimed && mg.credit) {
+              const amt = Math.round(Number(mg.amount_cents));
+              const mgCustomer = mg.customer || customer;
+              if (amt > 0 && mgCustomer) {
+                try {
+                  const bt: any = await stripe.customers.createBalanceTransaction(
+                    mgCustomer,
+                    { amount: -amt, currency: "usd", description: "Black Label short-week make-good (invoice " + invoiceId + ")" },
+                    { idempotencyKey: "bllmakegood_" + invoiceId },
+                  );
+                  try { await supabase.rpc("bl_make_good_mark_paid", { p_trigger_invoice: invoiceId, p_ref: bt?.id ?? null }); } catch (_) { /* ignore */ }
+                } catch (e) {
+                  await raise("make_good_credit_unfunded", "critical", "Make-good recorded but Stripe credit failed",
+                    { invoice: invoiceId, amount_cents: amt, err: String((e as Error)?.message ?? e) }, 6);
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error("make-good threw (non-fatal):", (e as Error)?.message ?? String(e));
+          await raise("make_good_error", "warn", "Make-good failed on invoice.paid",
+            { err: String((e as Error)?.message ?? e) }, 6);
+        }
         break;
       }
       case "charge.refunded": {
@@ -221,7 +261,7 @@ Deno.serve(async (req) => {
       }
       case "charge.dispute.closed": {
         const dp = event.data.object as any;
-        if (String(dp.status) !== "lost") break;          // only claw back when we actually lost the funds
+        if (String(dp.status) !== "lost") break;
         try {
           const ch: any = await stripe.charges.retrieve(idOf(dp.charge) as string);
           const invoiceId = await invoiceIdForCharge(ch);
