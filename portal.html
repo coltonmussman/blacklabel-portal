@@ -9,6 +9,10 @@
 <link rel="stylesheet" href="portal-redesign.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<!-- jsPDF + html2canvas exposed as globals: html2pdf.bundle does NOT expose them, so the one-page
+     (scale-to-fit) PDF path needs these explicitly. html2pdf stays as a fallback. -->
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
 /* ===== Leads-page reskin glue (legacy bits the JS still emits, restyled for the new shell) ===== */
 .leads-strip{margin-bottom:18px}
@@ -72,7 +76,7 @@
 
 /* ===== Lead PDF sheet (off-screen render target; html2pdf keeps this dark look) ===== */
 #pdfStage{position:fixed;left:-10000px;top:0;width:816px;z-index:-1}
-.bl-sheet{position:relative;width:816px;min-height:1056px;background:#0a0b0d;color:#eceef1;overflow:hidden;padding:54px 56px 40px;font-family:'Inter',sans-serif}
+.bl-sheet{position:relative;width:816px;min-height:1056px;background:#0a0b0d;color:#eceef1;overflow:hidden;padding:44px 56px 30px;font-family:'Inter',sans-serif}
 .bl-sheet::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#8e959f,#eef1f4 30%,#9aa1ab 55%,#dfe3e7 78%,#9ba1aa)}
 .bl-wm{position:absolute;top:-25%;left:-25%;width:150%;height:150%;z-index:1;pointer-events:none;overflow:hidden;transform:rotate(-30deg);transform-origin:center;opacity:.10;display:flex;flex-wrap:wrap;align-content:center;gap:8px 26px;justify-content:center}
 .bl-wm span{color:#fff;font-size:13px;font-weight:700;letter-spacing:.18em;white-space:nowrap}
@@ -86,8 +90,8 @@
 .bl-ey{font-size:10.5px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:#aeb4bc;margin-bottom:8px}
 .bl-row{font-size:12px;color:#c0c5cc;line-height:1.7}
 .bl-row b{color:#eceef1;font-weight:600}
-.bl-rule{height:1px;background:rgba(174,180,188,.26);margin:26px 0}
-.bl-rule.soft{background:rgba(236,238,241,.09);margin:18px 0}
+.bl-rule{height:1px;background:rgba(174,180,188,.26);margin:17px 0}
+.bl-rule.soft{background:rgba(236,238,241,.09);margin:12px 0}
 .bl-leadname{font-family:'Fraunces',serif;font-size:34px;color:#eceef1;letter-spacing:.01em;line-height:1.1}
 .bl-badges{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
 .bl-badge{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:6px 12px;border:1px solid rgba(174,180,188,.26);color:#e9ecef}
@@ -106,7 +110,7 @@
 .bl-pcell .bl-v.ok{color:#7fe0a8}
 .bl-pcell .bl-v a{color:#e9ecef;text-decoration:none}
 .bl-pcell.wide{grid-column:1 / -1}
-.bl-agent{border:1px solid rgba(174,180,188,.26);background:linear-gradient(180deg,rgba(174,180,188,.07),rgba(174,180,188,.01));padding:22px 24px;margin-top:6px}
+.bl-agent{border:1px solid rgba(174,180,188,.26);background:linear-gradient(180deg,rgba(174,180,188,.07),rgba(174,180,188,.01));padding:16px 24px;margin-top:6px}
 .bl-lbl{font-size:10.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#aeb4bc;margin-bottom:14px}
 .bl-who{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;align-items:baseline}
 .bl-nm{font-family:'Fraunces',serif;font-size:21px;color:#eceef1}
@@ -114,7 +118,7 @@
 .bl-det b{color:#eceef1;font-weight:600}
 .bl-lock{margin-top:16px;padding-top:15px;border-top:1px solid rgba(236,238,241,.09);font-size:12.5px;color:#c0c5cc;line-height:1.65}
 .bl-lock b{color:#e9ecef;font-weight:700}
-.bl-foot{margin-top:30px;padding-top:16px;border-top:1px solid rgba(174,180,188,.26);display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
+.bl-foot{margin-top:18px;padding-top:13px;border-top:1px solid rgba(174,180,188,.26);display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
 .bl-fb{font-family:'Fraunces',serif;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#aeb4bc}
 .bl-fn{font-size:10.5px;color:#848a93;line-height:1.6;max-width:520px;text-align:right}
 
@@ -677,19 +681,41 @@
     var code = populateSheet(l);
     if (btn){ btn.disabled = true; btn.dataset.busy = '1'; }
     function reset(){ if (btn){ btn.disabled = false; delete btn.dataset.busy; } }
-    (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function(){
+    var filename = 'BlackLabel_Lead_' + code + '.pdf';
+    var sheet = document.getElementById('blSheet');
+    // One page, always: render the whole sheet to one canvas and drop it onto a SINGLE letter page
+    // scaled to fit (the old html2pdf auto-pagination spilled the sheet onto a 2nd page).
+    function onePagePdf(){
+      return html2canvas(sheet, { scale: 2, backgroundColor: '#0a0b0d', useCORS: true }).then(function(canvas){
+        var JsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+        var pdf = new JsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
+        var pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
+        var r = Math.min(pw / canvas.width, ph / canvas.height);   // fit the WHOLE sheet on one page
+        var w = canvas.width * r, h = canvas.height * r;
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', (pw - w) / 2, (ph - h) / 2, w, h);
+        return pdf.output('bloburl');
+      });
+    }
+    // Fallback for html2pdf builds that don't expose the globals: keep avoid-all so the (now-tightened) sheet stays one page.
+    function legacyPdf(){
       return html2pdf().set({
         margin: 0,
-        filename: 'BlackLabel_Lead_' + code + '.pdf',
+        filename: filename,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, backgroundColor: '#0a0b0d', useCORS: true },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-      }).from(document.getElementById('blSheet')).outputPdf('bloburl');
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+        pagebreak: { mode: 'avoid-all' }
+      }).from(sheet).outputPdf('bloburl');
+    }
+    (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function(){
+      var JsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+      if (window.html2canvas && JsPDF){ return onePagePdf().catch(legacyPdf); }  // runtime fallback if the canvas path throws
+      return legacyPdf();
     }).then(function(url){
       url = (typeof url === 'string') ? url : String(url);
       if (tab){ tab.location.href = url; }                 // preview in the new tab (viewer has its own download)
       else {                                                // popup blocked - fall back to a direct download
-        var a = document.createElement('a'); a.href = url; a.download = 'BlackLabel_Lead_' + code + '.pdf';
+        var a = document.createElement('a'); a.href = url; a.download = filename;
         document.body.appendChild(a); a.click(); a.remove();
       }
       reset();
