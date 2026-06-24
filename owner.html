@@ -5,189 +5,279 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Owner Command Center — Black Label Leads</title>
 <meta name="robots" content="noindex">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="portal-redesign.css">
 <style>
-  .owner-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
-  .ostat{background:var(--card);border:1px solid var(--line-soft);padding:16px 18px}
-  .ostat .n{font-family:'Fraunces',serif;font-size:26px;color:var(--ivory)}
-  .ostat .n.good{color:var(--good,#7fe0a8)}
-  .ostat .l{font-size:10px;font-weight:700;letter-spacing:0.13em;text-transform:uppercase;color:var(--mute);margin-top:3px}
-  .opanel{background:var(--card);border:1px solid var(--line);margin-bottom:20px}
-  .opanel h2{font-family:'Fraunces',serif;font-size:17px;font-weight:500;padding:14px 18px;border-bottom:1px solid var(--line-soft);margin:0}
-  .otable{width:100%;border-collapse:collapse;font-size:12.5px}
-  .otable th{text-align:left;padding:9px 14px;font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);border-bottom:1px solid var(--line-soft)}
-  .otable td{padding:9px 14px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+  /* ===== Owner Command Center — owner-specific components on top of the shared design system =====
+     The bl_owner_* data <script> below is byte-for-byte unchanged; these classes restyle exactly the
+     markup that script still emits (.opanel/.otable/.ostat/.owner-grid/.pill/.obtn/.osel/...). */
+  .ownertag{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);background:var(--amber-bg);border:1px solid rgba(227,178,100,0.25);border-radius:6px;padding:5px 10px;margin:0 8px 16px;display:inline-block}
+
+  /* stat grid + cards */
+  .owner-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+  @media(max-width:880px){.owner-grid{grid-template-columns:repeat(2,1fr)}}
+  .ostat{background:var(--card);border:1px solid var(--edge-soft);border-radius:14px;padding:18px}
+  .ostat .n{font-family:var(--display);font-size:26px;font-weight:600;letter-spacing:-0.02em;line-height:1;color:#fff}
+  .ostat .n.good{color:var(--green)}
+  .ostat .l{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:8px}
+
+  /* panels */
+  .opanel{background:var(--card);border:1px solid var(--edge-soft);border-radius:14px;margin-bottom:18px;overflow:hidden}
+  .opanel>h2{font-family:var(--display);font-size:16px;font-weight:600;padding:18px 22px;border-bottom:1px solid var(--edge-soft);margin:0;
+    background:linear-gradient(100deg,#aab1bb 0%,#e9edf2 17%,#fff 28%,#fff 34%,#cfd5dc 45%,#aab1bb 62%,#aab1bb 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:shine 2.5s linear infinite}
+  .opanel>h2 .muted{-webkit-text-fill-color:var(--muted);color:var(--muted)}
+  @media(prefers-reduced-motion:reduce){.opanel>h2{animation:none;background-position:0 0}}
+
+  /* tables */
+  .otable{width:100%;border-collapse:collapse;font-size:13px}
+  .otable th{text-align:left;padding:10px 16px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;border-bottom:1px solid var(--hair)}
+  .otable td{padding:11px 16px;border-bottom:1px solid var(--edge-soft);vertical-align:middle}
   .otable tr:last-child td{border-bottom:none}
-  .pill{font-size:10px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;padding:2px 8px;border-radius:3px;border:1px solid var(--line-soft)}
-  .pill.active{color:#7fe0a8;border-color:rgba(127,224,168,0.4)}
-  .pill.paused{color:#e0b07f;border-color:rgba(224,176,127,0.4)}
-  .obtn{font-family:'Mulish',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;background:var(--black);color:var(--ivory);border:1px solid var(--line-soft);cursor:pointer;border-radius:3px}
+  .otable tbody tr:hover td{background:var(--card-hover)}
+
+  /* buttons + inputs/selects */
+  .obtn{font-family:'Inter',sans-serif;font-size:12px;font-weight:600;padding:7px 12px;background:var(--inset);color:var(--text);border:1px solid var(--edge);cursor:pointer;border-radius:8px;transition:border-color .15s,background .15s}
   .obtn:hover{border-color:var(--silver)}
-  .osel{background:var(--black);color:var(--ivory);border:1px solid var(--line-soft);font-size:11.5px;padding:4px 6px;border-radius:3px;max-width:170px}
-  .owarn{padding:60px 20px;text-align:center;color:var(--soft)}
-  .muted{color:var(--mute)}
-  .waitbig{font-family:'Fraunces',serif;color:var(--silver-bright)}
-  .giftl{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:3px}
+  .osel{background:var(--inset);color:var(--text);border:1px solid var(--edge);font-size:13px;padding:9px 11px;border-radius:9px;max-width:220px;font-family:inherit}
+  .osel:focus{outline:none;border-color:var(--silver)}
+
+  /* status pills */
+  .pill{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:6px;border:1px solid var(--edge-soft);color:var(--text-2);font-family:'Inter',sans-serif}
+  .pill.active{color:var(--green);border-color:rgba(98,207,146,0.4);background:var(--green-bg)}
+  .pill.paused{color:var(--amber);border-color:rgba(227,178,100,0.4);background:var(--amber-bg)}
+
+  /* misc */
+  .owarn{padding:46px 20px;text-align:center;color:var(--text-2)}
+  .waitbig{font-family:var(--display);font-weight:600;color:var(--silver-bright)}
+  .giftl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:5px}
+
+  /* global data-controls toolbar (window / refresh / auto-refresh) */
+  .ccbar{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;background:var(--card);border:1px solid var(--edge-soft);border-radius:12px;padding:13px 16px;margin-bottom:22px}
+
+  /* topbar live indicator */
+  .topbar .live{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-2)}
+  .topbar .live .d{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(98,207,146,.5);animation:livepulse 1.8s infinite}
+  @keyframes livepulse{70%{box-shadow:0 0 0 6px rgba(98,207,146,0)}}
+  @media(prefers-reduced-motion:reduce){.topbar .live .d{animation:none}}
+  .needs{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-<div class="topbar">
-  <div style="display:flex;align-items:center">
+<div class="app">
+
+  <!-- SIDEBAR — owner command center (in-page sections; gated server-side by bl_is_owner via bl_owner_metrics) -->
+  <aside class="side" id="side">
     <div class="brand">
-      <svg viewBox="0 0 170 170" aria-hidden="true">
+      <svg viewBox="0 0 100 100" aria-label="Black Label Leads">
         <defs>
-          <linearGradient id="pc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="0.38" stop-color="#c4cad2"/><stop offset="0.52" stop-color="#8e959f"/><stop offset="0.66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
-          <linearGradient id="pr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset="0.5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
+          <linearGradient id="lgChrome" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".38" stop-color="#c4cad2"/><stop offset=".52" stop-color="#8e959f"/><stop offset=".66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
+          <linearGradient id="lgRing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset=".5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
         </defs>
-        <circle cx="85" cy="85" r="66" fill="#101113" stroke="url(#pr)" stroke-width="2.2"/>
-        <text x="85" y="104" text-anchor="middle" font-family="'Fraunces',Georgia,serif" font-size="54" font-weight="500" letter-spacing="3" fill="url(#pc)">BL</text>
+        <circle cx="50" cy="50" r="46" fill="#101113" stroke="url(#lgRing)" stroke-width="1.7"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="#aeb4bc" stroke-width="0.6" opacity=".55"/>
+        <rect x="46.5" y="11.5" width="6" height="6" transform="rotate(45 50 14.5)" fill="url(#lgRing)"/>
+        <rect x="46.5" y="82.5" width="6" height="6" transform="rotate(45 50 85.5)" fill="url(#lgRing)"/>
+        <text x="50" y="64" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="36" font-weight="500" letter-spacing="2" fill="url(#lgChrome)">BL</text>
       </svg>
-      <span>Black <span class="lbl">Label</span> Leads</span>
+      <div class="w"><div class="l1">BLACK LABEL</div><div class="l2">LEADS</div></div>
     </div>
-  </div>
-  <div class="who">
-    <span id="whoami"></span>
-    <button class="signout" onclick="signOut()">Sign out</button>
-  </div>
-</div>
+    <span class="ownertag">Command Center</span>
+    <nav class="nav" id="nav" aria-label="Command center sections">
+      <button data-view="overview" class="active" aria-current="page"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg>Overview</button>
+      <button data-view="money"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-8"/></svg>Money &amp; P&amp;L</button>
+      <button data-view="leads"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 14h8"/></svg>Leads &amp; Vault</button>
+      <button data-view="agents"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5 6-5s6 1.7 6 5"/><path d="M16 6.5a3 3 0 0 1 0 5.8M22 20c0-2.4-1.4-4-3.5-4.6"/></svg>Agents</button>
+      <button data-view="refunds"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7h13a4 4 0 0 1 0 8H8M3 7l3-3M3 7l3 3"/></svg>Refunds</button>
+      <button data-view="referrals"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 12v8H4v-8M2 7h20v5H2zM12 22V7M12 7S9 2 6.5 4 9 7 12 7zM12 7s3-5 5.5-3-.5 3-3.5 3z"/></svg>Referrals</button>
+      <button data-view="alerts"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>Alerts</button>
+    </nav>
+    <div class="side-foot">
+      <div class="who"><span class="av" aria-hidden="true" style="display:grid;place-items:center;background:var(--chrome);color:#0c0e11;font-family:var(--display);font-weight:600;font-size:13px;border:none">CM</span><div><div class="nm" id="whoami"></div><div class="tr">Owner</div></div></div>
+      <button class="signout" onclick="signOut()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/></svg>Sign out</button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
 
-<div class="shell">
-  <div class="tracker-hero"><h1>Owner <em>command center</em></h1><p>Everything in one place: what's flowing, who's getting it, and what's waiting in the vault.</p></div>
+  <main class="main">
+    <div class="topbar">
+      <button class="hamb" id="hamb" aria-label="Open menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <h1 id="ptitle">Overview</h1>
+      <div class="right"><span class="live"><span class="d"></span>Live</span></div>
+    </div>
 
-  <div id="gate"></div>
-  <div id="dash" style="display:none">
+    <div class="content">
+      <div id="gate"></div>
+      <div id="dash" style="display:none">
 
-    <div id="commandCenter">
-      <div id="ccBar" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:18px">
-        <div><label class="giftl">Window</label><select id="cc-window" class="osel" onchange="ccWindowChanged()"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select></div>
-        <button class="obtn" style="padding:7px 14px" onclick="ccLoadAll()">Refresh</button>
-        <label style="font-size:11.5px;color:var(--soft);display:flex;align-items:center;gap:6px;cursor:pointer"><input id="cc-auto" type="checkbox" onchange="ccToggleAuto()"> Auto-refresh (60s)</label>
-        <span id="cc-autonote" class="muted" style="font-size:10.5px"></span>
-      </div>
-
-      <div class="opanel" id="ccAlertsPanel">
-        <h2>Alerts <span id="ccAlertBadges"></span></h2>
-        <div id="ccAlertsWrap"><div class="owarn muted">Loading…</div></div>
-      </div>
-
-      <div class="opanel" id="ccFlowPanel">
-        <h2>Lead flow</h2>
-        <div id="ccFlowWrap"><div class="owarn muted">Loading…</div></div>
-      </div>
-
-      <div class="opanel" id="ccLandingPanel">
-        <h2>Landing page performance</h2>
-        <div id="ccLandingWrap" style="overflow-x:auto"><div class="owarn muted">Loading…</div></div>
-      </div>
-
-      <div class="opanel" id="ccDeliveryPanel">
-        <h2>Agent delivery</h2>
-        <div id="ccDeliveryWrap" style="overflow-x:auto"><div class="owarn muted">Loading…</div></div>
-      </div>
-
-      <div class="opanel" id="ccQualityPanel">
-        <h2>Lead quality</h2>
-        <div id="ccQualityWrap"><div class="owarn muted">Loading…</div></div>
-      </div>
-
-      <div class="opanel" id="ccBillingPanel">
-        <h2>Billing health</h2>
-        <div id="ccBillingWrap"><div class="owarn muted">Loading…</div></div>
-      </div>
-
-      <div class="opanel" id="ccReferralsPanel">
-        <h2>Referrals <span class="muted" style="font-size:11px;font-weight:400">&mdash; program-cost monitor</span></h2>
-        <div id="ccReferralsWrap"><div class="owarn muted">Loading…</div></div>
-      </div>
-
-      <div class="opanel" id="ccMakeGoodPanel">
-        <h2>Make-good <span class="muted" style="font-size:11px;font-weight:400">&mdash; short-week credit cost</span></h2>
-        <div id="ccMakeGoodWrap"><div class="owarn muted">Loading…</div></div>
-      </div>
-
-      <div class="opanel" id="ccMarketsPanel">
-        <h2>Markets <span class="muted" style="font-size:11px;font-weight:400">&mdash; states you're running ads in</span></h2>
-        <div id="ccMarketsWrap" style="overflow-x:auto"><div class="owarn muted">Loading…</div></div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:0 18px 16px">
-          <input id="mkState" class="osel" placeholder="State (e.g. TX)" style="max-width:140px">
-          <select id="mkVert" class="osel"><option value="Final Expense">Final Expense</option><option value="Mortgage Protection">Mortgage Protection</option><option value="IUL">IUL</option><option value="Annuity">Annuity</option></select>
-          <button class="obtn" onclick="ccSetMarket(document.getElementById('mkState').value, document.getElementById('mkVert').value, true)">Open this market</button>
+        <!-- global data controls (window / refresh / auto-refresh) — drive the windowed bl_owner_* RPCs -->
+        <div class="ccbar" id="ccBar">
+          <div><label class="giftl" for="cc-window">Window</label><select id="cc-window" class="osel" onchange="ccWindowChanged()"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select></div>
+          <button class="obtn" onclick="ccLoadAll()">Refresh</button>
+          <label style="font-size:12px;color:var(--text-2);display:flex;align-items:center;gap:7px;cursor:pointer"><input id="cc-auto" type="checkbox" onchange="ccToggleAuto()"> Auto-refresh (60s)</label>
+          <span id="cc-autonote" class="muted" style="font-size:11px"></span>
         </div>
+
+        <!-- ===== OVERVIEW ===== -->
+        <section class="view active" id="view-overview">
+          <div class="page-intro"><h2>Owner command center</h2><p>Everything in one place: what's flowing, who's getting it, and what's waiting in the vault.</p></div>
+          <div class="owner-grid" id="metrics"></div>
+          <div class="panel">
+            <div class="sectionhead"><h3>Needs attention</h3><button class="btn sm" data-view="alerts">All alerts &rarr;</button></div>
+            <div class="needs"><span id="ccAlertBadges"></span><span class="muted" style="font-size:12.5px">Live from the 15-minute watchdog.</span></div>
+          </div>
+          <div class="opanel" id="ccFlowPanel">
+            <h2>Lead flow</h2>
+            <div id="ccFlowWrap"><div class="owarn muted">Loading…</div></div>
+          </div>
+        </section>
+
+        <!-- ===== MONEY & P&L ===== -->
+        <section class="view" id="view-money">
+          <div class="page-intro"><h2>Money &amp; P&amp;L</h2><p>Revenue in, ad spend out, profit, and who's producing.</p></div>
+
+          <div class="opanel" id="profitPanel">
+            <h2>Profit tracker</h2>
+            <div style="padding:16px 18px">
+              <div class="owner-grid" id="profitStats" style="margin-bottom:14px"></div>
+              <form id="adForm" onsubmit="addAdSpend(event)" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:8px">
+                <div><label style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:3px">Ad spend ($)</label><input id="as-amt" class="osel" type="number" min="0" step="0.01" placeholder="100" style="max-width:110px" required></div>
+                <div><label style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:3px">Date</label><input id="as-date" class="osel" type="date"></div>
+                <div><label style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:3px">Platform</label><select id="as-plat" class="osel"><option>Meta</option><option>Google</option><option>YouTube</option><option>TikTok</option><option>Other</option></select></div>
+                <div><label style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:3px">Vertical</label><select id="as-vert" class="osel"><option value="">All / mixed</option><option value="final_expense">Final Expense</option><option value="mortgage_protection">Mortgage</option><option value="iul">IUL</option><option value="annuity">Annuity</option></select></div>
+                <button class="obtn" type="submit" style="padding:7px 14px">Add spend</button>
+              </form>
+              <div class="muted" style="font-size:11px;margin-bottom:14px">Log your ad cost here. Revenue is pulled automatically from active agent subscriptions, and profit updates live. (Built so this can auto-import from Meta later.)</div>
+              <div id="adRecent"></div>
+            </div>
+          </div>
+
+          <div class="opanel" id="plPanel">
+            <h2>Business P&amp;L — my take</h2>
+            <div style="padding:16px 18px"><div class="owner-grid" id="plStats"></div>
+            <div class="muted" style="font-size:11px;margin-top:10px">Subscription revenue is summed from active agents by tier (Silver $400, Gold $600, Black Label $1,500/wk). Ad spend comes from the tracker above.</div></div>
+          </div>
+
+          <div class="opanel" id="agentProfitPanel">
+            <h2>Agent profit — who's producing</h2>
+            <div id="agentProfitWrap"><div class="owarn muted">Loading...</div></div>
+          </div>
+
+          <div class="opanel" id="ccBillingPanel">
+            <h2>Billing health</h2>
+            <div id="ccBillingWrap"><div class="owarn muted">Loading…</div></div>
+          </div>
+
+          <div class="opanel" id="ccLandingPanel">
+            <h2>Landing page performance</h2>
+            <div id="ccLandingWrap" style="overflow-x:auto"><div class="owarn muted">Loading…</div></div>
+          </div>
+
+          <div class="opanel" id="ccMakeGoodPanel">
+            <h2>Make-good <span class="muted" style="font-size:11px;font-weight:400">&mdash; short-week credit cost</span></h2>
+            <div id="ccMakeGoodWrap"><div class="owarn muted">Loading…</div></div>
+          </div>
+        </section>
+
+        <!-- ===== LEADS & VAULT ===== -->
+        <section class="view" id="view-leads">
+          <div class="page-intro"><h2>Leads &amp; Vault</h2><p>Live leads, manual assignment, and the vault waiting for coverage.</p></div>
+
+          <div class="opanel">
+            <h2>Vault — leads waiting for an agent</h2>
+            <div id="vaultWrap"><div class="owarn muted">Loading…</div></div>
+          </div>
+
+          <div class="opanel" id="giftPanel">
+            <h2>Give leads to an agent</h2>
+            <div style="padding:16px 18px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+              <div><label class="giftl">Agent</label><select id="gift-agent" class="osel"></select></div>
+              <div><label class="giftl">How many</label><input id="gift-count" class="osel" type="number" min="1" max="100" value="1" style="max-width:90px"></div>
+              <div><label class="giftl">State (optional)</label><input id="gift-state" class="osel" placeholder="TX" style="max-width:90px"></div>
+              <div><label class="giftl">Vertical (optional)</label><select id="gift-vert" class="osel"><option value="">Any</option><option value="Final Expense">Final Expense</option><option value="Mortgage Protection">Mortgage Protection</option><option value="IUL">IUL</option><option value="Annuity">Annuity</option></select></div>
+              <button class="obtn" style="padding:7px 14px" onclick="giftLeads()">Assign from vault</button>
+            </div>
+            <div class="muted" style="font-size:11px;padding:0 18px 14px">Hand-pick leads out of the vault for a specific agent. Pulls the oldest matching unassigned leads and overrides normal routing.</div>
+          </div>
+
+          <div class="opanel">
+            <h2>Leads</h2>
+            <div id="leadsWrap"><div class="owarn muted">Loading…</div></div>
+          </div>
+
+          <div class="opanel" id="ccQualityPanel">
+            <h2>Lead quality</h2>
+            <div id="ccQualityWrap"><div class="owarn muted">Loading…</div></div>
+          </div>
+
+          <div class="opanel" id="ccMarketsPanel">
+            <h2>Markets <span class="muted" style="font-size:11px;font-weight:400">&mdash; states you're running ads in</span></h2>
+            <div id="ccMarketsWrap" style="overflow-x:auto"><div class="owarn muted">Loading…</div></div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:0 18px 16px">
+              <input id="mkState" class="osel" placeholder="State (e.g. TX)" style="max-width:140px">
+              <select id="mkVert" class="osel"><option value="Final Expense">Final Expense</option><option value="Mortgage Protection">Mortgage Protection</option><option value="IUL">IUL</option><option value="Annuity">Annuity</option></select>
+              <button class="obtn" onclick="ccSetMarket(document.getElementById('mkState').value, document.getElementById('mkVert').value, true)">Open this market</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== AGENTS ===== -->
+        <section class="view" id="view-agents">
+          <div class="page-intro"><h2>Agents</h2><p>Manage tier, weekly cap, billing, and status.</p></div>
+
+          <div class="opanel">
+            <h2>Agents</h2>
+            <div id="agentsWrap"><div class="owarn muted">Loading…</div></div>
+          </div>
+
+          <div class="opanel" id="ccDeliveryPanel">
+            <h2>Agent delivery</h2>
+            <div id="ccDeliveryWrap" style="overflow-x:auto"><div class="owarn muted">Loading…</div></div>
+          </div>
+        </section>
+
+        <!-- ===== REFUNDS ===== -->
+        <section class="view" id="view-refunds">
+          <div class="page-intro"><h2>Refund &amp; replacement queue</h2><p>Review credit and replacement requests, then resolve them.</p></div>
+          <div class="panel">
+            <p class="muted" style="margin:0;font-size:13.5px">Requests show up here as agents flag leads. <b style="color:var(--text)">Phase 2</b> adds instant auto-credit for objective reasons (bad number, outside filters, duplicate) and a due-diligence view for the judgment calls, with each request's effort and consent cert attached.</p>
+          </div>
+          <div class="opanel" id="refundsPanel" style="display:none">
+            <h2>Refund / replacement requests</h2>
+            <div id="refundsWrap"></div>
+          </div>
+        </section>
+
+        <!-- ===== REFERRALS ===== -->
+        <section class="view" id="view-referrals">
+          <div class="page-intro"><h2>Referrals</h2><p>Program-cost monitor — what the two-sided referral program is paying out.</p></div>
+          <div class="opanel" id="ccReferralsPanel">
+            <h2>Referrals <span class="muted" style="font-size:11px;font-weight:400">&mdash; program-cost monitor</span></h2>
+            <div id="ccReferralsWrap"><div class="owarn muted">Loading…</div></div>
+          </div>
+        </section>
+
+        <!-- ===== ALERTS ===== -->
+        <section class="view" id="view-alerts">
+          <div class="page-intro"><h2>Alerts</h2><p>From the 15-minute watchdog, plus your owner action log. Safe fixes happen automatically; the rest need you.</p></div>
+          <div class="opanel" id="ccAlertsPanel">
+            <h2>Alerts</h2>
+            <div id="ccAlertsWrap"><div class="owarn muted">Loading…</div></div>
+          </div>
+          <div class="opanel" id="actionLogPanel">
+            <h2>Action log</h2>
+            <div id="actionLogWrap"><div class="owarn muted">Loading...</div></div>
+          </div>
+        </section>
+
+        <!-- Agent drill-down target — shared by the Agents table AND the Money agent-profit table.
+             Kept outside the views so it surfaces under whichever section opened it (viewAgent/setTier in the data script render here). -->
+        <div id="agentDetail" style="display:none"></div>
+
       </div>
     </div>
-
-    <div class="owner-grid" id="metrics"></div>
-
-    <div class="opanel" id="profitPanel">
-      <h2>Profit tracker</h2>
-      <div style="padding:16px 18px">
-        <div class="owner-grid" id="profitStats" style="margin-bottom:14px"></div>
-        <form id="adForm" onsubmit="addAdSpend(event)" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:8px">
-          <div><label style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:3px">Ad spend ($)</label><input id="as-amt" class="osel" type="number" min="0" step="0.01" placeholder="100" style="max-width:110px" required></div>
-          <div><label style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:3px">Date</label><input id="as-date" class="osel" type="date"></div>
-          <div><label style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:3px">Platform</label><select id="as-plat" class="osel"><option>Meta</option><option>Google</option><option>YouTube</option><option>TikTok</option><option>Other</option></select></div>
-          <div><label style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:3px">Vertical</label><select id="as-vert" class="osel"><option value="">All / mixed</option><option value="final_expense">Final Expense</option><option value="mortgage_protection">Mortgage</option><option value="iul">IUL</option><option value="annuity">Annuity</option></select></div>
-          <button class="obtn" type="submit" style="padding:7px 14px">Add spend</button>
-        </form>
-        <div class="muted" style="font-size:11px;margin-bottom:14px">Log your ad cost here. Revenue is pulled automatically from active agent subscriptions, and profit updates live. (Built so this can auto-import from Meta later.)</div>
-        <div id="adRecent"></div>
-      </div>
-    </div>
-
-    <div class="opanel" id="plPanel">
-      <h2>Business P&amp;L — my take</h2>
-      <div style="padding:16px 18px"><div class="owner-grid" id="plStats"></div>
-      <div class="muted" style="font-size:11px;margin-top:10px">Subscription revenue is summed from active agents by tier (Silver $400, Gold $600, Black Label $1,500/wk). Ad spend comes from the tracker above.</div></div>
-    </div>
-
-    <div class="opanel" id="agentProfitPanel">
-      <h2>Agent profit — who's producing</h2>
-      <div id="agentProfitWrap"><div class="owarn muted">Loading...</div></div>
-    </div>
-
-    <div class="opanel" id="giftPanel">
-      <h2>Give leads to an agent</h2>
-      <div style="padding:16px 18px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
-        <div><label class="giftl">Agent</label><select id="gift-agent" class="osel"></select></div>
-        <div><label class="giftl">How many</label><input id="gift-count" class="osel" type="number" min="1" max="100" value="1" style="max-width:90px"></div>
-        <div><label class="giftl">State (optional)</label><input id="gift-state" class="osel" placeholder="TX" style="max-width:90px"></div>
-        <div><label class="giftl">Vertical (optional)</label><select id="gift-vert" class="osel"><option value="">Any</option><option value="Final Expense">Final Expense</option><option value="Mortgage Protection">Mortgage Protection</option><option value="IUL">IUL</option><option value="Annuity">Annuity</option></select></div>
-        <button class="obtn" style="padding:7px 14px" onclick="giftLeads()">Assign from vault</button>
-      </div>
-      <div class="muted" style="font-size:11px;padding:0 18px 14px">Hand-pick leads out of the vault for a specific agent. Pulls the oldest matching unassigned leads and overrides normal routing.</div>
-    </div>
-
-    <div class="opanel" id="refundsPanel" style="display:none">
-      <h2>Refund / replacement requests</h2>
-      <div id="refundsWrap"></div>
-    </div>
-
-    <div class="opanel">
-      <h2>Vault — leads waiting for an agent</h2>
-      <div id="vaultWrap"><div class="owarn muted">Loading…</div></div>
-    </div>
-
-    <div class="opanel">
-      <h2>Agents</h2>
-      <div id="agentsWrap"><div class="owarn muted">Loading…</div></div>
-    </div>
-
-    <div class="opanel">
-      <h2>Leads</h2>
-      <div id="leadsWrap"><div class="owarn muted">Loading…</div></div>
-    </div>
-
-    <div id="agentDetail" style="display:none"></div>
-
-    <div class="opanel" id="actionLogPanel">
-      <h2>Action log</h2>
-      <div id="actionLogWrap"><div class="owarn muted">Loading...</div></div>
-    </div>
-  </div>
+  </main>
 </div>
 
 <script>
@@ -883,6 +973,40 @@
       ccLoadMarkets();
     });
   }
+</script>
+<script src="portal-shell.js"></script>
+<script>
+/* Command Center shell — in-page section switching + owner money shimmer.
+   Presentation only; the bl_owner_* data wiring above is untouched. portal-shell.js owns the mobile sidebar/scrim/Escape. */
+(function(){
+  var views=[].slice.call(document.querySelectorAll('.view'));
+  var navBtns=[].slice.call(document.querySelectorAll('#nav button'));
+  var ptitle=document.getElementById('ptitle');
+  var side=document.getElementById('side'), scrim=document.getElementById('scrim'), hamb=document.getElementById('hamb');
+  var titles={overview:'Overview',money:'Money & P&L',leads:'Leads & Vault',agents:'Agents',refunds:'Refunds',referrals:'Referrals',alerts:'Alerts'};
+  function show(v){
+    views.forEach(function(s){ s.classList.toggle('active', s.id==='view-'+v); });
+    navBtns.forEach(function(b){ var on=b.dataset.view===v; b.classList.toggle('active',on); if(on){ b.setAttribute('aria-current','page'); } else { b.removeAttribute('aria-current'); } });
+    if(ptitle) ptitle.textContent=titles[v]||'';
+    var ad=document.getElementById('agentDetail'); if(ad) ad.style.display='none';
+    window.scrollTo(0,0);
+    if(side) side.classList.remove('open'); if(scrim) scrim.classList.remove('show'); if(hamb) hamb.setAttribute('aria-expanded','false');
+  }
+  document.querySelectorAll('[data-view]').forEach(function(el){
+    el.addEventListener('click', function(e){ e.preventDefault(); show(el.dataset.view); });
+  });
+  /* money shimmer: tag whole-cell $-values once they render from the bl_owner_* RPCs (idempotent) */
+  function ownerTagMoney(){
+    var els=document.querySelectorAll('#dash .ostat .n, #dash .waitbig, #dash .otable td');
+    for(var i=0;i<els.length;i++){ var el=els[i]; if(el.classList.contains('money')) continue; if(/^\s*\$-?[\d,]+(\.\d+)?\s*$/.test(el.textContent||'')) el.classList.add('money'); }
+  }
+  var dash=document.getElementById('dash');
+  if(dash && window.MutationObserver){
+    var pending=false;
+    new MutationObserver(function(){ if(pending) return; pending=true; setTimeout(function(){ pending=false; ownerTagMoney(); }, 60); }).observe(dash, {childList:true, subtree:true});
+  }
+  if(document.readyState!=='loading') ownerTagMoney(); else document.addEventListener('DOMContentLoaded', ownerTagMoney);
+})();
 </script>
 </body>
 </html>
