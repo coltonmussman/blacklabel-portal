@@ -283,17 +283,22 @@
 <script>
   var SUPABASE_URL = 'https://hqiyxeriugywlkbcuasu.supabase.co';
   var SUPABASE_KEY = 'sb_publishable_9m66yQmAgJwgCRMoYcU5sA_3l_XlfXr';
-  var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  // Owner session is isolated from the agent portal via a distinct auth storageKey, so the owner can be
+  // signed into the command center AND a test-agent account at the same time in one browser.
+  // (bl_is_owner() gate + RLS are server-side and unchanged — this only changes where the session is stored.)
+  var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { storageKey: 'bl-owner-auth', persistSession: true, autoRefreshToken: true }
+  });
   var agents = [];
 
   function esc(s){ var d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
   function money(n){ return '$' + Math.round(Number(n)||0).toLocaleString(); }
   function fmt(ts){ if(!ts) return '—'; var d=new Date(ts); return d.toLocaleDateString([], {month:'short', day:'numeric'}); }
   function pretty(v){ var m={final_expense:'Final Expense',mortgage_protection:'Mortgage Protection',iul:'IUL',annuity:'Annuity'}; return m[v]||(v||'—'); }
-  function signOut(){ db.auth.signOut().then(function(){ window.location.href='index.html'; }); }
+  function signOut(){ db.auth.signOut().then(function(){ window.location.href='owner-login.html'; }); }
 
   db.auth.getSession().then(function(r){
-    if(!r.data.session){ window.location.href='index.html'; return; }
+    if(!r.data.session){ window.location.href='owner-login.html'; return; }
     document.getElementById('whoami').innerHTML = '<span class="email">' + esc(r.data.session.user.email) + '</span>';
     boot();
   });

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Command Center Sign In — Black Label Leads</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="portal-redesign.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body{display:grid;place-items:center;min-height:100vh;padding:24px}
+  .auth-card{width:100%;max-width:400px;background:var(--card);border:1px solid var(--edge-soft);border-radius:18px;padding:34px 30px;box-shadow:var(--shadow)}
+  .auth-brand{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:6px}
+  .auth-brand svg{width:62px;height:62px;margin-bottom:12px}
+  .auth-brand .wm{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:.14em;color:var(--silver-bright)}
+  .ownertag{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);background:var(--amber-bg);border:1px solid rgba(227,178,100,0.25);border-radius:6px;padding:5px 11px;margin-top:13px;display:inline-block}
+  h1{font-size:23px;font-weight:600;text-align:center;margin:24px 0 4px}
+  .sub{font-size:13.5px;color:var(--text-2);text-align:center;margin-bottom:24px;line-height:1.5}
+  .field{margin-bottom:15px}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--text-2);margin-bottom:7px}
+  .field input{width:100%;background:var(--inset);border:1px solid var(--edge);color:var(--text);border-radius:9px;padding:12px 14px;font-size:14px;font-family:inherit}
+  .field input:focus{outline:none;border-color:var(--silver)}
+  .btn-signin{width:100%;background:var(--chrome);color:#0c0e11;border:none;border-radius:9px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px;transition:opacity .15s}
+  .btn-signin:hover{opacity:.92}
+  .btn-signin:disabled{opacity:.5;cursor:default}
+  .msg{font-size:13px;text-align:center;margin-top:14px;min-height:18px}
+  .msg.err{color:var(--red)} .msg.ok{color:var(--green)}
+  .foot{font-size:12.5px;color:var(--muted);text-align:center;margin-top:18px}
+  .foot a{color:var(--silver);cursor:pointer;font-weight:600}
+  .foot a:hover{color:var(--silver-bright)}
+  :focus-visible{outline:2px solid var(--silver-bright);outline-offset:2px;border-radius:4px}
+</style>
+</head>
+<body>
+  <div class="auth-card">
+    <div class="auth-brand">
+      <svg viewBox="0 0 170 170" aria-label="Black Label Leads">
+        <defs>
+          <linearGradient id="pc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="0.38" stop-color="#c4cad2"/><stop offset="0.52" stop-color="#8e959f"/><stop offset="0.66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
+          <linearGradient id="pr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset="0.5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
+        </defs>
+        <circle cx="85" cy="85" r="66" fill="#101113" stroke="url(#pr)" stroke-width="2.2"/>
+        <circle cx="85" cy="85" r="58" fill="none" stroke="#aeb4bc" stroke-width="1" opacity="0.55"/>
+        <rect x="81.5" y="33.5" width="7" height="7" transform="rotate(45 85 37)" fill="url(#pr)"/>
+        <rect x="81.5" y="129.5" width="7" height="7" transform="rotate(45 85 133)" fill="url(#pr)"/>
+        <text x="85" y="104" text-anchor="middle" font-family="'Fraunces',Georgia,serif" font-size="54" font-weight="500" letter-spacing="3" fill="url(#pc)">BL</text>
+      </svg>
+      <div class="wm">BLACK LABEL LEADS</div>
+      <span class="ownertag">Command Center</span>
+    </div>
+
+    <h1>Owner sign in</h1>
+    <p class="sub">Owner-only. This is a separate session from the agent portal, so you can stay signed into both at once.</p>
+
+    <form id="loginForm" onsubmit="return false;">
+      <div class="field"><label for="email">Email</label><input type="email" id="email" autocomplete="email" required></div>
+      <div class="field"><label for="password">Password</label><input type="password" id="password" autocomplete="current-password" required></div>
+      <button class="btn-signin" id="loginBtn" onclick="signIn()">Sign in</button>
+    </form>
+    <p class="msg" id="msg"></p>
+    <p class="foot"><a onclick="forgot()">Forgot your password?</a></p>
+  </div>
+
+<script>
+  var SUPABASE_URL = 'https://hqiyxeriugywlkbcuasu.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_9m66yQmAgJwgCRMoYcU5sA_3l_XlfXr';
+  // Owner session is isolated from the agent portal via a distinct auth storageKey, so the owner can be
+  // signed into the command center AND a test-agent account at the same time in one browser.
+  // (The server-side bl_is_owner() gate + RLS are unchanged — this is session isolation, not a security change.)
+  var ownerClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { storageKey: 'bl-owner-auth', persistSession: true, autoRefreshToken: true }
+  });
+
+  /* already signed in as owner? straight to the command center */
+  ownerClient.auth.getSession().then(function(r){
+    if (r.data.session) window.location.href = 'owner.html';
+  });
+
+  function show(kind, text){ var m = document.getElementById('msg'); m.className = 'msg ' + kind; m.textContent = text; }
+
+  function signIn(){
+    var btn = document.getElementById('loginBtn');
+    var email = document.getElementById('email').value.trim();
+    var password = document.getElementById('password').value;
+    if(!email || !password){ show('err','Enter your email and password.'); return; }
+    btn.disabled = true;
+    ownerClient.auth.signInWithPassword({ email: email, password: password }).then(function(r){
+      if (r.error) { btn.disabled = false; show('err', r.error.message === 'Invalid login credentials' ? 'Email or password is incorrect.' : r.error.message); return; }
+      window.location.href = 'owner.html';
+    });
+  }
+
+  function forgot(){
+    var email = document.getElementById('email').value.trim();
+    if(!email){ show('err','Type your email above first, then click "Forgot your password?" again.'); return; }
+    ownerClient.auth.resetPasswordForEmail(email, { redirectTo: 'https://portal.blacklabelleads.app/welcome.html' }).then(function(r){
+      if (r.error) { show('err', r.error.message); return; }
+      show('ok','Reset link sent — check your email.');
+    });
+  }
+
+  document.getElementById('password').addEventListener('keydown', function(e){ if(e.key==='Enter') signIn(); });
+</script>
+</body>
+</html>
