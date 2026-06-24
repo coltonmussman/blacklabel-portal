@@ -3,92 +3,154 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Home — Black Label Leads Portal</title>
+<title>Dashboard - Black Label Leads Portal</title>
 <meta name="robots" content="noindex">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="portal-redesign.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+<div class="app">
 
-<div class="topbar">
-  <div style="display:flex;align-items:center">
+  <!-- SIDEBAR -->
+  <aside class="side" id="side">
     <div class="brand">
-      <svg viewBox="0 0 170 170" aria-hidden="true">
+      <svg viewBox="0 0 100 100" aria-label="Black Label Leads">
         <defs>
-          <linearGradient id="pc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="0.38" stop-color="#c4cad2"/><stop offset="0.52" stop-color="#8e959f"/><stop offset="0.66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
-          <linearGradient id="pr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset="0.5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
+          <linearGradient id="lgChrome" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".38" stop-color="#c4cad2"/><stop offset=".52" stop-color="#8e959f"/><stop offset=".66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
+          <linearGradient id="lgRing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset=".5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
         </defs>
-        <circle cx="85" cy="85" r="66" fill="#101113" stroke="url(#pr)" stroke-width="2.2"/>
-        <circle cx="85" cy="85" r="58" fill="none" stroke="#aeb4bc" stroke-width="1" opacity="0.55"/>
-        <rect x="81.5" y="33.5" width="7" height="7" transform="rotate(45 85 37)" fill="url(#pr)"/>
-        <rect x="81.5" y="129.5" width="7" height="7" transform="rotate(45 85 133)" fill="url(#pr)"/>
-        <text x="85" y="104" text-anchor="middle" font-family="'Fraunces',Georgia,serif" font-size="54" font-weight="500" letter-spacing="3" fill="url(#pc)">BL</text>
+        <circle cx="50" cy="50" r="46" fill="#101113" stroke="url(#lgRing)" stroke-width="1.7"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="#aeb4bc" stroke-width="0.6" opacity=".55"/>
+        <rect x="46.5" y="11.5" width="6" height="6" transform="rotate(45 50 14.5)" fill="url(#lgRing)"/>
+        <rect x="46.5" y="82.5" width="6" height="6" transform="rotate(45 50 85.5)" fill="url(#lgRing)"/>
+        <text x="50" y="64" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="36" font-weight="500" letter-spacing="2" fill="url(#lgChrome)">BL</text>
       </svg>
-      <span>Black <span class="lbl">Label</span> Leads</span>
+      <div class="w"><div class="l1">BLACK LABEL</div><div class="l2">LEADS</div></div>
     </div>
-    <nav class="topnav">
-      <a href="home.html" class="active">Home</a>
-      <a href="portal.html">My Leads</a>
-      <a href="tracker.html">Tracker</a>
-      <a href="profile.html">Profile</a>
-      <a href="refer.html">Refer &amp; Earn</a>
-      <a href="support.html">Support</a>
+    <nav class="nav" id="nav">
+      <a href="home.html" class="active"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Dashboard</a>
+      <a href="portal.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 14h8"/></svg>My Leads</a>
+      <a href="tracker.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-8"/></svg>Tracker</a>
+      <a href="profile.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>Profile</a>
+      <a href="refer.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 12v8H4v-8M2 7h20v5H2zM12 22V7M12 7S9 2 6.5 4 9 7 12 7zM12 7s3-5 5.5-3-.5 3-3.5 3z"/></svg>Refer &amp; Earn</a>
+      <a href="support.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.4 9.3a2.6 2.6 0 1 1 3.9 2.4c-.9.6-1.3 1-1.3 2"/><circle cx="12" cy="16.6" r=".6" fill="currentColor" stroke="none"/></svg>Support</a>
     </nav>
-  </div>
-  <div class="who">
-    <span id="availBadge"></span>
-    <span id="whoami"></span>
-    <button class="signout" onclick="signOut()">Sign out</button>
-  </div>
+    <div class="side-foot">
+      <div class="who"><img class="av" id="sideAvatar" src="favicon.svg" alt=""><div><div class="nm" id="sideName">…</div><div class="tr" id="sideTier"></div></div></div>
+      <button class="signout" onclick="signOut()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/></svg>Sign out</button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <main class="main">
+    <div class="topbar">
+      <button class="hamb" id="hamb" aria-label="Open menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <h1>Dashboard</h1>
+      <div class="right"><span id="availBadge"></span></div>
+    </div>
+
+    <div class="content wide">
+      <div class="dash-grid" id="dashGrid">
+        <div class="dash-main">
+
+          <div class="dash-top">
+            <div class="page-intro"><h2>Good <span id="greet">day</span>, <span id="firstName">agent</span></h2><p>Here's where your week stands.</p></div>
+            <button class="dash-customize" id="dashreset" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Restore hidden</button>
+          </div>
+
+          <!-- billing banner (active confirmation / activation CTA) -->
+          <div id="billingBanner" class="panel" style="display:none"></div>
+
+          <!-- finish-your-card attention (Handshake) -->
+          <div id="cardAttention" class="panel" style="display:none;border-color:rgba(227,178,100,0.45);background:rgba(227,178,100,0.08)">
+            <h3 style="color:#e3c184">Finish your agent card</h3>
+            <p class="sub" style="margin-bottom:14px">The moment a lead is assigned to you, National Coverage Group introduces you to them by name and photo - before you ever dial. Your card isn't finished yet, so your leads don't meet you first. It takes about two minutes.</p>
+            <a class="btn primary" href="profile.html#cardSection">Finish my card</a>
+          </div>
+
+          <!-- milestone toast (the agent's own actuals) -->
+          <div id="milestone" class="milestone" style="display:none"><span class="mi">🎉</span><span id="milestoneText"></span></div>
+
+          <!-- tier upgrade nudge - built but DORMANT; Phase 2 (TIER_UPGRADE_NUDGE) fills + reveals it on real signals -->
+          <div class="nudge" id="upnudge" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+            <div class="nt" id="upnudgeText"></div>
+            <button class="nx" id="nudgex" title="Dismiss">×</button>
+          </div>
+
+          <!-- membership / upgrade -->
+          <div class="tierbox">
+            <div class="ti"><div class="tlab">Your membership</div><div class="tname" id="tierName">—</div><div class="tmeta" id="tierMeta"></div></div>
+            <button class="up" id="upbtn" hidden>Upgrade</button>
+          </div>
+
+          <!-- stats -->
+          <div class="stats">
+            <div class="stat"><div class="lab">Leads this week</div><div class="num" id="statWeek">—</div><div class="delta flat" id="statWeekDelta"></div></div>
+            <div class="stat"><div class="lab">Premium written · month</div><div class="num" id="statPrem">—</div><div class="delta flat" id="statPremDelta"></div></div>
+            <div class="stat"><div class="lab">Return this month</div><div class="num" id="statRoi">—</div><div class="delta flat" id="statRoiDelta"></div></div>
+            <div class="stat"><div class="lab">Total leads</div><div class="num" id="statTotal">—</div><div class="delta flat">since you joined</div></div>
+          </div>
+
+          <!-- your week recap -->
+          <div class="panel" id="recapPanel">
+            <div class="sectionhead" style="margin:0 0 14px"><h3>Your week</h3><span class="muted" style="font-size:12.5px">Mon → today</span></div>
+            <div class="recap">
+              <div class="r"><div class="v" id="recReceived">—</div><div class="l">Received</div></div>
+              <div class="r"><div class="v" id="recContacted">—</div><div class="l">Contacted</div></div>
+              <div class="r"><div class="v" id="recAppt">—</div><div class="l">Appointments</div></div>
+              <div class="r"><div class="v" id="recSold">—</div><div class="l">Sold</div></div>
+              <div class="r"><div class="v" id="recRate">—</div><div class="l">Contact rate</div></div>
+            </div>
+          </div>
+
+          <!-- collective pool (combined across all agents; never individual) -->
+          <div class="panel" id="poolCard" style="display:none">
+            <h3>The Black Label pool</h3>
+            <p class="sub" id="poolLine" style="margin-bottom:0">Loading the collective numbers…</p>
+          </div>
+
+          <!-- latest leads -->
+          <div class="sectionhead" id="recentHead"><h3>Latest leads</h3><a href="portal.html">View all my leads →</a></div>
+          <div class="leadlist" id="recent"><div class="lead"><span class="muted" style="font-size:13px">Loading…</span></div></div>
+
+          <!-- routing / drop note -->
+          <div class="note" id="dropNote" style="margin-top:22px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex-shrink:0;color:var(--silver)"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><span id="dropNoteText">You receive leads on your Drop days, in real time - usually within two minutes of the customer hitting submit.</span></div>
+
+        </div>
+
+        <!-- THE BOARD - built, but owner-gated OFF in Phase 1 (no agent sees $0). Phase 2 flips BOARD_ENABLED + fills real, RLS-safe aggregates. -->
+        <aside class="dash-right" id="dashRight" style="display:none">
+          <div class="board-wrap" id="boardwrap">
+            <div class="board">
+              <div class="board-head"><span class="bt">The Board</span><button class="board-hide" id="boardhide" title="Hide the board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg></button></div>
+              <div class="bignum"><div class="l">Company premium · this month</div><div class="v" id="boardMonth">—</div></div>
+              <div class="bignum"><div class="l">Company premium · this year</div><div class="v" id="boardYear">—</div></div>
+              <div class="bignum row"><div class="l">Active agents</div><div class="v" id="boardAgents">—</div></div>
+              <div class="board-div"></div>
+              <div class="lb" id="boardList"></div>
+              <button class="board-view" id="boardview">View full leaderboard →</button>
+            </div>
+            <button class="board-show" id="boardshow"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>Show the Board</button>
+          </div>
+        </aside>
+
+      </div>
+    </div>
+  </main>
 </div>
 
-<div class="shell">
-  <div class="home-hero">
-    <h1>Welcome back, <em id="firstName">agent</em>.</h1>
-    <p>Every lead in your portal was generated by our own ads, consent-certified, and sold to you alone — once, forever. New leads land here, and in your email, the moment they're delivered.</p>
-  </div>
-
-  <div id="billingBanner" class="home-card" style="display:none;margin-bottom:22px"></div>
-
-  <div id="cardAttention" class="home-card" style="display:none;margin-bottom:22px;border-color:rgba(210,169,106,0.45);background:rgba(210,169,106,0.10)">
-    <h2 style="color:#e3c184">Finish your agent card</h2>
-    <p class="support-line">The moment a lead is assigned to you, National Coverage Group introduces you to them by name and photo — before you ever dial. Your card isn't finished yet, so your leads don't meet you first. It takes about two minutes.</p>
-    <a class="home-cta" href="profile.html#cardSection" style="margin-top:10px">Finish my card</a>
-  </div>
-
-  <div class="home-card" id="poolCard" style="display:none;margin-bottom:22px;border-color:rgba(127,184,154,0.35)">
-    <h2>The Black Label pool</h2>
-    <p class="support-line" id="poolLine">Loading the collective numbers…</p>
-  </div>
-
-  <div class="stats">
-    <div class="stat"><div class="n" id="statWeek">—</div><div class="l">Leads this week</div></div>
-    <div class="stat"><div class="n" id="statTotal">—</div><div class="l">Total leads</div></div>
-    <div class="stat"><div class="n" id="statTier">—</div><div class="l">Your tier</div></div>
-  </div>
-
-  <div class="home-grid">
-    <div class="home-card" style="grid-row:span 2">
-      <h2>Latest leads</h2>
-      <div id="recent"><div class="support-line">Loading…</div></div>
-      <a class="home-cta" href="portal.html">View all my leads</a>
-    </div>
-    <div class="home-card">
-      <h2>Routing &amp; returns</h2>
-      <p class="support-line" id="stateLine">Leads from your licensed states route to you automatically.</p>
-      <p class="support-line" id="roiLine" style="margin-top:8px"></p>
-      <a class="home-cta" href="tracker.html" style="margin-top:12px">Open profit tracker</a>
-    </div>
-    <div class="home-card">
-      <h2>Need a hand?</h2>
-      <p class="support-line">
-        Question about a lead, your account, or a credit under the 24-hour standard?
-        Email <a href="mailto:blacklabelleads@gmail.com?subject=Portal%20support">blacklabelleads@gmail.com</a>
-        and you'll get a reply from a licensed agent — not a ticket queue.
-      </p>
-    </div>
+<!-- UPGRADE CONFIRM MODAL (Phase 1: explains the switch; the actual Monday plan-change lands in Phase 2) -->
+<div class="modal" id="upmodal">
+  <div class="box" role="dialog" aria-modal="true" aria-labelledby="upTitle">
+    <div class="mh"><h3 id="upTitle">Upgrade</h3><button class="mx" id="upclose" aria-label="Close">×</button></div>
+    <p class="sub">More volume, same one-agent-forever standard.</p>
+    <div class="kv"><span class="k">New plan</span><span class="v" id="upNew">—</span></div>
+    <div class="kv"><span class="k">Replaces</span><span class="v" id="upOld">—</span></div>
+    <div class="kv"><span class="k">Starts</span><span class="v" id="upStart">—</span></div>
+    <div class="note" style="margin-top:16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex-shrink:0;color:var(--silver)"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><span>Upgrades take effect on your <b>next weekly cycle (Monday)</b>, so your new week begins then. Your current leads keep coming until then, your card is <b>never charged twice</b>, and your old tier ends exactly as the new one begins. You can cancel the switch any time before it starts.</span></div>
+    <div class="savebar" style="margin-top:18px;align-items:center"><span class="muted" id="upSoon" style="font-size:12px;margin-right:auto">One-click upgrades turn on shortly.</span><button class="btn ghost" id="upcancel">Not now</button><button class="btn primary" id="upconfirm" disabled>Confirm upgrade</button></div>
   </div>
 </div>
 
@@ -98,16 +160,24 @@
   var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   var me = null;
 
+  // Phase 2 flips this on (one switch) once the RLS-safe aggregate RPC ships. Off = the whole Board column is hidden.
+  var BOARD_ENABLED = false;
+
   // ⬇⬇ STRIPE PAYMENT LINKS per tier (TEST links now; swap to live when you go live).
   var PAYMENT_LINKS = {
     silver:     { url: 'https://buy.stripe.com/test_28EcN6dYn9mXgb6ep6gQE00', weekly: 400 },
     gold:       { url: 'https://buy.stripe.com/test_aFaeVe7zZ8iT6AwcgYgQE01', weekly: 600 },
     blacklabel: { url: 'https://buy.stripe.com/test_6oU28s8E31Uv8IE94MgQE03', weekly: 1500 }
   };
-  function tierPlan(tier){
-    var t = String(tier||'silver').toLowerCase().replace(/[^a-z]/g,'');
-    return PAYMENT_LINKS[t] || PAYMENT_LINKS.silver;
-  }
+  // Tier display data for the membership box + upgrade modal.
+  var TIERS = {
+    silver:     { name: 'Silver',      weekly: 400,  leads: '5–8 exclusive leads / week' },
+    gold:       { name: 'Gold',        weekly: 600,  leads: '12 exclusive leads / week' },
+    blacklabel: { name: 'Black Label', weekly: 1500, leads: '30 exclusive leads / week' }
+  };
+  var TIER_ORDER = ['silver', 'gold', 'blacklabel'];
+  function tierKey(t){ return String(t || 'silver').toLowerCase().replace(/[^a-z]/g, ''); }
+  function tierPlan(tier){ return PAYMENT_LINKS[tierKey(tier)] || PAYMENT_LINKS.silver; }
 
   db.auth.getSession().then(function(r){
     if (!r.data.session){ window.location.href = 'index.html'; return; }
@@ -118,21 +188,34 @@
       profData = p.data || {};
       if (profData && profData.setup_complete === false){ window.location.href = 'setup.html'; return; }  // onboarding gate
       renderBilling(profData);
+
+      // card-attention (Handshake): show until headshot + dial number + active card
       var cardDone = !!(profData.headshot_url && profData.dial_number && profData.card_status === 'active');
       var caEl = document.getElementById('cardAttention'); if (caEl) caEl.style.display = cardDone ? 'none' : 'block';
+
+      // identity → sidebar + greeting
       var name = ((profData.first_name||'') + ' ' + (profData.last_name||'')).trim() || me.email;
-      document.getElementById('whoami').innerHTML = '<span class="email">' + esc(name) + '</span>';
+      var tier = profData.tier || 'Silver';
+      document.getElementById('sideName').textContent = name;
+      document.getElementById('sideTier').textContent = tier + (profData.npn ? ' · NPN ' + profData.npn : '');
+      if (profData.headshot_url) document.getElementById('sideAvatar').src = profData.headshot_url;
       document.getElementById('firstName').textContent = profData.first_name || 'agent';
-      var tierEl = document.getElementById('statTier');
-      tierEl.textContent = profData.tier || 'Silver';
-      var isBL = String(profData.tier||'').toLowerCase().indexOf('black label') > -1;
-      tierEl.classList.toggle('bl-tier', isBL);
-      if (tierEl.parentElement) tierEl.parentElement.classList.toggle('bl-stat', isBL);
+      document.getElementById('greet').textContent = greeting();
+
+      renderTier(tier, profData);
+      maybeBoard();
+
+      // routing/drop note: honest, no fabricated "next drop is tomorrow"
       var states = (profData.states_licensed || '').split(/[,;/\n]+/).map(function(s){return s.trim();}).filter(Boolean);
-      document.getElementById('stateLine').textContent = states.length
-        ? 'You automatically receive leads from: ' + states.join(', ') + '. No claiming, no picking.'
-        : 'Leads from your licensed states route to you automatically.';
+      var bs = String(profData.subscription_status || '').toLowerCase();
+      var billTxt = (bs === 'active' || bs === 'trialing') ? ' Billing is <b style="color:var(--good)">active</b>.'
+                  : (bs === 'reserved') ? ' Your seat is <b>reserved</b> - no charge until your first Drop.' : '';
+      document.getElementById('dropNoteText').innerHTML =
+        (states.length ? 'You automatically receive leads from <b>' + esc(states.join(', ')) + '</b> on your Drop days, '
+                       : 'You receive leads on your Drop days, ')
+        + 'in real time - usually within two minutes of the customer hitting submit.' + billTxt;
     });
+
     db.from('leads')
       .select('first_name, last_name, state, vertical, assigned_at, created_at, lead_status, annual_premium, sold_at')
       .order('assigned_at', { ascending: false, nullsFirst: false })
@@ -141,29 +224,122 @@
         var leads = r2.data || [];
         var now = Date.now(), week = 7*24*60*60*1000;
         function thisMonth(ts){ if(!ts) return false; var d=new Date(ts), n=new Date(); return d.getMonth()===n.getMonth() && d.getFullYear()===n.getFullYear(); }
-        var weekly = Number(profData.weekly_investment || 400);
+        function st(l){ return String(l.lead_status||'').toUpperCase().replace(/\s+/g,' ').trim(); }
+        var weekly = Number(profData.weekly_investment || (TIERS[tierKey(profData.tier)]||TIERS.silver).weekly || 400);
         var invested = weekly * Math.ceil(new Date().getDate()/7);
-        var written = leads.filter(function(l){ return l.lead_status==='SOLD' && l.annual_premium && thisMonth(l.sold_at||l.assigned_at); }).reduce(function(a,l){return a+Number(l.annual_premium||0);},0);
-        document.getElementById('roiLine').innerHTML = written>0
-          ? 'This month: <b style="color:var(--good)">' + '$'+Math.round(written).toLocaleString() + ' written</b> on $' + Math.round(invested).toLocaleString() + ' invested (' + (written/invested).toFixed(1) + 'x).'
-          : 'Log your first sale on My Leads to start tracking your return.';
+
+        var soldThisMonth = leads.filter(function(l){ return st(l)==='SOLD' && thisMonth(l.sold_at||l.assigned_at); });
+        var written = soldThisMonth.filter(function(l){return l.annual_premium;}).reduce(function(a,l){return a+Number(l.annual_premium||0);},0);
+
+        // stat cards
+        var weekLeads = leads.filter(function(l){ var t=l.assigned_at||l.created_at; return t && (now-new Date(t).getTime())<week; });
+        document.getElementById('statWeek').textContent = weekLeads.length;
         document.getElementById('statTotal').textContent = leads.length >= 50 ? '50+' : leads.length;
-        document.getElementById('statWeek').textContent = leads.filter(function(l){
-          var t = l.assigned_at || l.created_at;
-          return t && (now - new Date(t).getTime()) < week;
-        }).length;
+        document.getElementById('statPrem').textContent = '$' + Math.round(written).toLocaleString();
+        document.getElementById('statPremDelta').textContent = soldThisMonth.length + (soldThisMonth.length===1?' policy issued':' policies issued');
+        var roi = (invested>0 && written>0) ? (written/invested) : 0;
+        document.getElementById('statRoi').textContent = roi>0 ? roi.toFixed(1)+'×' : '—';
+        document.getElementById('statRoiDelta').textContent = roi>0 ? ('$' + Math.round(invested).toLocaleString() + ' invested') : '';
+
+        // your week recap
+        var rec = weekLeads.length;
+        var contacted = weekLeads.filter(function(l){ return ['CONTACTED','APPOINTMENT','SOLD'].indexOf(st(l))>-1; }).length;
+        var appts = weekLeads.filter(function(l){ return ['APPOINTMENT','SOLD'].indexOf(st(l))>-1; }).length;
+        var soldW = weekLeads.filter(function(l){ return st(l)==='SOLD'; }).length;
+        document.getElementById('recReceived').textContent = rec;
+        document.getElementById('recContacted').textContent = contacted;
+        document.getElementById('recAppt').textContent = appts;
+        document.getElementById('recSold').textContent = soldW;
+        document.getElementById('recRate').textContent = rec ? Math.round(contacted/rec*100) + '%' : '—';
+
+        // milestone (the agent's own written premium this month)
+        var goal = Number(profData.monthly_goal || 0);
+        if (written > 0){
+          var mEl = document.getElementById('milestone'), mt = document.getElementById('milestoneText');
+          mt.innerHTML = goal > 0
+            ? "You've written <b>$" + Math.round(written).toLocaleString() + "</b> this month - " + Math.round(written/goal*100) + "% of your $" + Math.round(goal).toLocaleString() + " goal. Keep it going."
+            : "You've written <b>$" + Math.round(written).toLocaleString() + "</b> in premium this month. Keep it going.";
+          mEl.style.display = 'flex';
+        }
+
+        // latest leads list (reskinned rows)
         var box = document.getElementById('recent');
-        if (!leads.length){ box.innerHTML = '<p class="support-line">No leads yet — when your state opens, they appear here and in your inbox within two minutes of the customer hitting submit.</p>'; return; }
-        box.innerHTML = leads.slice(0,4).map(function(l){
-          return '<div class="mini-lead"><div class="who"><b>' + esc((l.first_name||'') + ' ' + (l.last_name||'')) + '</b><div>' + esc(l.state||'') + ' · ' + esc(pretty(l.vertical)) + '</div></div><div class="when">' + fmt(l.assigned_at || l.created_at) + '</div></div>';
-        }).join('');
-      });
+        if (!leads.length){
+          box.innerHTML = '<div class="lead"><span class="muted" style="font-size:13px">No leads yet - when your state opens, they appear here and in your inbox within two minutes of the customer hitting submit.</span></div>';
+        } else {
+          box.innerHTML = leads.slice(0,5).map(function(l){
+            var nm = esc(((l.first_name||'') + ' ' + (l.last_name||'')).trim() || 'Lead');
+            return '<div class="lead">'
+              + '<div class="who2"><div class="n">' + nm + '</div><div class="s">' + esc(l.state||'') + '</div></div>'
+              + '<span class="vbadge">' + esc(pretty(l.vertical)) + '</span>'
+              + '<span class="meta">' + esc(l.state||'') + '</span>'
+              + '<span class="time">' + fmt(l.assigned_at || l.created_at) + '</span>'
+              + '<span class="status ' + statusClass(st(l)) + '">' + esc(statusLabel(st(l))) + '</span>'
+              + '</div>';
+          }).join('');
+        }
+
+        window.BLtagMoney();
+        wireHideables();
+      })
+      .catch(function(e){ try { wireHideables(); } catch(_){} console.warn('leads load failed', e); });
   });
 
+  function greeting(){ var h=new Date().getHours(); return h<12?'morning':(h<18?'afternoon':'evening'); }
+  function statusClass(s){ var m={'NEW':'st-new','CONTACTED':'st-contacted','APPOINTMENT':'st-appt','SOLD':'st-sold','NO PICKUP':'st-nopickup','NOPICKUP':'st-nopickup','DEAD':'st-dead'}; return m[s]||'st-new'; }
+  function statusLabel(s){ var m={'NEW':'New','CONTACTED':'Contacted','APPOINTMENT':'Appointment','SOLD':'Sold','NO PICKUP':'No pickup','NOPICKUP':'No pickup','DEAD':'Dead'}; return m[s]||(s?s.charAt(0)+s.slice(1).toLowerCase():'New'); }
   function pretty(v){ var m={final_expense:'Final Expense',mortgage_protection:'Mortgage Protection',iul:'IUL',annuity:'Annuity'}; return m[v]||v||''; }
   function esc(s){ var d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
   function fmt(ts){ if(!ts) return ''; var d=new Date(ts); return d.toLocaleDateString([],{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}); }
   function fmtDate(ts){ if(!ts) return ''; var d=new Date(ts); return d.toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'}); }
+
+  // ---- membership box + upgrade modal ----
+  function renderTier(tier, p){
+    var key = tierKey(tier), info = TIERS[key] || TIERS.silver;
+    var bs = String((p && p.subscription_status) || '').toLowerCase();
+    var billTxt = (bs==='active'||bs==='trialing') ? ' · billing active' : (bs==='reserved' ? ' · seat reserved' : '');
+    document.getElementById('tierName').textContent = info.name;
+    document.getElementById('tierMeta').textContent = info.leads + ' · $' + info.weekly + '/wk' + billTxt;
+
+    var idx = TIER_ORDER.indexOf(key);
+    var nextKey = (idx > -1 && idx < TIER_ORDER.length-1) ? TIER_ORDER[idx+1] : null;
+    var btn = document.getElementById('upbtn');
+    if (!nextKey){ btn.hidden = true; return; }
+    var next = TIERS[nextKey];
+    btn.hidden = false;
+    btn.textContent = 'Upgrade to ' + next.name + ' ↑';
+    btn.addEventListener('click', function(){ openUpgrade(info, next); });
+  }
+  function nextMonday(){ var d=new Date(); var add=(8-d.getDay())%7; if(add===0)add=7; d.setDate(d.getDate()+add); return d; }
+  function openUpgrade(cur, next){
+    document.getElementById('upTitle').textContent = 'Upgrade to ' + next.name;
+    document.getElementById('upNew').textContent = next.name + ' · ' + next.leads + ' · $' + next.weekly + '/wk';
+    document.getElementById('upOld').textContent = cur.name + ' · $' + cur.weekly + '/wk';
+    document.getElementById('upStart').textContent = 'Monday, ' + nextMonday().toLocaleDateString([], {month:'short', day:'numeric'});
+    window.__upLast = document.activeElement;
+    document.getElementById('upmodal').classList.add('open');
+    var ucl = document.getElementById('upclose'); if (ucl) ucl.focus();
+  }
+
+  // ---- The Board gate ----
+  function maybeBoard(){
+    var right = document.getElementById('dashRight'), grid = document.getElementById('dashGrid');
+    if (!BOARD_ENABLED){ if(right) right.style.display='none'; if(grid) grid.style.gridTemplateColumns='1fr'; return; }
+    if (right) right.style.display='';
+    // Phase 2: fetch RLS-safe company aggregates + leaderboard here and fill #boardMonth/#boardYear/#boardAgents/#boardList, then BLtagMoney().
+  }
+
+  // ---- hideable widgets (persisted) ----
+  function wireHideables(){
+    if (window.__hdone) return; window.__hdone = true;
+    BLhideable(document.getElementById('milestone'), 'home-milestone');
+    BLhideable(document.querySelector('.stats'), 'home-stats');
+    BLhideable(document.getElementById('recapPanel'), 'home-recap');
+    BLhideable(document.getElementById('poolCard'), 'home-pool');
+    BLhideable(document.getElementById('recent'), 'home-recent', [document.getElementById('recentHead')]);
+    BLhideable(document.getElementById('dropNote'), 'home-dropnote');
+    var dr = document.getElementById('dashreset'); if (dr){ dr.style.display='inline-flex'; dr.addEventListener('click', function(){ BLrestoreHidden(); }); }
+  }
 
   // Billing banner: quiet confirmation when active; a clear call to act when not.
   function renderBilling(p){
@@ -177,23 +353,23 @@
     if (good){
       var renew = p.current_period_end ? (' · renews ' + fmtDate(p.current_period_end)) : '';
       el.style.display = 'block';
-      el.style.borderColor = 'rgba(127,184,154,0.45)';
+      el.style.borderColor = 'rgba(98,207,146,0.45)';
       el.innerHTML =
         '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
         + '<span style="width:8px;height:8px;border-radius:50%;background:var(--good);flex:none"></span>'
-        + '<span class="support-line" style="margin:0"><b style="color:var(--ivory)">Subscription active</b>'
+        + '<span class="sub" style="margin:0"><b style="color:var(--ivory)">Subscription active</b>'
         + esc(renew) + '. Your leads are flowing.</span>'
-        + '<a id="mngBilling" href="#" onclick="openBillingPortal(event)" class="support-line" style="margin:0 0 0 auto;color:var(--silver);text-decoration:underline;cursor:pointer">Manage billing</a>'
+        + '<a id="mngBilling" href="#" onclick="openBillingPortal(event)" class="sub" style="margin:0 0 0 auto;color:var(--silver);text-decoration:underline;cursor:pointer">Manage billing</a>'
         + '</div>';
       return;
     }
 
     if (status === 'reserved'){
       el.style.display = 'block';
-      el.style.borderColor = 'rgba(127,184,154,0.45)';
+      el.style.borderColor = 'rgba(98,207,146,0.45)';
       el.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
         + '<span style="width:8px;height:8px;border-radius:50%;background:var(--good);flex:none"></span>'
-        + '<span class="support-line" style="margin:0"><b style="color:var(--ivory)">Seat reserved</b> &mdash; card on file, no charge until your first Drop. You\'ll start getting Drops as your state opens.</span>'
+        + '<span class="sub" style="margin:0"><b style="color:var(--ivory)">Seat reserved</b>  -  card on file, no charge until your first Drop. You\'ll start getting Drops as your state opens.</span>'
         + '</div>';
       return;
     }
@@ -201,27 +377,27 @@
     var head, sub;
     if (status === 'canceled'){
       head = 'Your subscription is canceled';
-      sub  = 'Your leads are paused. Reactivate to start receiving your exclusive leads again — ' + wk + ', cancel anytime.';
+      sub  = 'Your leads are paused. Reactivate to start receiving your exclusive leads again - ' + wk + ', cancel anytime.';
     } else if (status === 'past_due' || status === 'unpaid'){
       head = 'Payment needs attention';
       sub  = "Your last weekly payment didn't go through, so your leads are paused. Update your card and they resume right away.";
     } else { // 'none' or anything unset
       head = 'Activate your lead subscription';
-      sub  = 'Put a card on file to start receiving your exclusive leads — ' + wk + ', billed automatically, cancel anytime.';
+      sub  = 'Put a card on file to start receiving your exclusive leads - ' + wk + ', billed automatically, cancel anytime.';
     }
-    var btnLabel = (status === 'none') ? ('Activate — ' + wk) : 'Update payment';
+    var btnLabel = (status === 'none') ? ('Activate - ' + wk) : 'Update payment';
 
     el.style.display = 'block';
-    el.style.borderColor = (status === 'none') ? 'rgba(210,169,106,0.55)' : 'rgba(201,138,138,0.6)';
-    var inner = '<h2 style="margin-bottom:6px">' + esc(head) + '</h2>'
-      + '<p class="support-line" style="margin:0 0 14px">' + esc(sub) + '</p>';
+    el.style.borderColor = (status === 'none') ? 'rgba(227,178,100,0.55)' : 'rgba(224,133,133,0.6)';
+    var inner = '<h3 style="margin-bottom:6px">' + esc(head) + '</h3>'
+      + '<p class="sub" style="margin:0 0 14px">' + esc(sub) + '</p>';
     if (plan.url){
       var sep = plan.url.indexOf('?') > -1 ? '&' : '?';
       var href = plan.url + sep + 'client_reference_id=' + encodeURIComponent(me.id)
                + '&prefilled_email=' + encodeURIComponent(me.email || '');
-      inner += '<a class="home-cta" style="margin-top:0" href="' + href + '">' + esc(btnLabel) + '</a>';
+      inner += '<a class="btn primary" href="' + href + '">' + esc(btnLabel) + '</a>';
     } else {
-      inner += '<span class="support-line" style="color:var(--warn)">Billing link not set up yet — check back shortly.</span>';
+      inner += '<span class="sub" style="color:var(--warn)">Billing link not set up yet - check back shortly.</span>';
     }
     el.innerHTML = inner;
   }
@@ -233,8 +409,11 @@
     db.functions.invoke('billing-portal').then(function(r){
       if (el){ el.textContent = 'Manage billing'; el.style.pointerEvents = ''; }
       var url = r && r.data && r.data.url;
-      if ((r && r.error) || !url){ alert("Couldn't open billing right now — email blacklabelleads@gmail.com and we'll sort it out."); return; }
+      if ((r && r.error) || !url){ alert("Couldn't open billing right now - email blacklabelleads@gmail.com and we'll sort it out."); return; }
       window.location.href = url;
+    }).catch(function(){
+      if (el){ el.textContent = 'Manage billing'; el.style.pointerEvents = ''; }
+      alert("Couldn't open billing right now. Try again, or email blacklabelleads@gmail.com.");
     });
   }
 
@@ -254,7 +433,22 @@
   }
 
   function signOut(){ db.auth.signOut().then(function(){ window.location.href = 'index.html'; }); }
+
+  // upgrade modal close handlers
+  (function(){
+    var um = document.getElementById('upmodal');
+    function close(){ um.classList.remove('open'); if (window.__upLast && window.__upLast.focus) { window.__upLast.focus(); } }
+    document.getElementById('upclose').addEventListener('click', close);
+    document.getElementById('upcancel').addEventListener('click', close);
+    um.addEventListener('click', function(e){ if(e.target===um) close(); });
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape' && um.classList.contains('open')) close(); });
+    // board modal/hide handlers (inert while gated off, ready for Phase 2)
+    var bw=document.getElementById('boardwrap');
+    var bh=document.getElementById('boardhide'); if(bh&&bw)bh.addEventListener('click',function(){bw.classList.add('hidden');});
+    var bs=document.getElementById('boardshow'); if(bs&&bw)bs.addEventListener('click',function(){bw.classList.remove('hidden');});
+  })();
 </script>
+<script src="portal-shell.js"></script>
 <script src="avail-badge.js"></script>
 </body>
 </html>

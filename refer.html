@@ -3,83 +3,91 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Refer &amp; Earn — Black Label Leads Portal</title>
+<title>Refer &amp; Earn - Black Label Leads Portal</title>
 <meta name="robots" content="noindex">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="portal-redesign.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+<div class="app">
 
-<div class="topbar">
-  <div style="display:flex;align-items:center">
+  <!-- SIDEBAR -->
+  <aside class="side" id="side">
     <div class="brand">
-      <svg viewBox="0 0 170 170" aria-hidden="true">
+      <svg viewBox="0 0 100 100" aria-label="Black Label Leads">
         <defs>
-          <linearGradient id="pc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="0.38" stop-color="#c4cad2"/><stop offset="0.52" stop-color="#8e959f"/><stop offset="0.66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
-          <linearGradient id="pr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset="0.5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
+          <linearGradient id="lgChrome" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".38" stop-color="#c4cad2"/><stop offset=".52" stop-color="#8e959f"/><stop offset=".66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
+          <linearGradient id="lgRing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset=".5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
         </defs>
-        <circle cx="85" cy="85" r="66" fill="#101113" stroke="url(#pr)" stroke-width="2.2"/>
-        <circle cx="85" cy="85" r="58" fill="none" stroke="#aeb4bc" stroke-width="1" opacity="0.55"/>
-        <rect x="81.5" y="33.5" width="7" height="7" transform="rotate(45 85 37)" fill="url(#pr)"/>
-        <rect x="81.5" y="129.5" width="7" height="7" transform="rotate(45 85 133)" fill="url(#pr)"/>
-        <text x="85" y="104" text-anchor="middle" font-family="'Fraunces',Georgia,serif" font-size="54" font-weight="500" letter-spacing="3" fill="url(#pc)">BL</text>
+        <circle cx="50" cy="50" r="46" fill="#101113" stroke="url(#lgRing)" stroke-width="1.7"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="#aeb4bc" stroke-width="0.6" opacity=".55"/>
+        <rect x="46.5" y="11.5" width="6" height="6" transform="rotate(45 50 14.5)" fill="url(#lgRing)"/>
+        <rect x="46.5" y="82.5" width="6" height="6" transform="rotate(45 50 85.5)" fill="url(#lgRing)"/>
+        <text x="50" y="64" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="36" font-weight="500" letter-spacing="2" fill="url(#lgChrome)">BL</text>
       </svg>
-      <span>Black <span class="lbl">Label</span> Leads</span>
+      <div class="w"><div class="l1">BLACK LABEL</div><div class="l2">LEADS</div></div>
     </div>
-    <nav class="topnav">
-      <a href="home.html">Home</a>
-      <a href="portal.html">My Leads</a>
-      <a href="tracker.html">Tracker</a>
-      <a href="profile.html">Profile</a>
-      <a href="refer.html" class="active">Refer &amp; Earn</a>
-      <a href="support.html">Support</a>
+    <nav class="nav" id="nav">
+      <a href="home.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Dashboard</a>
+      <a href="portal.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 14h8"/></svg>My Leads</a>
+      <a href="tracker.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-8"/></svg>Tracker</a>
+      <a href="profile.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>Profile</a>
+      <a href="refer.html" class="active"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 12v8H4v-8M2 7h20v5H2zM12 22V7M12 7S9 2 6.5 4 9 7 12 7zM12 7s3-5 5.5-3-.5 3-3.5 3z"/></svg>Refer &amp; Earn</a>
+      <a href="support.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.4 9.3a2.6 2.6 0 1 1 3.9 2.4c-.9.6-1.3 1-1.3 2"/><circle cx="12" cy="16.6" r=".6" fill="currentColor" stroke="none"/></svg>Support</a>
     </nav>
-  </div>
-  <div class="who">
-    <span id="availBadge"></span>
-    <span id="whoami"></span>
-    <button class="signout" onclick="signOut()">Sign out</button>
-  </div>
-</div>
-
-<div class="shell">
-  <div class="home-hero">
-    <h1>Refer &amp; <em>earn</em>.</h1>
-    <p>Know another agent who's tired of recycled "exclusive" leads? Send them your link. They start with a discount, and once they're up and running you earn ongoing credit on your own bill — for as long as you're both active.</p>
-  </div>
-
-  <div class="home-card" style="margin-bottom:22px">
-    <h2>Your share link</h2>
-    <p class="support-line" id="howLine" style="margin-bottom:14px">Loading…</p>
-    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-      <input id="refLink" readonly value="" style="flex:1;min-width:240px;background:var(--black);color:var(--ivory);border:1px solid var(--line-soft);border-radius:6px;padding:11px 12px;font-size:13px;font-family:'Mulish',sans-serif">
-      <button class="home-cta" style="margin-top:0;flex:none" onclick="copyLink()" id="copyBtn">Copy link</button>
+    <div class="side-foot">
+      <div class="who"><img class="av" id="sideAvatar" src="favicon.svg" alt=""><div><div class="nm" id="sideName">…</div><div class="tr" id="sideTier"></div></div></div>
+      <button class="signout" onclick="signOut()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/></svg>Sign out</button>
     </div>
-    <p class="support-line" style="margin-top:10px;font-size:12.5px">Your code: <b id="refCode" style="color:var(--ivory)">—</b> · Share the link or the code. Anyone who applies through it is tied to you at signup.</p>
-  </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
 
-  <div class="stats">
-    <div class="stat"><div class="n" id="statCredit">—</div><div class="l">Credit earned (net)</div></div>
-    <div class="stat"><div class="n" id="statActive">—</div><div class="l">Earning friends</div></div>
-    <div class="stat"><div class="n" id="statPending">—</div><div class="l">Pending</div></div>
-  </div>
+  <main class="main">
+    <div class="topbar">
+      <button class="hamb" id="hamb" aria-label="Open menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <h1>Refer &amp; Earn</h1>
+      <div class="right"><span id="availBadge"></span></div>
+    </div>
 
-  <div class="home-grid">
-    <div class="home-card" style="grid-row:span 2">
-      <h2>Agents you've referred</h2>
-      <div id="refList"><div class="support-line">Loading…</div></div>
+    <div class="content">
+      <div class="page-intro">
+        <h2>Refer &amp; <span>Earn</span></h2>
+        <p>Know another agent who's tired of recycled "exclusive" leads? Send them your link. They start with a welcome discount, and once they're up and running you earn ongoing credit on your own bill, for as long as you're both active.</p>
+      </div>
+
+      <div class="panel">
+        <h3>Your share link</h3>
+        <p class="sub" id="howLine">Loading…</p>
+        <div class="copyrow">
+          <input id="refLink" readonly value="">
+          <button class="btn primary sm" onclick="copyLink()" id="copyBtn">Copy</button>
+        </div>
+        <p class="sub" style="margin:12px 0 0">Your code: <b style="color:var(--ivory)" id="refCode">—</b> · Share the link or the code. Anyone who applies through it is tied to you at signup.</p>
+        <div class="refstat">
+          <div class="s"><div class="v" id="statCredit">—</div><div class="l">Credit earned (net)</div></div>
+          <div class="s"><div class="v" id="statActive">—</div><div class="l">Earning friends</div></div>
+          <div class="s"><div class="v" id="statPending">—</div><div class="l">Pending</div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Agents you've referred</h3>
+        <div class="reftable" id="refList"><p class="sub" style="margin:0">Loading…</p></div>
+      </div>
+
+      <div class="panel">
+        <h3>How it pays</h3>
+        <p class="sub" id="payLine" style="margin:0">Loading the terms…</p>
+      </div>
+
+      <div class="panel">
+        <h3>The fine print</h3>
+        <p class="sub" style="margin:0">Credit is applied to your own subscription automatically, no payout to chase. It's tied to your friend's lead subscription, never to any insurance sale. If a friend refunds or cancels, the matching credit reverses. One referrer per agent, locked at signup.</p>
+      </div>
+
     </div>
-    <div class="home-card">
-      <h2>How it pays</h2>
-      <p class="support-line" id="payLine">Loading the terms…</p>
-    </div>
-    <div class="home-card">
-      <h2>The fine print</h2>
-      <p class="support-line">Credit is applied to your own subscription automatically — no payout to chase. It's tied to your friend's lead subscription, never to any insurance sale. If a friend refunds or cancels, the matching credit reverses. One referrer per agent, locked at signup.</p>
-    </div>
-  </div>
+  </main>
 </div>
 
 <script>
@@ -89,24 +97,26 @@
   var me = null;
 
   function esc(s){ var d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
-  function money(c){ return '$' + (Math.round((Number(c)||0))/100).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:2}); }
+  function money(c){ var d=(Math.round(Number(c)||0))/100; return '$' + d.toLocaleString(undefined,{minimumFractionDigits:(d%1?2:0),maximumFractionDigits:2}); }
   function fmtDate(ts){ if(!ts) return ''; var d=new Date(ts); return d.toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'}); }
   function signOut(){ db.auth.signOut().then(function(){ window.location.href='index.html'; }); }
 
   db.auth.getSession().then(function(r){
     if (!r.data.session){ window.location.href = 'index.html'; return; }
     me = r.data.session.user;
-    db.from('agent_profiles').select('first_name,last_name').eq('id', me.id).single().then(function(p){
+    db.from('agent_profiles').select('first_name,last_name,tier,npn,headshot_url').eq('id', me.id).single().then(function(p){
       var pr = p.data || {};
       var name = ((pr.first_name||'') + ' ' + (pr.last_name||'')).trim() || me.email;
-      document.getElementById('whoami').innerHTML = '<span class="email">' + esc(name) + '</span>';
+      document.getElementById('sideName').textContent = name;
+      document.getElementById('sideTier').textContent = (pr.tier || 'Silver') + (pr.npn ? ' · NPN ' + pr.npn : '');
+      if (pr.headshot_url) document.getElementById('sideAvatar').src = pr.headshot_url;
     });
     load();
   });
 
   function load(){
     db.rpc('bl_my_referrals').then(function(r){
-      if (r.error){ document.getElementById('refList').innerHTML = '<p class="support-line">Couldn\'t load your referrals right now. Refresh in a moment.</p>'; return; }
+      if (r.error){ document.getElementById('refList').innerHTML = '<p class="sub" style="margin:0">Couldn\'t load your referrals right now. Refresh in a moment.</p>'; return; }
       var d = r.data || {};
       var t = d.terms || {};
       document.getElementById('refCode').textContent = d.code || '—';
@@ -117,28 +127,29 @@
       var pct = Number(t.pct||10), wel = Number(t.welcome_cents||0), days = Number(t.qualifying_days||30), cap = Number(t.cap_months||12);
       var welTxt = wel>0 ? ('$' + Math.round(wel/100).toLocaleString() + ' off their first week') : 'a welcome discount';
       document.getElementById('howLine').innerHTML =
-        'Send this to any licensed agent. When they sign up through it and put a card on file, they get <b style="color:var(--ivory)">' + esc(welTxt) + '</b> — and you\'re set up to earn.';
+        'Send this to any licensed agent. When they sign up through it and put a card on file, they get <b style="color:var(--ivory)">' + esc(welTxt) + '</b> - and you\'re set up to earn.';
       document.getElementById('payLine').innerHTML =
-        'Once a friend has been active for <b style="color:var(--ivory)">' + days + ' days</b>, you start earning <b style="color:var(--good)">' + pct + '%</b> of what they pay each week, applied as credit on your own bill, for up to <b style="color:var(--ivory)">' + cap + ' months</b> — as long as you\'re both active.';
+        'Once a friend has been active for <b style="color:var(--ivory)">' + days + ' days</b>, you start earning <b style="color:var(--good)">' + pct + '%</b> of what they pay each week, applied as credit on your own bill, for up to <b style="color:var(--ivory)">' + cap + ' months</b> - as long as you\'re both active.';
 
       var rows = d.referred || [];
       var active = rows.filter(function(x){ return x.status==='active'; }).length;
       document.getElementById('statActive').textContent = active;
 
       var box = document.getElementById('refList');
-      if (!rows.length){ box.innerHTML = '<p class="support-line">No referrals yet. Share your link above — the agents who trust you are the ones who\'ll stick.</p>'; return; }
+      if (!rows.length){ box.innerHTML = '<p class="sub" style="margin:0">No referrals yet. Share your link above - the agents who trust you are the ones who\'ll stick.</p>'; window.BLtagMoney(); return; }
       box.innerHTML = rows.map(function(x){
-        return '<div class="mini-lead"><div class="who"><b>' + esc(x.who) + '</b><div>' + statusLabel(x.status) + '</div></div><div class="when">' + esc(fmtDate(x.signed_up_at)) + '</div></div>';
+        return '<div class="r"><span>' + esc(x.who) + ' · ' + esc(fmtDate(x.signed_up_at)) + '</span>' + statusLabel(x.status) + '</div>';
       }).join('');
+      window.BLtagMoney();
     });
   }
 
   function statusLabel(s){
-    if (s==='active') return '<span style="color:var(--good)">Earning</span>';
-    if (s==='qualified') return '<span style="color:var(--good)">Qualified</span>';
-    if (s==='canceled') return '<span class="support-line">Canceled</span>';
-    if (s==='disqualified') return '<span class="support-line">Not eligible</span>';
-    return 'Pending — getting started';
+    if (s==='active') return '<span class="status st-sold">Earning</span>';
+    if (s==='qualified') return '<span class="status st-sold">Qualified</span>';
+    if (s==='canceled') return '<span class="status st-nopickup">Canceled</span>';
+    if (s==='disqualified') return '<span class="status st-nopickup">Not eligible</span>';
+    return '<span class="status st-nopickup">Pending - getting started</span>';
   }
 
   function copyLink(){
@@ -149,6 +160,7 @@
     else { try{document.execCommand('copy');}catch(e){} done(); }
   }
 </script>
+<script src="portal-shell.js"></script>
 <script src="avail-badge.js"></script>
 </body>
 </html>

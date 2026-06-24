@@ -3,46 +3,76 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Your Leads — Black Label Leads</title>
+<title>My Leads - Black Label Leads</title>
 <meta name="robots" content="noindex">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="portal-redesign.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
+/* ===== Leads-page reskin glue (legacy bits the JS still emits, restyled for the new shell) ===== */
+.leads-strip{margin-bottom:18px}
+.lead .who2 .s{margin-top:2px}
+.lead .tf{display:inline-block;font-size:11px;color:var(--silver);margin-top:4px}
+.lead .tf:hover{color:var(--silver-bright);text-decoration:underline}
+.lead-extras{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.lead-extras .lx{font-size:11px;color:var(--text);background:var(--inset);border:1px solid var(--edge-soft);border-radius:6px;padding:2px 7px}
+.lead-extras .lxk{color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;font-size:9.5px;font-weight:700;margin-right:3px}
+.lead .col-where{font-size:13px;color:var(--text-2)}
+.lead .col-deliv{font-size:12.5px;color:var(--muted)}
+.lead .col-deliv .sub3{font-size:11px;color:var(--muted);margin-top:2px}
+.lead .acts{flex-wrap:wrap;justify-content:flex-end}
+/* Status writer keeps the existing <select> + setStatus() wiring; restyled to match the shell */
+.status-sel{font-size:12px;font-weight:600;padding:6px 9px;border-radius:7px;border:1px solid var(--edge);background:var(--inset);color:var(--text);cursor:pointer}
+.status-sel:focus{outline:none;border-color:var(--silver)}
+.status-sel.s-NEW{color:var(--silver-bright)} .status-sel.s-CONTACTED{color:var(--amber)}
+.status-sel.s-NOPICKUP{color:var(--muted)} .status-sel.s-APPOINTMENT{color:var(--amber)}
+.status-sel.s-SOLD{color:var(--green)} .status-sel.s-DEAD{color:var(--red)}
+.premium-tag{font-size:12.5px;font-weight:700;color:var(--green);white-space:nowrap}
+.sellbtn{background:none;border:1px solid var(--green);color:var(--green);font-size:10.5px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;padding:6px 10px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.sellbtn:hover{background:var(--green-bg)}
+.linkbtn{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline;padding:0}
+.linkbtn:hover{color:var(--text-2)}
+.empty-row{padding:40px 22px;text-align:center;color:var(--text-2);font-size:14px;line-height:1.8}
+.empty-row b{color:var(--text)}
+.note-badge{display:inline-block;min-width:16px;padding:0 5px;margin-left:5px;font-size:10px;font-weight:700;line-height:16px;text-align:center;color:var(--bg);background:var(--silver);border-radius:9px}
+.foot-note{font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:22px}
+.foot-note a{color:var(--silver);text-decoration:underline}
+@media(max-width:880px){
+  .lead{grid-template-columns:1fr auto;row-gap:8px}
+  .lead .col-where,.lead .col-deliv,.lead .vbadge{display:none}
+}
+
 /* ===== Notes modal + sheet buttons ===== */
-.note-badge{display:inline-block;min-width:16px;padding:0 5px;margin-left:5px;font-size:10px;font-weight:700;line-height:16px;text-align:center;color:#0a0b0d;background:var(--silver);border-radius:9px}
-.docbtn{background:none;border:1px solid var(--line);color:var(--soft);font-family:'Mulish',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:7px 10px;cursor:pointer;white-space:nowrap}
-.docbtn:hover{color:var(--ivory);border-color:var(--silver)}
+.docbtn{background:none;border:1px solid var(--edge);color:var(--text-2);font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:7px 10px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.docbtn:hover{color:var(--text);border-color:var(--silver)}
 .docbtn:disabled{opacity:.5;cursor:wait}
-.sheet-cell{white-space:nowrap}
 .nm-overlay{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;background:rgba(5,6,8,0.72);padding:20px}
 .nm-overlay.open{display:flex}
-.nm-box{width:100%;max-width:520px;max-height:84vh;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,0.6)}
-.nm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:18px 20px;border-bottom:1px solid var(--line-soft)}
-.nm-title{font-family:'Fraunces',serif;font-size:18px;font-weight:500}
-.nm-sub{font-size:11.5px;color:var(--mute);margin-top:3px}
-.nm-x{background:none;border:none;color:var(--mute);font-size:26px;line-height:1;cursor:pointer;padding:0 2px}
-.nm-x:hover{color:var(--ivory)}
+.nm-box{width:100%;max-width:520px;max-height:84vh;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--edge);border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,0.6)}
+.nm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:18px 20px;border-bottom:1px solid var(--edge-soft)}
+.nm-title{font-family:var(--display);font-size:18px;font-weight:500;color:#fff}
+.nm-sub{font-size:11.5px;color:var(--muted);margin-top:3px}
+.nm-x{background:none;border:none;color:var(--muted);font-size:26px;line-height:1;cursor:pointer;padding:0 2px}
+.nm-x:hover{color:var(--text)}
 .nm-list{flex:1;overflow-y:auto;padding:14px 20px;min-height:80px}
-.nm-empty{color:var(--mute);font-size:13px;text-align:center;padding:24px 0;line-height:1.6}
-.nm-note{padding:11px 0;border-bottom:1px solid var(--line-soft)}
+.nm-empty{color:var(--muted);font-size:13px;text-align:center;padding:24px 0;line-height:1.6}
+.nm-note{padding:11px 0;border-bottom:1px solid var(--edge-soft)}
 .nm-note:last-child{border-bottom:none}
 .nm-note.legacy{opacity:.82}
-.nm-note-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;color:var(--mute);margin-bottom:4px}
-.nm-note-body{font-size:13.5px;color:var(--ivory);line-height:1.6;white-space:pre-wrap;word-break:break-word}
-.nm-del{background:none;border:none;color:var(--mute);font-size:17px;line-height:1;cursor:pointer;padding:0 2px;flex-shrink:0}
+.nm-note-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;color:var(--muted);margin-bottom:4px}
+.nm-note-body{font-size:13.5px;color:var(--text);line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.nm-del{background:none;border:none;color:var(--muted);font-size:17px;line-height:1;cursor:pointer;padding:0 2px;flex-shrink:0}
 .nm-del:hover{color:var(--bad)}
-.nm-compose{display:flex;gap:10px;padding:16px 20px;border-top:1px solid var(--line-soft);align-items:flex-end}
-.nm-compose textarea{flex:1;resize:vertical;min-height:46px;max-height:160px;padding:11px 13px;border:1px solid var(--line-soft);background:var(--black);color:var(--ivory);font-family:'Mulish',sans-serif;font-size:14px;line-height:1.5;border-radius:0}
+.nm-compose{display:flex;gap:10px;padding:16px 20px;border-top:1px solid var(--edge-soft);align-items:flex-end}
+.nm-compose textarea{flex:1;resize:vertical;min-height:46px;max-height:160px;padding:11px 13px;border:1px solid var(--edge);background:var(--inset);color:var(--text);font-family:inherit;font-size:14px;line-height:1.5;border-radius:8px}
 .nm-compose textarea:focus{outline:none;border-color:var(--silver)}
-.nm-add{background:var(--chrome-btn);color:var(--black);border:none;font-family:'Mulish',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:12px 16px;cursor:pointer;white-space:nowrap}
+.nm-add{background:var(--chrome-btn);color:var(--bg);border:none;border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;padding:12px 16px;cursor:pointer;white-space:nowrap}
 .nm-add:disabled{opacity:.5;cursor:wait}
 
 /* ===== Lead PDF sheet (off-screen render target; html2pdf keeps this dark look) ===== */
 #pdfStage{position:fixed;left:-10000px;top:0;width:816px;z-index:-1}
-.bl-sheet{position:relative;width:816px;min-height:1056px;background:#0a0b0d;color:#eceef1;overflow:hidden;padding:54px 56px 40px;font-family:'Mulish',sans-serif}
+.bl-sheet{position:relative;width:816px;min-height:1056px;background:#0a0b0d;color:#eceef1;overflow:hidden;padding:54px 56px 40px;font-family:'Inter',sans-serif}
 .bl-sheet::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#8e959f,#eef1f4 30%,#9aa1ab 55%,#dfe3e7 78%,#9ba1aa)}
 .bl-wm{position:absolute;top:-25%;left:-25%;width:150%;height:150%;z-index:1;pointer-events:none;overflow:hidden;transform:rotate(-30deg);transform-origin:center;opacity:.10;display:flex;flex-wrap:wrap;align-content:center;gap:8px 26px;justify-content:center}
 .bl-wm span{color:#fff;font-size:13px;font-weight:700;letter-spacing:.18em;white-space:nowrap}
@@ -118,91 +148,85 @@
 </style>
 </head>
 <body>
+<div class="app">
 
-<div class="topbar">
-  <div style="display:flex;align-items:center">
-  <div class="brand">
-    <svg viewBox="0 0 170 170" aria-hidden="true">
-      <defs>
-        <linearGradient id="pc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="0.38" stop-color="#c4cad2"/><stop offset="0.52" stop-color="#8e959f"/><stop offset="0.66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
-        <linearGradient id="pr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset="0.5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
-      </defs>
-      <circle cx="85" cy="85" r="66" fill="#101113" stroke="url(#pr)" stroke-width="2.2"/>
-      <circle cx="85" cy="85" r="58" fill="none" stroke="#aeb4bc" stroke-width="1" opacity="0.55"/>
-      <rect x="81.5" y="33.5" width="7" height="7" transform="rotate(45 85 37)" fill="url(#pr)"/>
-      <rect x="81.5" y="129.5" width="7" height="7" transform="rotate(45 85 133)" fill="url(#pr)"/>
-      <text x="85" y="104" text-anchor="middle" font-family="'Fraunces',Georgia,serif" font-size="54" font-weight="500" letter-spacing="3" fill="url(#pc)">BL</text>
-    </svg>
-    <span>Black <span class="lbl">Label</span> Leads</span>
-  </div>
-  <nav class="topnav">
-    <a href="home.html">Home</a>
-    <a href="portal.html" class="active">My Leads</a>
-    <a href="tracker.html">Tracker</a>
-    <a href="profile.html">Profile</a>
-    <a href="refer.html">Refer &amp; Earn</a>
-    <a href="support.html">Support</a>
-  </nav>
-  </div>
-  <div class="who">
-    <span id="availBadge"></span>
-    <span id="whoami"></span>
-    <button class="signout" onclick="signOut()">Sign out</button>
-  </div>
-</div>
+  <!-- SIDEBAR (verbatim from home.html; "My Leads" set active here) -->
+  <aside class="side" id="side">
+    <div class="brand">
+      <svg viewBox="0 0 100 100" aria-label="Black Label Leads">
+        <defs>
+          <linearGradient id="lgChrome" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".38" stop-color="#c4cad2"/><stop offset=".52" stop-color="#8e959f"/><stop offset=".66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
+          <linearGradient id="lgRing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset=".5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
+        </defs>
+        <circle cx="50" cy="50" r="46" fill="#101113" stroke="url(#lgRing)" stroke-width="1.7"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="#aeb4bc" stroke-width="0.6" opacity=".55"/>
+        <rect x="46.5" y="11.5" width="6" height="6" transform="rotate(45 50 14.5)" fill="url(#lgRing)"/>
+        <rect x="46.5" y="82.5" width="6" height="6" transform="rotate(45 50 85.5)" fill="url(#lgRing)"/>
+        <text x="50" y="64" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="36" font-weight="500" letter-spacing="2" fill="url(#lgChrome)">BL</text>
+      </svg>
+      <div class="w"><div class="l1">BLACK LABEL</div><div class="l2">LEADS</div></div>
+    </div>
+    <nav class="nav" id="nav">
+      <a href="home.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Dashboard</a>
+      <a href="portal.html" class="active"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 14h8"/></svg>My Leads</a>
+      <a href="tracker.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-8"/></svg>Tracker</a>
+      <a href="profile.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>Profile</a>
+      <a href="refer.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 12v8H4v-8M2 7h20v5H2zM12 22V7M12 7S9 2 6.5 4 9 7 12 7zM12 7s3-5 5.5-3-.5 3-3.5 3z"/></svg>Refer &amp; Earn</a>
+      <a href="support.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.4 9.3a2.6 2.6 0 1 1 3.9 2.4c-.9.6-1.3 1-1.3 2"/><circle cx="12" cy="16.6" r=".6" fill="currentColor" stroke="none"/></svg>Support</a>
+    </nav>
+    <div class="side-foot">
+      <div class="who"><img class="av" id="sideAvatar" src="favicon.svg" alt=""><div><div class="nm" id="sideName">…</div><div class="tr" id="sideTier"></div></div></div>
+      <button class="signout" onclick="signOut()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/></svg>Sign out</button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
 
-<div class="shell">
-  <div class="stats">
-    <div class="stat"><div class="n" id="statWeek">—</div><div class="l">Leads this week</div></div>
-    <div class="stat"><div class="n" id="statTotal">—</div><div class="l">Total leads</div></div>
-    <div class="stat"><div class="n" id="statTier">—</div><div class="l">Your tier</div></div>
-  </div>
-
-  <div class="leads-layout">
-    <div class="panel">
-      <div class="panel-head">
-        <h2>Your leads</h2>
-        <span class="hint">Newest first &middot; Mark a deal sold to log the premium</span>
-      </div>
-      <div id="tableWrap">
-        <div class="empty">Loading your leads…</div>
-      </div>
+  <main class="main">
+    <div class="topbar">
+      <button class="hamb" id="hamb" aria-label="Open menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <h1>My Leads</h1>
+      <div class="right"><span id="availBadge"></span></div>
     </div>
 
-    <!-- always-visible profit rail -->
-    <aside class="rail">
-      <div class="rail-card feature">
-        <div class="rail-h">This month's return</div>
-        <div class="roi-big" id="railRoi">—</div>
-        <div class="roi-sub" id="railRoiSub">written per $1 invested</div>
-        <div class="rail-row"><span class="k">Invested</span><span class="v out" id="railInvested">—</span></div>
-        <div class="rail-row"><span class="k">Written</span><span class="v in" id="railWritten">—</span></div>
-        <div class="rail-row"><span class="k">Deals closed</span><span class="v" id="railDeals">—</span></div>
+    <div class="content">
+      <div class="page-intro">
+        <h2>My Leads</h2>
+        <p>Every lead is exclusively yours. Work them, track them, log what you write. Double-click a lead for its branded sheet.</p>
       </div>
-      <div class="rail-card">
-        <div class="rail-h">Monthly goal</div>
-        <div style="display:flex;justify-content:center;margin:4px 0 10px">
-          <div class="ring mini" id="railRing">
-            <svg viewBox="0 0 210 210">
-              <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset="0.5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#f4f6f8"/></linearGradient></defs>
-              <circle class="track" cx="105" cy="105" r="86"/>
-              <circle class="arc" id="railRingArc" cx="105" cy="105" r="86" stroke-dasharray="540.35" stroke-dashoffset="540.35"/>
-            </svg>
-            <div class="ctr"><div class="pct" id="railRingPct">—</div><div class="lbl2">of goal</div><div class="hit-badge">Hit!</div></div>
-          </div>
-        </div>
-        <div class="goal-txt" id="railGoalTxt" style="text-align:center">Set a goal on the tracker</div>
-        <button class="editlink" onclick="window.location.href='tracker.html'">Open full tracker &rarr;</button>
-      </div>
-    </aside>
-  </div>
 
-  <p class="foot-note">
-    Every lead here was generated by our own ads, consent-certified, and sold to you alone — once, forever.
-    Bad lead? The 24-hour replace-or-credit standard applies — email
-    <a href="mailto:blacklabelleads@gmail.com?subject=Lead%20credit%20request">blacklabelleads@gmail.com</a>
-    with the lead's name and what went wrong, and a licensed agent (not a ticket queue) sorts it.
-  </p>
+      <!-- profit rail (5-up strip, bound to existing profit numbers) -->
+      <div class="strip leads-strip">
+        <div class="s"><div class="l">Return this month</div><div class="v" id="stripRoi">—</div></div>
+        <div class="s"><div class="l">Invested</div><div class="v" id="stripInvested">—</div></div>
+        <div class="s"><div class="l">Premium written</div><div class="v" id="stripWritten">—</div></div>
+        <div class="s"><div class="l">Deals closed</div><div class="v" id="stripDeals">—</div></div>
+        <div class="s"><div class="l">Monthly goal</div><div class="v" id="stripGoal">—</div></div>
+      </div>
+
+      <!-- status filter chips (wired client-side to lead_status) -->
+      <div class="filterbar" id="filterBar">
+        <button class="fchip on" data-filter="ALL">All</button>
+        <button class="fchip" data-filter="NEW">New</button>
+        <button class="fchip" data-filter="CONTACTED">Contacted</button>
+        <button class="fchip" data-filter="APPOINTMENT">Appointment</button>
+        <button class="fchip" data-filter="SOLD">Sold</button>
+        <button class="fchip" data-filter="NO PICKUP">No pickup</button>
+        <button class="fchip" data-filter="DEAD">Dead</button>
+      </div>
+
+      <!-- leads list (reskinned to .leadlist / .lead rows; render() fills this) -->
+      <div id="tableWrap">
+        <div class="leadlist"><div class="lead"><span class="muted" style="font-size:13px">Loading your leads…</span></div></div>
+      </div>
+
+      <p class="foot-note">
+        Every lead here was generated by our own ads, consent-certified, and sold to you alone, once, forever.
+        Bad lead? The 24-hour replace-or-credit standard applies. Email
+        <a href="mailto:blacklabelleads@gmail.com?subject=Lead%20credit%20request">blacklabelleads@gmail.com</a>
+        with the lead's name and what went wrong, and a licensed agent (not a ticket queue) sorts it.
+      </p>
+    </div>
+  </main>
 </div>
 
 <!-- Notes modal -->
@@ -236,7 +260,7 @@
   var SUPABASE_KEY = 'sb_publishable_9m66yQmAgJwgCRMoYcU5sA_3l_XlfXr';
   var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   var STATUSES = ['NEW','CONTACTED','NO PICKUP','APPOINTMENT','SOLD','DEAD'];
-  var me = null, profile = {}, allLeads = [], noteCounts = {};
+  var me = null, profile = {}, allLeads = [], noteCounts = {}, activeFilter = 'ALL';
 
   db.auth.getSession().then(function(r){
     if (!r.data.session){ window.location.href = 'index.html'; return; }
@@ -251,12 +275,12 @@
     db.from('agent_profiles').select('*').eq('id', me.id).single().then(function(r){
       profile = r.data || {};
       var name = ((profile.first_name||'') + ' ' + (profile.last_name||'')).trim() || me.email;
-      document.getElementById('whoami').innerHTML = '<span class="email">' + esc(name) + '</span>';
-      var tierEl = document.getElementById('statTier');
-      tierEl.textContent = profile.tier || 'Silver';
-      var isBL = String(profile.tier||'').toLowerCase().indexOf('black label') > -1;
-      tierEl.classList.toggle('bl-tier', isBL);
-      if (tierEl.parentElement) tierEl.parentElement.classList.toggle('bl-stat', isBL);
+      // sidebar identity (mirrors home.html binding)
+      var sideName = document.getElementById('sideName');
+      if (sideName) sideName.textContent = name;
+      var sideTier = document.getElementById('sideTier');
+      if (sideTier) sideTier.textContent = (profile.tier || 'Silver') + (profile.npn ? ' · NPN ' + profile.npn : '');
+      if (profile.headshot_url){ var av = document.getElementById('sideAvatar'); if (av) av.src = profile.headshot_url; }
       renderRail();
     });
   }
@@ -274,7 +298,7 @@
       .select('id, first_name, last_name, phone, email, state, vertical, age, coverage_amount, coverage_purpose, existing_coverage, zip, address, tobacco, best_time, income_band, monthly_income, intent, consent_given, submitted_at, created_at, assigned_at, lead_status, agent_notes, annual_premium, sold_at, trustedform_cert_url')
       .order('assigned_at', { ascending: false, nullsFirst: false })
       .then(function(r){
-        if (r.error){ document.getElementById('tableWrap').innerHTML = '<div class="empty">Couldn\'t load leads: ' + esc(r.error.message) + '</div>'; return; }
+        if (r.error){ document.getElementById('tableWrap').innerHTML = '<div class="leadlist"><div class="lead"><span class="muted" style="font-size:13px">Couldn\'t load leads: ' + esc(r.error.message) + '</span></div></div>'; return; }
         allLeads = r.data || [];
         render(allLeads);
         renderRail();
@@ -284,84 +308,109 @@
 
   function leadById(id){ return allLeads.filter(function(l){ return l.id === id; })[0]; }
 
+  function normStatus(s){ return String(s||'NEW').toUpperCase().replace(/\s+/g,' ').trim(); }
+  function statusClassNew(s){ var m={'NEW':'st-new','CONTACTED':'st-contacted','APPOINTMENT':'st-appt','SOLD':'st-sold','NO PICKUP':'st-nopickup','DEAD':'st-dead'}; return m[normStatus(s)]||'st-new'; }
+
+  function visibleLeads(){
+    if (activeFilter === 'ALL') return allLeads;
+    return allLeads.filter(function(l){ return normStatus(l.lead_status) === activeFilter; });
+  }
+
+  // Status filter chips (client-side, by lead_status)
+  (function(){
+    var bar = document.getElementById('filterBar');
+    if (!bar) return;
+    bar.addEventListener('click', function(e){
+      var chip = e.target.closest ? e.target.closest('.fchip') : null;
+      if (!chip) return;
+      activeFilter = chip.getAttribute('data-filter') || 'ALL';
+      Array.prototype.forEach.call(bar.querySelectorAll('.fchip'), function(c){ c.classList.toggle('on', c === chip); });
+      render(allLeads);
+    });
+  })();
+
   function render(leads){
     var wrap = document.getElementById('tableWrap');
     var now = Date.now(), week = 7*24*60*60*1000;
-    document.getElementById('statTotal').textContent = leads.length;
-    document.getElementById('statWeek').textContent = leads.filter(function(l){
-      var t = l.assigned_at || l.created_at; return t && (now - new Date(t).getTime()) < week;
-    }).length;
 
     if (!leads.length){
-      wrap.innerHTML = '<div class="empty"><b>No leads yet.</b><br>When your state opens and leads start flowing, they appear here the moment they\'re delivered — name, number, consent certificate, everything.</div>';
+      wrap.innerHTML = '<div class="leadlist"><div class="empty-row"><b>No leads yet.</b><br>When your state opens and leads start flowing, they appear here the moment they\'re delivered - name, number, consent certificate, everything.</div></div>';
       return;
     }
 
-    var html = '<table><thead><tr><th>Lead</th><th>Contact</th><th>Where / What</th><th>Delivered</th><th>Status</th><th>Premium</th><th>Notes</th><th>Sheet</th></tr></thead><tbody>';
-    leads.forEach(function(l){
+    var rows = visibleLeads();
+    if (!rows.length){
+      wrap.innerHTML = '<div class="leadlist"><div class="empty-row">No leads with that status yet.</div></div>';
+      return;
+    }
+
+    var html = '<div class="leadlist">';
+    rows.forEach(function(l){
       var delivered = l.assigned_at || l.created_at;
-      var statusClass = 's-' + String(l.lead_status||'NEW').replace(' ','');
-      var sold = l.lead_status === 'SOLD';
-      html += '<tr>'
-        + '<td><div class="nm">' + esc((l.first_name||'') + ' ' + (l.last_name||'')) + '</div>'
-        +   '<div class="sub2">' + (l.age ? 'Age ' + esc(l.age) : '') + '</div>'
-        +   (safeUrl(l.trustedform_cert_url) ? '<a class="tf" href="' + esc(safeUrl(l.trustedform_cert_url)) + '" target="_blank" rel="noopener">Consent certificate ↗</a>' : '')
-        + '</td>'
-        + '<td><div><a href="tel:' + esc(l.phone||'') + '">' + esc(l.phone||'—') + '</a></div>'
-        +   '<div class="sub2">' + esc(l.email||'') + '</div></td>'
-        + '<td><div>' + esc(l.state||'—') + '</div><div class="sub2">' + esc(prettyVertical(l.vertical)) + '</div>' + leadDetailsHtml(l) + '</td>'
-        + '<td><div>' + fmt(delivered) + '</div>'
-        +   (l.submitted_at ? '<div class="sub2">submitted ' + fmt(l.submitted_at) + '</div>' : '')
-        + '</td>'
-        + '<td><select class="status ' + statusClass + '" onchange="setStatus(\'' + l.id + '\', this)">'
-        +   STATUSES.map(function(s){ return '<option' + (s===l.lead_status?' selected':'') + '>' + s + '</option>'; }).join('')
-        + '</select></td>'
-        + '<td>' + (sold && l.annual_premium
-              ? '<span class="premium-tag">' + money(l.annual_premium) + '</span> <button class="notesbtn" onclick="editPremium(\'' + l.id + '\')">edit</button>'
+      var ns = normStatus(l.lead_status);
+      var sold = ns === 'SOLD';
+      var name = ((l.first_name||'') + ' ' + (l.last_name||'')).trim() || 'Lead';
+      var sub = [];
+      if (l.age) sub.push('Age ' + esc(l.age));
+      if (l.state) sub.push(esc(l.state));
+      if (l.phone) sub.push(esc(l.phone));
+      var consentTxt = (l.consent_given === true) ? 'Consent ✓' : 'Consent on file';
+
+      html += '<div class="lead" data-id="' + l.id + '" ondblclick="openLeadPdf(\'' + l.id + '\')" title="Double-click for the branded lead sheet">'
+        // who
+        + '<div class="who2"><div class="n">' + esc(name) + '</div>'
+        +   '<div class="s">' + sub.join(' · ') + '</div>'
+        +   (l.email ? '<div class="s">' + esc(l.email) + '</div>' : '')
+        +   (safeUrl(l.trustedform_cert_url) ? '<a class="tf" href="' + esc(safeUrl(l.trustedform_cert_url)) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">Consent certificate ↗</a>' : '')
+        + '</div>'
+        // vertical badge
+        + '<span class="vbadge">' + esc(prettyVertical(l.vertical)) + '</span>'
+        // where / what
+        + '<div class="col-where"><span>' + consentTxt + '</span>' + leadDetailsHtml(l) + '</div>'
+        // delivered
+        + '<div class="col-deliv">' + fmt(delivered)
+        +   (l.submitted_at ? '<div class="sub3">submitted ' + fmt(l.submitted_at) + '</div>' : '')
+        + '</div>'
+        // actions: status writer + premium + notes + pdf
+        + '<div class="acts" onclick="event.stopPropagation()">'
+        +   '<select class="status-sel s-' + ns.replace(' ','') + '" onchange="setStatus(\'' + l.id + '\', this)" title="Lead status">'
+        +     STATUSES.map(function(s){ return '<option' + (s===l.lead_status?' selected':'') + '>' + s + '</option>'; }).join('')
+        +   '</select>'
+        +   (sold && l.annual_premium
+              ? '<span class="premium-tag">' + money(l.annual_premium) + '</span> <button class="linkbtn" onclick="editPremium(\'' + l.id + '\')">edit</button>'
               : (sold
                   ? '<button class="sellbtn" onclick="editPremium(\'' + l.id + '\')">Log premium</button>'
-                  : '<span class="sub2">—</span>'))
-        + '</td>'
-        + '<td><button class="notesbtn js-notes" data-id="' + l.id + '" onclick="openNotes(\'' + l.id + '\')">Notes' + ((noteCounts[l.id]||0) > 0 ? ' <span class="note-badge">' + noteCounts[l.id] + '</span>' : '') + '</button></td>'
-        + '<td class="sheet-cell"><button class="docbtn" onclick="openLeadPdf(\'' + l.id + '\',this)">PDF</button> <button class="docbtn" onclick="printLeadPdf(\'' + l.id + '\')">Print</button></td>'
-        + '</tr>';
+                  : ''))
+        +   '<button class="iconbtn js-notes" data-id="' + l.id + '" onclick="openNotes(\'' + l.id + '\')" title="Notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v11H8l-4 4z"/></svg>' + ((noteCounts[l.id]||0) > 0 ? '<span class="note-badge">' + noteCounts[l.id] + '</span>' : '') + '</button>'
+        +   '<button class="iconbtn" onclick="openLeadPdf(\'' + l.id + '\',this)" title="Branded PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg></button>'
+        +   '<button class="docbtn" onclick="printLeadPdf(\'' + l.id + '\')" title="Print">Print</button>'
+        + '</div>'
+        + '</div>';
     });
-    html += '</tbody></table>';
+    html += '</div>';
     wrap.innerHTML = html;
   }
 
   function renderRail(){
     var weekly = Number(profile.weekly_investment || 400);
     var invested = weekly * weeksElapsedThisMonth();
-    var soldThisMonth = allLeads.filter(function(l){ return l.lead_status==='SOLD' && l.annual_premium && thisMonth(l.sold_at || l.assigned_at); });
+    var soldThisMonth = allLeads.filter(function(l){ return normStatus(l.lead_status)==='SOLD' && l.annual_premium && thisMonth(l.sold_at || l.assigned_at); });
     var written = soldThisMonth.reduce(function(a,l){ return a + Number(l.annual_premium||0); }, 0);
     var roi = invested > 0 ? (written / invested) : 0;
-
-    document.getElementById('railInvested').textContent = money(invested);
-    document.getElementById('railWritten').textContent = money(written);
-    document.getElementById('railDeals').textContent = soldThisMonth.length;
-    document.getElementById('railRoi').textContent = written > 0 ? roi.toFixed(1) + 'x' : '—';
-    document.getElementById('railRoiSub').textContent = written > 0 ? 'written per $1 invested' : 'log a sale to see your return';
-
     var goal = Number(profile.monthly_goal || 0);
-    var CIRC = 2 * Math.PI * 86;
-    var arc = document.getElementById('railRingArc');
-    var ring = document.getElementById('railRing');
-    var pctEl = document.getElementById('railRingPct');
-    var txt = document.getElementById('railGoalTxt');
-    arc.setAttribute('stroke-dasharray', CIRC);
+
+    document.getElementById('stripInvested').textContent = money(invested);
+    document.getElementById('stripWritten').textContent = money(written);
+    document.getElementById('stripDeals').textContent = soldThisMonth.length;
+    document.getElementById('stripRoi').textContent = written > 0 ? roi.toFixed(1) + '×' : '—';
+    var goalEl = document.getElementById('stripGoal');
     if (goal > 0){
-      var p = Math.min(1, written / goal), pctInt = Math.round(p * 100);
-      arc.setAttribute('stroke-dashoffset', CIRC * (1 - p));
-      pctEl.textContent = pctInt + '%';
-      ring.className = 'ring mini' + (p >= 1 ? ' hit' : (p >= 0.75 ? ' glow' : ''));
-      txt.innerHTML = p >= 1 ? '<b style="color:var(--good)">Goal hit!</b>' : money(written) + ' of ' + money(goal);
+      var p = Math.min(1, written / goal);
+      goalEl.textContent = (written >= goal) ? 'Hit ✓' : Math.round(p * 100) + '%';
     } else {
-      arc.setAttribute('stroke-dashoffset', CIRC);
-      pctEl.textContent = '—';
-      ring.className = 'ring mini';
-      txt.textContent = 'Set a goal on the tracker';
+      goalEl.textContent = '—';
     }
+    if (window.BLtagMoney) window.BLtagMoney();
   }
 
   function prettyVertical(v){ var m={final_expense:'Final Expense',mortgage_protection:'Mortgage Protection',iul:'IUL',annuity:'Annuity'}; return m[v]||(v||'—'); }
@@ -388,13 +437,13 @@
     var d = leadDetails(l);
     if (!d.length) return '';
     return '<div class="lead-extras">' + d.map(function(x){
-      return '<span class="lx"><span class="lxk">' + esc(x[0]) + '</span> ' + esc(x[1]) + '</span>';
+      return '<span class="lx"><span class="lxk">' + esc(x[0]) + '</span>' + esc(x[1]) + '</span>';
     }).join('') + '</div>';
   }
 
   function setStatus(id, sel){
     var v = sel.value;
-    sel.className = 'status s-' + v.replace(' ','');
+    sel.className = 'status-sel s-' + v.replace(' ','');
     var patch = { lead_status: v };
     if (v === 'SOLD'){ patch.sold_at = new Date().toISOString(); }
     db.from('leads').update(patch).eq('id', id).then(function(r){
@@ -435,7 +484,7 @@
     var btn = document.querySelector('.js-notes[data-id="' + id + '"]');
     if (!btn) return;
     var n = noteCounts[id] || 0;
-    btn.innerHTML = 'Notes' + (n > 0 ? ' <span class="note-badge">' + n + '</span>' : '');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v11H8l-4 4z"/></svg>' + (n > 0 ? '<span class="note-badge">' + n + '</span>' : '');
   }
   function openNotes(id){
     var l = leadById(id); if (!l) return;
@@ -476,7 +525,7 @@
              + '<div class="nm-note-body">' + esc(l.agent_notes) + '</div></div>';
     }
     if (!notes.length && !legacy){
-      list.innerHTML = '<div class="nm-empty">No notes yet.<br>Add the first one below — only you and Black Label can see it.</div>';
+      list.innerHTML = '<div class="nm-empty">No notes yet.<br>Add the first one below - only you and Black Label can see it.</div>';
       return;
     }
     list.innerHTML = notes.map(function(n){
@@ -530,7 +579,7 @@
     var u = String(url).replace(/^https?:\/\//, '');
     return (u.length <= 34) ? u : (u.slice(0,26) + '…' + u.slice(-6));
   }
-  // Only ever put an https URL in an href — esc() encodes HTML but not the URL scheme,
+  // Only ever put an https URL in an href - esc() encodes HTML but not the URL scheme,
   // so without this a javascript: cert URL would execute in the agent's session on click.
   function safeUrl(url){ var s = String(url == null ? '' : url).trim(); return /^https:\/\//i.test(s) ? s : ''; }
   function buildLayer(l, prof, email){
@@ -550,7 +599,7 @@
       return '<div class="bl-cell"><div class="bl-k">' + esc(f[0]) + '</div><div class="bl-v ' + f[2] + '">' + esc(f[1]) + '</div></div>';
     }).join('');
     // Pad the last row with empty (still dark) cells so a partial row doesn't expose the
-    // lighter grid-fill background — every row stays a fully solid block.
+    // lighter grid-fill background - every row stays a fully solid block.
     var pad = (3 - (shown.length % 3)) % 3;
     for (var pi = 0; pi < pad; pi++){ gridCells += '<div class="bl-cell"></div>'; }
     if (hasVal(l.email)){
@@ -588,7 +637,7 @@
     + '<div class="bl-sec-tag">The Lead</div>'
     + '<div class="bl-grid">' + gridCells + '</div>'
     + '<div class="bl-rule soft"></div>'
-    + '<div class="bl-sec-tag">Verification — the proof</div>'
+    + '<div class="bl-sec-tag">Verification - the proof</div>'
     + '<div class="bl-proof">'
     +   '<div class="bl-pcell"><span class="bl-k">Consent (TCPA)</span>' + consent + '</div>'
     +   '<div class="bl-pcell"><span class="bl-k">Submitted</span><span class="bl-v">' + (l.submitted_at ? esc(fmtFull(l.submitted_at)) : '—') + '</span></div>'
@@ -598,7 +647,7 @@
     + '<div class="bl-rule soft"></div>'
     + '<div class="bl-agent"><div class="bl-lbl">Assigned Exclusively To</div>'
     +   '<div class="bl-who"><div class="bl-nm">' + esc(agentName) + '</div><div class="bl-det">' + det + '</div></div>'
-    +   '<div class="bl-lock">This lead was sold to <b>one agent — you</b> — and will never be sold, shared, or re-listed. <b>Resale or redistribution is prohibited.</b> This copy is watermarked to your account and lead ID.</div>'
+    +   '<div class="bl-lock">This lead was sold to <b>one agent - you</b> - and will never be sold, shared, or re-listed. <b>Resale or redistribution is prohibited.</b> This copy is watermarked to your account and lead ID.</div>'
     + '</div>'
     + '<div class="bl-foot"><div class="bl-fb">Black Label Leads</div>'
     +   '<div class="bl-fn">© 2026 Black Label Leads · For licensed insurance agents only. Verify consent and timing at the TrustedForm certificate above.</div>'
@@ -617,7 +666,7 @@
   }
   function openLeadPdf(id, btn){
     var l = leadById(id); if (!l) return;
-    if (!window.html2pdf){ alert('PDF tool is still loading — give it a second and try again.'); return; }
+    if (!window.html2pdf){ alert('PDF tool is still loading - give it a second and try again.'); return; }
     // Reserve the tab inside the click gesture so popup blockers don't kill it; fill it once ready.
     var tab = window.open('', '_blank');
     if (tab && tab.document){
@@ -626,8 +675,8 @@
         + '<p style="padding:24px;font-size:14px">Generating your lead sheet…</p></body>');
     }
     var code = populateSheet(l);
-    if (btn){ btn.disabled = true; btn.textContent = '…'; }
-    function reset(){ if (btn){ btn.disabled = false; btn.textContent = 'PDF'; } }
+    if (btn){ btn.disabled = true; btn.dataset.busy = '1'; }
+    function reset(){ if (btn){ btn.disabled = false; delete btn.dataset.busy; } }
     (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function(){
       return html2pdf().set({
         margin: 0,
@@ -639,14 +688,14 @@
     }).then(function(url){
       url = (typeof url === 'string') ? url : String(url);
       if (tab){ tab.location.href = url; }                 // preview in the new tab (viewer has its own download)
-      else {                                                // popup blocked — fall back to a direct download
+      else {                                                // popup blocked - fall back to a direct download
         var a = document.createElement('a'); a.href = url; a.download = 'BlackLabel_Lead_' + code + '.pdf';
         document.body.appendChild(a); a.click(); a.remove();
       }
       reset();
     }, function(){
       if (tab){ try { tab.close(); } catch(e){} }
-      alert('Could not generate the PDF — please try again.');
+      alert('Could not generate the PDF - please try again.');
       reset();
     });
   }
@@ -660,6 +709,7 @@
     setTimeout(function(){ window.print(); }, 60);
   }
 </script>
+<script src="portal-shell.js"></script>
 <script src="avail-badge.js"></script>
 </body>
 </html>

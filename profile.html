@@ -3,59 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Profile — Black Label Leads Portal</title>
+<title>Profile - Black Label Leads Portal</title>
 <meta name="robots" content="noindex">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="portal-redesign.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
-  /* profile-specific bits layered on top of portal.css */
-  .pf-section{ margin-bottom:22px }
-  .pf-section h2{ margin-bottom:4px }
-  .pf-sub{ color:var(--silver); font-size:14px; line-height:1.5; margin:0 0 14px }
-  .pf-field{ display:flex; justify-content:space-between; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06) }
-  .pf-field:last-child{ border-bottom:0 }
-  .pf-field .k{ color:var(--silver); font-size:13px }
-  .pf-field .v{ color:var(--ivory); font-weight:600; text-align:right }
-  .pill{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; letter-spacing:.2px }
-  .pill.good{ background:rgba(127,184,154,0.16); color:var(--good); border:1px solid rgba(127,184,154,0.4) }
-  .pill.warn{ background:rgba(210,169,106,0.16); color:#d2a96a; border:1px solid rgba(210,169,106,0.45) }
-  .pill.bad{ background:rgba(201,138,138,0.16); color:#c98a8a; border:1px solid rgba(201,138,138,0.5) }
-  .pill.neutral{ background:rgba(255,255,255,0.06); color:var(--silver); border:1px solid rgba(255,255,255,0.12) }
-  .toggle.pending{ border-color:rgba(210,169,106,0.6); color:#d2a96a; opacity:1 }
-  .toggle .sub{ display:block; font-size:10px; font-weight:600; opacity:.85; margin-top:1px }
-  .pf-label{ color:var(--ivory); font-weight:700; font-size:13px; margin:14px 0 8px; letter-spacing:.2px }
-  .day-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px }
-  .day{ padding:8px 12px; border:1px solid rgba(255,255,255,0.14); border-radius:10px; cursor:pointer; font-size:13px; color:var(--silver); user-select:none }
-  .day.on{ border-color:rgba(127,184,154,0.55); color:var(--ivory); background:rgba(127,184,154,0.12) }
-  .pf-input, .pf-select{ background:#16181c; border:1px solid rgba(255,255,255,0.16); color:var(--ivory); border-radius:10px; padding:9px 11px; font-size:14px; font-family:inherit }
-  .pf-row{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-top:6px }
-  .pf-row label{ color:var(--silver); font-size:13px }
-  .note-ok{ color:var(--good); font-size:13px; margin-top:10px }
-  .note-warn{ color:#d2a96a; font-size:13px; margin-top:10px }
-  .note-bad{ color:#c98a8a; font-size:13px; margin-top:10px }
-  .mng-link{ color:var(--silver); text-decoration:underline; cursor:pointer; font-size:13px }
-  /* Account-needs-attention banner */
-  .pf-banner{ display:none; background:rgba(210,169,106,0.12); border:1px solid rgba(210,169,106,0.45); border-radius:14px; padding:16px 18px; margin-bottom:22px }
-  .pf-banner h3{ color:#e3c184; font-size:15px; margin:0 0 4px }
-  .pf-banner p{ color:var(--ivory); font-size:13px; line-height:1.5; margin:0 0 10px }
-  .pf-banner a.cta{ color:#0f1113; background:#e3c184; padding:8px 14px; border-radius:9px; font-weight:700; font-size:13px; text-decoration:none; display:inline-block }
-  /* What your leads see — editor + live NCG card preview */
-  .lc-wrap{ display:flex; flex-wrap:wrap; gap:22px }
+  /* profile-specific bits layered on top of portal-redesign.css */
+  /* pill variants the JS emits that the shared system doesn't define */
+  .pill.good{ color:var(--green); background:var(--green-bg) }
+  .pill.bad{ color:var(--red); background:rgba(224,133,133,0.14) }
+  .pill.neutral{ color:var(--text-2); background:var(--inset) }
+  /* inline save/status notes */
+  .pf-note{ font-size:13px; color:var(--text-2); margin-top:12px; line-height:1.5 }
+  .note-ok{ color:var(--green) } .note-warn{ color:var(--amber) } .note-bad{ color:var(--red) }
+  .mng-link{ color:var(--silver); text-decoration:underline; cursor:pointer; font-size:13.5px }
+  /* coverage/vertical toggle chips (re-uses .chip look) */
+  .toggle-row{ display:flex; flex-wrap:wrap; gap:10px }
+  .toggle{ display:inline-flex; flex-direction:column; gap:1px; background:var(--inset); border:1px solid var(--edge); border-radius:10px; padding:9px 14px; font-size:14px; font-weight:600; cursor:pointer; color:var(--text-2); user-select:none; transition:all .15s }
+  .toggle:hover{ border-color:var(--silver) }
+  .toggle.on{ background:var(--green-bg); border-color:rgba(98,207,146,0.4); color:var(--text) }
+  .toggle.pending{ border-color:rgba(227,178,100,0.55); color:var(--amber) }
+  .toggle .sub{ font-size:10px; font-weight:600; opacity:.85 }
+  /* attention banner when card unfinished */
+  .pf-banner{ display:none; background:rgba(227,178,100,0.08); border:1px solid rgba(227,178,100,0.45); border-radius:14px; padding:18px 20px; margin-bottom:22px }
+  .pf-banner h3{ color:#e3c184; font-size:15px; margin:0 0 5px }
+  .pf-banner p{ color:var(--text); font-size:13px; line-height:1.55; margin:0 0 12px }
+  /* What your leads see - editor + live NCG card preview */
+  .lc-wrap{ display:flex; flex-wrap:wrap; gap:24px }
   .lc-form{ flex:1 1 250px; min-width:240px }
-  .lc-form label{ display:block; color:var(--silver); font-size:13px; margin:13px 0 5px }
-  .lc-form label .req{ color:#d2a96a }
-  .lc-form .pf-input{ width:100%; max-width:320px }
-  .lc-up{ display:flex; align-items:center; gap:12px; margin-top:4px }
-  .lc-thumb{ width:58px; height:58px; border-radius:50%; object-fit:cover; background:#16181c; border:1px solid rgba(255,255,255,0.16); flex-shrink:0 }
-  .lc-tip{ color:var(--silver); font-size:12px; line-height:1.55; margin-top:12px }
-  .lc-tip a{ color:var(--ivory) }
-  .lc-flag{ color:#d2a96a; font-size:12px; margin-top:5px }
+  .lc-up{ display:flex; align-items:center; gap:14px; margin-bottom:6px }
+  .lc-thumb{ width:64px; height:64px; border-radius:50%; object-fit:cover; background:var(--inset); border:1px solid var(--edge); flex-shrink:0 }
+  .lc-tip{ color:var(--text-2); font-size:12px; line-height:1.55; margin-top:10px }
+  .lc-tip a{ color:var(--silver) }
+  .lc-flag{ color:var(--amber); font-size:12px; margin-top:5px }
   .lc-preview{ flex:1 1 320px; min-width:300px }
-  .lc-cap{ color:var(--silver); font-size:11px; margin-bottom:10px; text-transform:uppercase; letter-spacing:.09em }
-  .lc-card{ width:100%; max-width:520px; background:#fff; border-radius:14px; overflow:hidden; display:grid; grid-template-columns:148px 1fr; box-shadow:0 18px 50px rgba(19,41,75,.30); font-family:'Mulish',Arial,sans-serif }
+  .lc-cap{ color:var(--muted); font-size:11px; margin-bottom:12px; text-transform:uppercase; letter-spacing:.12em; font-weight:600 }
+  /* the generated NCG-branded card (kept exact: html2canvas renders this DOM, do not restyle internals) */
+  .lc-card{ width:100%; max-width:520px; background:#fff; border-radius:14px; overflow:hidden; display:grid; grid-template-columns:148px 1fr; box-shadow:0 18px 50px rgba(19,41,75,.30); font-family:'Inter',Arial,sans-serif }
   .lc-left{ position:relative; background:#cfe2f3; display:flex; align-items:center; justify-content:center; min-height:232px }
   .lc-photo{ width:100%; height:100%; min-height:232px; object-fit:cover; display:block }
   .lc-ph{ color:#5f7fa3; font-size:11px; text-align:center; padding:10px; line-height:1.4 }
@@ -83,205 +69,277 @@
 </style>
 </head>
 <body>
+<div class="app">
 
-<div class="topbar">
-  <div style="display:flex;align-items:center">
+  <!-- SIDEBAR -->
+  <aside class="side" id="side">
     <div class="brand">
-      <svg viewBox="0 0 170 170" aria-hidden="true">
+      <svg viewBox="0 0 100 100" aria-label="Black Label Leads">
         <defs>
-          <linearGradient id="pc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="0.38" stop-color="#c4cad2"/><stop offset="0.52" stop-color="#8e959f"/><stop offset="0.66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
-          <linearGradient id="pr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset="0.5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
+          <linearGradient id="lgChrome" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".38" stop-color="#c4cad2"/><stop offset=".52" stop-color="#8e959f"/><stop offset=".66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
+          <linearGradient id="lgRing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset=".5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
         </defs>
-        <circle cx="85" cy="85" r="66" fill="#101113" stroke="url(#pr)" stroke-width="2.2"/>
-        <circle cx="85" cy="85" r="58" fill="none" stroke="#aeb4bc" stroke-width="1" opacity="0.55"/>
-        <rect x="81.5" y="33.5" width="7" height="7" transform="rotate(45 85 37)" fill="url(#pr)"/>
-        <rect x="81.5" y="129.5" width="7" height="7" transform="rotate(45 85 133)" fill="url(#pr)"/>
-        <text x="85" y="104" text-anchor="middle" font-family="'Fraunces',Georgia,serif" font-size="54" font-weight="500" letter-spacing="3" fill="url(#pc)">BL</text>
+        <circle cx="50" cy="50" r="46" fill="#101113" stroke="url(#lgRing)" stroke-width="1.7"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="#aeb4bc" stroke-width="0.6" opacity=".55"/>
+        <rect x="46.5" y="11.5" width="6" height="6" transform="rotate(45 50 14.5)" fill="url(#lgRing)"/>
+        <rect x="46.5" y="82.5" width="6" height="6" transform="rotate(45 50 85.5)" fill="url(#lgRing)"/>
+        <text x="50" y="64" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="36" font-weight="500" letter-spacing="2" fill="url(#lgChrome)">BL</text>
       </svg>
-      <span>Black <span class="lbl">Label</span> Leads</span>
+      <div class="w"><div class="l1">BLACK LABEL</div><div class="l2">LEADS</div></div>
     </div>
-    <nav class="topnav">
-      <a href="home.html">Home</a>
-      <a href="portal.html">My Leads</a>
-      <a href="tracker.html">Tracker</a>
-      <a href="profile.html" class="active">Profile</a>
-      <a href="refer.html">Refer &amp; Earn</a>
-      <a href="support.html">Support</a>
+    <nav class="nav" id="nav">
+      <a href="home.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Dashboard</a>
+      <a href="portal.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 14h8"/></svg>My Leads</a>
+      <a href="tracker.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-8"/></svg>Tracker</a>
+      <a href="profile.html" class="active"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>Profile</a>
+      <a href="refer.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 12v8H4v-8M2 7h20v5H2zM12 22V7M12 7S9 2 6.5 4 9 7 12 7zM12 7s3-5 5.5-3-.5 3-3.5 3z"/></svg>Refer &amp; Earn</a>
+      <a href="support.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.4 9.3a2.6 2.6 0 1 1 3.9 2.4c-.9.6-1.3 1-1.3 2"/><circle cx="12" cy="16.6" r=".6" fill="currentColor" stroke="none"/></svg>Support</a>
     </nav>
-  </div>
-  <div class="who">
-    <span id="availBadge"></span>
-    <span id="whoami"></span>
-    <button class="signout" onclick="signOut()">Sign out</button>
-  </div>
-</div>
+    <div class="side-foot">
+      <div class="who"><img class="av" id="sideAvatar" src="favicon.svg" alt=""><div><div class="nm" id="sideName">…</div><div class="tr" id="sideTier"></div></div></div>
+      <button class="signout" onclick="signOut()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/></svg>Sign out</button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
 
-<div class="shell">
-  <!-- Account-needs-attention banner (card incomplete) -->
-  <div class="pf-banner" id="cardBanner">
-    <h3>Finish your agent card</h3>
-    <p>The moment a lead is assigned to you, National Coverage Group introduces you to them by name and photo — before you ever dial. Your card isn't finished yet, so your leads don't meet you first. It takes two minutes below.</p>
-    <a class="cta" href="#cardSection" onclick="document.getElementById('cardSection').scrollIntoView({behavior:'smooth'});return false;">Finish my card</a>
-  </div>
-  <div class="home-hero">
-    <h1>Your <em>profile.</em></h1>
-    <p>Everything about your account in one place — billing, where your Drops go, and the states and verticals you receive. Turning coverage off is instant. Adding coverage starts at the beginning of your next paid week.</p>
-  </div>
+  <main class="main">
+    <div class="topbar">
+      <button class="hamb" id="hamb" aria-label="Open menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <h1 id="ptitle">Profile</h1>
+      <div class="right">
+        <button class="back" id="back"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>Back</button>
+        <span id="availBadge"></span>
+        <span id="whoami"></span>
+      </div>
+    </div>
 
-  <!-- 0. AVAILABILITY -->
-  <div class="home-card pf-section" id="availCard">
-    <h2>Availability</h2>
-    <p class="pf-sub">Your live on/off switch for new Drops. Pause when you're on a call, in an appointment, or done for the day and leads route to the next available agent instead of a phone you can't answer. Resume the moment you're free and any queued leads come to you right away.</p>
-    <div class="pf-field"><span class="k">Current status</span><span class="v" id="availStatus">—</span></div>
-    <div class="pf-row" id="availControls" style="margin-top:10px"></div>
-    <p class="pf-note" id="availNote"></p>
-    <p class="pf-note" style="margin-top:12px">Your weekly target is <b id="availTarget">about 30</b> exclusive leads. Pausing your status or narrowing your states or verticals lowers what you'll receive — that's your call, and those weeks aren't counted as a shortfall. If a week ever runs short on <i>our</i> end, the difference is automatically credited toward your next week.</p>
-  </div>
+    <div class="content">
 
-  <!-- 1. ACCOUNT -->
-  <div class="home-card pf-section">
-    <h2>Account</h2>
-    <p class="pf-sub">Name and NPN come from your license on file (NIPR). To change your name, NPN, or login email, email support — we verify license details before updating them.</p>
-    <div class="pf-field"><span class="k">Name</span><span class="v" id="acctName">—</span></div>
-    <div class="pf-field"><span class="k">NPN</span><span class="v" id="acctNpn">—</span></div>
-    <div class="pf-field"><span class="k">Login email</span><span class="v" id="acctEmail">—</span></div>
-    <div class="pf-field"><span class="k">Tier</span><span class="v" id="acctTier">—</span></div>
-    <div class="pf-field"><span class="k">Billing</span><span class="v" id="acctBilling">—</span></div>
-    <div class="pf-field"><span class="k">Short-week credits</span><span class="v" id="acctMakeGood">—</span></div>
-    <div id="billingActions" style="margin-top:10px"></div>
-  </div>
+      <!-- ============ HUB ============ -->
+      <section class="hub" id="hub">
 
-  <!-- 1.5 WHAT YOUR LEADS SEE -->
-  <div class="home-card pf-section" id="cardSection">
-    <h2>What your leads see</h2>
-    <p class="pf-sub">The instant a lead is assigned to you, National Coverage Group sends them this card — your name, photo, and number — so when you call, they already know who you are. It turns a cold call into an expected one. A finished card (photo + call-from number) is required before we send you leads.</p>
-    <div class="lc-wrap">
-      <div class="lc-form">
-        <label>Your headshot <span class="req">*</span></label>
-        <div class="lc-up">
-          <img id="lcThumb" class="lc-thumb" alt="" style="display:none">
-          <div>
-            <input type="file" id="lcFile" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="onPickHeadshot(event)">
-            <button type="button" class="gp-save" onclick="document.getElementById('lcFile').click()">Upload photo</button>
+        <!-- Account-needs-attention banner (card incomplete) -->
+        <div class="pf-banner" id="cardBanner">
+          <h3>Finish your agent card</h3>
+          <p>The moment a lead is assigned to you, National Coverage Group introduces you to them by name and photo - before you ever dial. Your card isn't finished yet, so your leads don't meet you first. It takes about two minutes.</p>
+          <a class="btn primary" href="#" data-open="cardSection">Finish my card</a>
+        </div>
+
+        <div class="profile-head">
+          <img class="ph-av" id="phAvatar" src="favicon.svg" alt="Your profile photo">
+          <div class="ph-info">
+            <h2 class="shine" id="phName">—</h2>
+            <div class="ph-meta" id="phMeta"></div>
+            <a class="ph-edit" href="#" data-open="cardSection"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Update your photo &amp; card</a>
           </div>
         </div>
-        <p class="lc-tip">A clean, professional headshot matters — it's the first thing your lead sees. No good one? AI headshots are cheap: <a href="https://www.headshotpro.com" target="_blank" rel="noopener">HeadshotPro</a> (~$29) or <a href="https://www.betterpic.io" target="_blank" rel="noopener">BetterPic</a> (~$19, 4K).</p>
 
-        <label for="lcNameIn">Display name <span style="color:var(--silver)">(optional)</span></label>
-        <input type="text" id="lcNameIn" class="pf-input" maxlength="60" placeholder="Defaults to your name on file" oninput="paintCard()">
+        <div class="cards">
+          <button class="card" data-open="cardSection"><span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="body"><span class="ct"><span class="shine">What your leads see</span> <span class="pill" id="cardPill" style="display:none"></span></span><span class="cd">Your photo, name, and the number on the welcome each lead receives.</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
 
-        <label for="lcTitleIn">Title</label>
-        <input type="text" id="lcTitleIn" class="pf-input" maxlength="48" placeholder="Licensed Insurance Agent" oninput="paintCard()">
-        <p class="lc-flag">Safe defaults: "Licensed Insurance Agent" or "Licensed Insurance Producer." Only use "Broker" if you're actually licensed/operating as one — some states regulate the advertised title.</p>
+          <button class="card" data-open="sub-availability"><span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span class="body"><span class="ct"><span class="shine">Availability</span> <span class="pill" id="availPill" style="display:none"></span></span><span class="cd">Pause new Drops when you're busy. You keep what you already have.</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
 
-        <label for="lcTagIn">One-line tagline <span style="color:var(--silver)">(optional)</span></label>
-        <input type="text" id="lcTagIn" class="pf-input" maxlength="160" placeholder="e.g. Helping families protect what matters most." oninput="paintCard()">
+          <button class="card" data-open="sub-coverage"><span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 21s7-5.5 7-11a7 7 0 10-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span><span class="body"><span class="ct"><span class="shine">Coverage</span></span><span class="cd" id="covSummary">Your states and verticals</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
 
-        <label for="lcPhoneIn">Call-from number <span class="req">*</span></label>
-        <input type="text" id="lcPhoneIn" class="pf-input" inputmode="tel" maxlength="20" placeholder="(555) 123-4567" oninput="paintCard()">
-        <p class="lc-tip">This is the number your leads are told you'll call from — so make calls from it. If the text says one number and you ring from another, it backfires.</p>
+          <button class="card" data-open="sub-schedule"><span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></span><span class="body"><span class="ct"><span class="shine">Drop schedule</span></span><span class="cd" id="schedSummary">The days you receive Drops</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
 
-        <div style="margin-top:16px"><button class="gp-save" onclick="saveCard()">Save my card</button></div>
-        <p class="pf-note" id="cardNote"></p>
-      </div>
+          <button class="card" data-open="sub-goals"><span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></span><span class="body"><span class="ct"><span class="shine">Goals &amp; targets</span></span><span class="cd" id="goalSummary">Your monthly premium goal</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
 
-      <div class="lc-preview">
-        <div class="lc-cap">Live preview</div>
-        <div class="lc-card" id="lcCard">
-          <div class="lc-left">
-            <img id="lcPhoto" class="lc-photo" alt="" crossorigin="anonymous" style="display:none">
-            <div class="lc-ph" id="lcPh">Your photo<br>appears here</div>
-            <div class="lc-arc"></div>
-          </div>
-          <div class="lc-right">
-            <div class="lc-logo">
-              <svg width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                <defs><clipPath id="lcsh"><path d="M16 3.2l10.5 3.6V15c0 6.9-4.6 11.8-10.5 13.6C9.6 26.8 5 21.9 5 15V6.8z"/></clipPath></defs>
-                <path d="M16 3.2l10.5 3.6V15c0 6.9-4.6 11.8-10.5 13.6C9.6 26.8 5 21.9 5 15V6.8z" fill="#0f2747"/>
-                <g clip-path="url(#lcsh)"><rect x="3" y="16" width="26" height="2.1" fill="#ffffff"/><rect x="3" y="19" width="26" height="2.1" fill="#c8322e"/><rect x="3" y="22" width="26" height="2.1" fill="#ffffff"/></g>
-                <path d="M16 7.2L16.8 9.5L19.23 9.55L17.29 11.02L18 13.35L16 11.96L14 13.35L14.71 11.02L12.77 9.55L15.2 9.5Z" fill="#ffffff"/>
-              </svg>
-              <div><div class="lc-wm">NATIONAL <span>COVERAGE</span> GROUP</div><div class="lc-wm-sub">LICENSED INSURANCE</div></div>
-            </div>
-            <div class="lc-name" id="lcName">Your Name</div>
-            <div class="lc-title" id="lcTitle">Licensed Insurance Agent</div>
-            <div class="lc-rule"></div>
-            <div class="lc-tag" id="lcTag"></div>
-            <div class="lc-spec-h">SPECIALIZING IN</div>
-            <div class="lc-spec" id="lcSpec"></div>
-            <div class="lc-bar">
-              <div class="lc-contact">
-                <div class="lc-c"><span class="lc-ci">&#9742;</span><span class="lc-big" id="lcPhone">—</span></div>
-                <div class="lc-c" id="lcNpnRow" style="display:none"><span class="lc-ci">&#10003;</span><span id="lcNpn"></span></div>
+          <button class="card" data-open="sub-account"><span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span><span class="body"><span class="ct"><span class="shine">Account &amp; billing</span></span><span class="cd" id="acctSummary">Your tier, billing, and Drop number</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+        </div>
+      </section>
+
+      <!-- ============ SUBPAGE: WHAT YOUR LEADS SEE ============ -->
+      <!-- id="cardSection" kept so dashboard's profile.html#cardSection lands/auto-opens here -->
+      <section class="subpage" id="cardSection">
+        <div class="page-intro"><h2>What your leads see</h2><p>The instant a lead is assigned to you, National Coverage Group sends them this card - your name, photo, and number - so when you call, they already know who you are. A finished card (photo + call-from number) is required before we send you leads.</p></div>
+        <div class="panel">
+          <div class="lc-wrap">
+            <div class="lc-form">
+              <div class="field">
+                <label>Your headshot <span style="color:var(--amber)">*</span></label>
+                <div class="lc-up">
+                  <img id="lcThumb" class="lc-thumb" alt="" style="display:none">
+                  <div>
+                    <input type="file" id="lcFile" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="onPickHeadshot(event)">
+                    <button type="button" class="btn sm" onclick="document.getElementById('lcFile').click()">Upload photo</button>
+                  </div>
+                </div>
+                <p class="lc-tip">A clean, professional headshot matters - it's the first thing your lead sees. No good one? AI headshots are cheap: <a href="https://www.headshotpro.com" target="_blank" rel="noopener">HeadshotPro</a> (~$29) or <a href="https://www.betterpic.io" target="_blank" rel="noopener">BetterPic</a> (~$19, 4K).</p>
               </div>
-              <div class="lc-shield">LICENSED &amp;<br>TRUSTED</div>
+
+              <div class="field">
+                <label for="lcNameIn">Display name <span style="color:var(--muted);font-weight:500">(optional)</span></label>
+                <input type="text" id="lcNameIn" maxlength="60" placeholder="Defaults to your name on file" oninput="paintCard()">
+              </div>
+
+              <div class="field">
+                <label for="lcTitleIn">Title</label>
+                <input type="text" id="lcTitleIn" maxlength="48" placeholder="Licensed Insurance Agent" oninput="paintCard()">
+                <p class="lc-flag">Safe defaults: "Licensed Insurance Agent" or "Licensed Insurance Producer." Only use "Broker" if you're actually licensed/operating as one - some states regulate the advertised title.</p>
+              </div>
+
+              <div class="field">
+                <label for="lcTagIn">One-line tagline <span style="color:var(--muted);font-weight:500">(optional)</span></label>
+                <input type="text" id="lcTagIn" maxlength="160" placeholder="e.g. Helping families protect what matters most." oninput="paintCard()">
+              </div>
+
+              <div class="field">
+                <label for="lcPhoneIn">Call-from number <span style="color:var(--amber)">*</span></label>
+                <input type="text" id="lcPhoneIn" inputmode="tel" maxlength="20" placeholder="(555) 123-4567" oninput="paintCard()">
+                <p class="lc-tip">This is the number your leads are told you'll call from - so make calls from it. If the text says one number and you ring from another, it backfires.</p>
+              </div>
+
+              <div class="savebar"><button class="btn primary" onclick="saveCard()">Save my card</button></div>
+              <p class="pf-note" id="cardNote"></p>
+            </div>
+
+            <div class="lc-preview">
+              <div class="lc-cap">Live preview</div>
+              <div class="lc-card" id="lcCard">
+                <div class="lc-left">
+                  <img id="lcPhoto" class="lc-photo" alt="" crossorigin="anonymous" style="display:none">
+                  <div class="lc-ph" id="lcPh">Your photo<br>appears here</div>
+                  <div class="lc-arc"></div>
+                </div>
+                <div class="lc-right">
+                  <div class="lc-logo">
+                    <svg width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                      <defs><clipPath id="lcsh"><path d="M16 3.2l10.5 3.6V15c0 6.9-4.6 11.8-10.5 13.6C9.6 26.8 5 21.9 5 15V6.8z"/></clipPath></defs>
+                      <path d="M16 3.2l10.5 3.6V15c0 6.9-4.6 11.8-10.5 13.6C9.6 26.8 5 21.9 5 15V6.8z" fill="#0f2747"/>
+                      <g clip-path="url(#lcsh)"><rect x="3" y="16" width="26" height="2.1" fill="#ffffff"/><rect x="3" y="19" width="26" height="2.1" fill="#c8322e"/><rect x="3" y="22" width="26" height="2.1" fill="#ffffff"/></g>
+                      <path d="M16 7.2L16.8 9.5L19.23 9.55L17.29 11.02L18 13.35L16 11.96L14 13.35L14.71 11.02L12.77 9.55L15.2 9.5Z" fill="#ffffff"/>
+                    </svg>
+                    <div><div class="lc-wm">NATIONAL <span>COVERAGE</span> GROUP</div><div class="lc-wm-sub">LICENSED INSURANCE</div></div>
+                  </div>
+                  <div class="lc-name" id="lcName">Your Name</div>
+                  <div class="lc-title" id="lcTitle">Licensed Insurance Agent</div>
+                  <div class="lc-rule"></div>
+                  <div class="lc-tag" id="lcTag"></div>
+                  <div class="lc-spec-h">SPECIALIZING IN</div>
+                  <div class="lc-spec" id="lcSpec"></div>
+                  <div class="lc-bar">
+                    <div class="lc-contact">
+                      <div class="lc-c"><span class="lc-ci">&#9742;</span><span class="lc-big" id="lcPhone">—</span></div>
+                      <div class="lc-c" id="lcNpnRow" style="display:none"><span class="lc-ci">&#10003;</span><span id="lcNpn"></span></div>
+                    </div>
+                    <div class="lc-shield">LICENSED &amp;<br>TRUSTED</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
+
+      <!-- ============ SUBPAGE: AVAILABILITY ============ -->
+      <section class="subpage" id="sub-availability">
+        <div class="page-intro"><h2>Availability</h2><p>Your live on/off switch for new Drops. Pause when you're on a call, in an appointment, or done for the day, and leads route to the next available agent. Resume the moment you're free and any queued leads come to you right away.</p></div>
+        <div class="panel" id="availCard">
+          <h3>Current status</h3>
+          <p class="sub">Pausing skips you on new Drops. You keep every lead you already have.</p>
+          <div class="kv"><span class="k">Status</span><span class="v" id="availStatus">—</span></div>
+          <div class="dur" id="availControls" style="margin-top:16px"></div>
+          <p class="pf-note" id="availNote"></p>
+          <div class="note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex-shrink:0;color:var(--silver)"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span>Your weekly target is <b id="availTarget">about 30</b> exclusive leads. Pausing your status or narrowing your states or verticals lowers what you'll receive - that's your call, and those weeks aren't counted as a shortfall. If a week ever runs short on <i>our</i> end, the difference is automatically credited toward your next week.</span></div>
+        </div>
+      </section>
+
+      <!-- ============ SUBPAGE: COVERAGE (states + verticals) ============ -->
+      <section class="subpage" id="sub-coverage">
+        <div class="page-intro"><h2>Coverage</h2><p>The states you're licensed in and the verticals you want. Turning coverage off is instant. Adding coverage starts at the beginning of your next paid week.</p></div>
+
+        <div class="panel">
+          <h3>States</h3>
+          <p class="sub">You receive leads from the states switched on below - only states you're licensed in (NIPR). Switch a state <b>off</b> to stop its leads right away. Switch one <b>on</b> to add it; added coverage starts at the beginning of your next paid week.</p>
+          <div class="toggle-row" id="stateToggles"></div>
+          <p class="pf-note" id="stateNote"></p>
+          <p class="pf-note" style="margin-top:10px">Need to add or remove a <b>licensed</b> state itself? Email <a href="mailto:blacklabelleads@gmail.com?subject=Update%20my%20licensed%20states" style="color:var(--silver)">blacklabelleads@gmail.com</a> - we verify license changes before updating.</p>
+        </div>
+
+        <div class="panel">
+          <h3>Verticals</h3>
+          <p class="sub">The product lines you want. Switch one <b>off</b> to stop those leads right away. Switch one <b>on</b> to add it; like states, added coverage starts at the beginning of your next paid week.</p>
+          <div class="toggle-row" id="vertToggles"></div>
+          <p class="pf-note" id="vertNote"></p>
+        </div>
+      </section>
+
+      <!-- ============ SUBPAGE: DROP SCHEDULE ============ -->
+      <section class="subpage" id="sub-schedule">
+        <div class="page-intro"><h2>Drop schedule</h2><p>The days you want to receive Drops, in your timezone. Turning a day off takes effect right away. Leave them all on to receive Drops any day.</p></div>
+        <div class="panel">
+          <h3>Drop days</h3>
+          <p class="sub">Tap a day to turn Drops on or off.</p>
+          <div class="days" id="dayRow"></div>
+          <div class="field" style="margin-top:24px;max-width:320px">
+            <label for="tzSelect">Time zone</label>
+            <select id="tzSelect">
+              <option value="America/New_York">Eastern (New York)</option>
+              <option value="America/Chicago">Central (Chicago)</option>
+              <option value="America/Denver">Mountain (Denver)</option>
+              <option value="America/Phoenix">Arizona (no DST)</option>
+              <option value="America/Los_Angeles">Pacific (Los Angeles)</option>
+              <option value="America/Anchorage">Alaska</option>
+              <option value="Pacific/Honolulu">Hawaii</option>
+            </select>
+          </div>
+          <div class="savebar"><button class="btn primary" onclick="saveSchedule()">Save days &amp; timezone</button></div>
+          <p class="pf-note" id="schedNote"></p>
+          <div class="note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex-shrink:0;color:var(--silver)"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Days you turn off send your leads to the next available agent - they're not held for you.</span></div>
+        </div>
+      </section>
+
+      <!-- ============ SUBPAGE: GOALS ============ -->
+      <section class="subpage" id="sub-goals">
+        <div class="page-intro"><h2>Goals &amp; targets</h2><p>Your monthly premium target and your weekly tier cost. These power the return numbers and the goal ring on your Tracker.</p></div>
+        <div class="panel">
+          <h3>Monthly goal</h3>
+          <p class="sub">What you're aiming to write each month, plus your weekly tier cost.</p>
+          <div class="field" style="max-width:280px">
+            <label for="goalInput">Monthly goal ($)</label>
+            <input type="text" id="goalInput" inputmode="numeric" placeholder="e.g. 20000">
+          </div>
+          <div class="field" style="max-width:280px">
+            <label for="invInput">My weekly tier cost ($)</label>
+            <input type="text" id="invInput" inputmode="numeric" placeholder="400">
+          </div>
+          <div class="savebar"><button class="btn primary" onclick="saveGoals()">Save goals</button></div>
+          <p class="pf-note" id="goalNote"></p>
+        </div>
+      </section>
+
+      <!-- ============ SUBPAGE: ACCOUNT & BILLING ============ -->
+      <section class="subpage" id="sub-account">
+        <div class="page-intro"><h2>Account &amp; billing</h2><p>Your identity, your plan, your Drop number, and your card.</p></div>
+
+        <div class="panel">
+          <h3>Account</h3>
+          <p class="sub">Name and NPN come from your license on file (NIPR). To change your name, NPN, or login email, email support - we verify license details before updating them.</p>
+          <div class="kv"><span class="k">Name</span><span class="v" id="acctName">—</span></div>
+          <div class="kv"><span class="k">NPN</span><span class="v" id="acctNpn">—</span></div>
+          <div class="kv"><span class="k">Login email</span><span class="v" id="acctEmail">—</span></div>
+        </div>
+
+        <div class="panel">
+          <h3>Drop number</h3>
+          <p class="sub">The mobile number where your Drops are texted the moment a lead is delivered. Changing it requires a quick re-verify by text, so the wrong phone never receives your leads.</p>
+          <div class="kv"><span class="k">Verified number</span><span class="v" id="dropNumber">—</span></div>
+          <p class="pf-note note-warn" id="dropNote">Text alerts are coming online shortly. Until then every Drop still lands in your email the instant it's delivered, and shows here in the portal.</p>
+        </div>
+
+        <div class="panel">
+          <h3>Plan &amp; billing</h3>
+          <p class="sub">Manage your card or invoices through Stripe.</p>
+          <div class="kv"><span class="k">Tier</span><span class="v" id="acctTier">—</span></div>
+          <div class="kv"><span class="k">Billing status</span><span class="v" id="acctBilling">—</span></div>
+          <div class="kv"><span class="k">Short-week credits</span><span class="v" id="acctMakeGood">—</span></div>
+          <div id="billingActions" style="margin-top:18px"></div>
+        </div>
+      </section>
+
     </div>
-  </div>
-
-  <!-- 2. DROP NUMBER -->
-  <div class="home-card pf-section">
-    <h2>Drop number</h2>
-    <p class="pf-sub">The mobile number where your Drops are texted the moment a lead is delivered. Changing it requires a quick re-verify by text, so the wrong phone never receives your leads.</p>
-    <div class="pf-field"><span class="k">Verified number</span><span class="v" id="dropNumber">—</span></div>
-    <p class="note-warn" id="dropNote">Text alerts are coming online shortly. Until then every Drop still lands in your email the instant it's delivered, and shows here in the portal.</p>
-  </div>
-
-  <!-- 3. STATES -->
-  <div class="home-card pf-section">
-    <h2>States</h2>
-    <p class="pf-sub">You receive leads from the states switched on below — only states you're licensed in (NIPR). Switch a state <b>off</b> to stop its leads right away. Switch one <b>on</b> to add it; added coverage starts at the beginning of your next paid week.</p>
-    <div class="toggle-row" id="stateToggles"></div>
-    <p class="pf-note" id="stateNote"></p>
-    <p class="pf-note" style="margin-top:10px">Need to add or remove a <b>licensed</b> state itself? Email <a href="mailto:blacklabelleads@gmail.com?subject=Update%20my%20licensed%20states">blacklabelleads@gmail.com</a> — we verify license changes before updating.</p>
-  </div>
-
-  <!-- 4. VERTICALS -->
-  <div class="home-card pf-section">
-    <h2>Verticals</h2>
-    <p class="pf-sub">The product lines you want. Switch one <b>off</b> to stop those leads right away. Switch one <b>on</b> to add it; like states, added coverage starts at the beginning of your next paid week.</p>
-    <div class="toggle-row" id="vertToggles"></div>
-    <p class="pf-note" id="vertNote"></p>
-  </div>
-
-  <!-- 5. DROP DAYS + TIMEZONE -->
-  <div class="home-card pf-section">
-    <h2>Drop days &amp; timezone</h2>
-    <p class="pf-sub">The days you want to receive Drops, in your timezone. Turning a day off takes effect right away. Leave them all on to receive Drops any day.</p>
-    <div class="pf-label">Drop days</div>
-    <div class="day-row" id="dayRow"></div>
-    <div class="pf-row">
-      <label for="tzSelect">Timezone</label>
-      <select id="tzSelect" class="pf-select">
-        <option value="America/New_York">Eastern (New York)</option>
-        <option value="America/Chicago">Central (Chicago)</option>
-        <option value="America/Denver">Mountain (Denver)</option>
-        <option value="America/Phoenix">Arizona (no DST)</option>
-        <option value="America/Los_Angeles">Pacific (Los Angeles)</option>
-        <option value="America/Anchorage">Alaska</option>
-        <option value="Pacific/Honolulu">Hawaii</option>
-      </select>
-      <button class="gp-save" onclick="saveSchedule()">Save days &amp; timezone</button>
-    </div>
-    <p class="pf-note" id="schedNote"></p>
-  </div>
-
-  <!-- 6. GOALS -->
-  <div class="home-card pf-section">
-    <h2>Goals</h2>
-    <p class="pf-sub">Your monthly premium target and your weekly tier cost. These power the return numbers and the goal ring on your Tracker.</p>
-    <div class="pf-row">
-      <label for="goalInput">Monthly goal ($)</label>
-      <input type="text" id="goalInput" class="pf-input" inputmode="numeric" placeholder="e.g. 20000" style="width:140px">
-      <label for="invInput">My weekly tier cost ($)</label>
-      <input type="text" id="invInput" class="pf-input" inputmode="numeric" placeholder="400" style="width:120px">
-      <button class="gp-save" onclick="saveGoals()">Save goals</button>
-    </div>
-    <p class="pf-note" id="goalNote"></p>
-  </div>
+  </main>
 </div>
 
 <script>
@@ -313,6 +371,8 @@
       pending = (res[2] && res[2].data) || [];
       var name = ((profile.first_name||'') + ' ' + (profile.last_name||'')).trim() || me.email;
       document.getElementById('whoami').innerHTML = '<span class="email">' + esc(name) + '</span>';
+      renderSidebar(name);
+      renderProfileHead(name);
       renderAccount(name);
       renderAvailability();
       renderDropNumber();
@@ -323,7 +383,26 @@
       renderMakeGood();
       renderCard();
       renderCardBanner();
+      renderHubSummaries();
+      maybeOpenFromHash();
     });
+  }
+
+  /* ---------- sidebar binding (mirrors home.html) ---------- */
+  function renderSidebar(name){
+    var tier = profile.tier || 'Silver';
+    document.getElementById('sideName').textContent = name;
+    document.getElementById('sideTier').textContent = tier + (profile.npn ? ' · NPN ' + profile.npn : '');
+    if (profile.headshot_url) document.getElementById('sideAvatar').src = profile.headshot_url;
+  }
+  function renderProfileHead(name){
+    document.getElementById('phName').textContent = name;
+    var tier = profile.tier || 'Silver';
+    var bits = '<span class="tier-badge">' + esc(tier) + '</span>';
+    if (profile.npn) bits += ' &nbsp;·&nbsp; NPN ' + esc(profile.npn);
+    if (me && me.email) bits += ' &nbsp;·&nbsp; ' + esc(me.email);
+    document.getElementById('phMeta').innerHTML = bits;
+    if (profile.headshot_url) document.getElementById('phAvatar').src = profile.headshot_url;
   }
 
   /* ---------- helpers ---------- */
@@ -363,17 +442,16 @@
     var sEl = document.getElementById('availStatus');
     var cEl = document.getElementById('availControls');
     if (eff){
-      sEl.innerHTML = '<span class="pill good">Available — receiving Drops</span>';
-      cEl.innerHTML = '<span class="k" style="align-self:center">Pause for</span>'
-        + '<button class="gp-save" onclick="pauseAvail(1)">1 hour</button>'
-        + '<button class="gp-save" onclick="pauseAvail(4)">4 hours</button>'
-        + '<button class="gp-save" onclick="pauseAvail(-1)">Until I resume</button>';
+      sEl.innerHTML = '<span class="pill good">Available - receiving Drops</span>';
+      cEl.innerHTML = '<button class="btn" onclick="pauseAvail(1)">Pause 1 hour</button>'
+        + '<button class="btn" onclick="pauseAvail(4)">Pause 4 hours</button>'
+        + '<button class="btn" onclick="pauseAvail(-1)">Pause until I resume</button>';
     } else {
       var until = profile.available_until;
-      var txt = until ? ('Paused — auto-resumes ' + fmtTime(until)) : 'Paused — until you resume';
+      var txt = until ? ('Paused - auto-resumes ' + fmtTime(until)) : 'Paused - until you resume';
       sEl.innerHTML = '<span class="pill warn">' + esc(txt) + '</span>';
-      cEl.innerHTML = '<button class="gp-save" onclick="resumeAvail()">Resume now</button>'
-        + '<button class="gp-save" onclick="pauseAvail(4)">Extend 4h</button>';
+      cEl.innerHTML = '<button class="btn primary" onclick="resumeAvail()">Resume now</button>'
+        + '<button class="btn" onclick="pauseAvail(4)">Extend 4h</button>';
     }
   }
   function setAvail(available, hours){
@@ -385,10 +463,11 @@
       profile.is_available = d.is_available;
       profile.available_until = d.available_until;
       renderAvailability();
+      renderHubSummaries();
       if (window.blAvailPaint) window.blAvailPaint(profile.is_available, profile.available_until);
       if (available){
         note.className='pf-note note-ok';
-        note.textContent = "You're available — receiving Drops again." + (d.drained ? (' ' + d.drained + ' queued lead' + (d.drained==1?'':'s') + ' just came to you.') : '');
+        note.textContent = "You're available - receiving Drops again." + (d.drained ? (' ' + d.drained + ' queued lead' + (d.drained==1?'':'s') + ' just came to you.') : '');
       } else {
         note.className='pf-note note-warn';
         note.textContent = profile.available_until ? ('Paused. You will auto-resume at ' + fmtTime(profile.available_until) + '.') : 'Paused until you resume.';
@@ -424,7 +503,7 @@
     bEl.innerHTML = '<span class="pill ' + pill + '">' + esc(txt) + '</span>';
     // Manage billing (Stripe portal) only makes sense once there's a customer on file
     if (profile.stripe_customer_id){
-      act.innerHTML = '<a id="mngBilling" class="mng-link" onclick="openBillingPortal(event)">Manage billing</a>';
+      act.innerHTML = '<button id="mngBilling" class="btn primary" onclick="openBillingPortal(event)">Manage billing</button>';
     } else {
       act.innerHTML = '<a class="mng-link" href="home.html">Activate your subscription</a>';
     }
@@ -437,8 +516,11 @@
     db.functions.invoke('billing-portal').then(function(r){
       if (el){ el.textContent = 'Manage billing'; el.style.pointerEvents = ''; }
       var url = r && r.data && r.data.url;
-      if ((r && r.error) || !url){ alert("Couldn't open billing right now — email blacklabelleads@gmail.com and we'll sort it out."); return; }
+      if ((r && r.error) || !url){ alert("Couldn't open billing right now - email blacklabelleads@gmail.com and we'll sort it out."); return; }
       window.location.href = url;
+    }).catch(function(){
+      if (el){ el.textContent = 'Manage billing'; el.style.pointerEvents = ''; }
+      alert("Couldn't open billing right now. Try again, or email blacklabelleads@gmail.com.");
     });
   }
 
@@ -455,7 +537,7 @@
     note.textContent = '';
     var licensed = splitList(profile.states_licensed);
     if (!licensed.length){
-      box.innerHTML = '<span class="pf-note">No states on file yet — they come from your application. Email us to add your license.</span>';
+      box.innerHTML = '<span class="pf-note">No states on file yet - they come from your application. Email us to add your license.</span>';
       return;
     }
     var activeRaw = (profile.active_states || '').trim();
@@ -492,7 +574,7 @@
       if (r.error){ note.className='pf-note note-bad'; note.textContent = "Couldn't add " + s + ': ' + r.error.message; return; }
       var d = r.data || {};
       if (d.immediate){ note.className='pf-note note-ok'; note.textContent = s + ' is now on.'; }
-      else { note.className='pf-note note-warn'; note.textContent = s + ' is queued — it starts delivering ' + fmtDay(d.effective_at) + '.'; }
+      else { note.className='pf-note note-warn'; note.textContent = s + ' is queued - it starts delivering ' + fmtDay(d.effective_at) + '.'; }
       reload();
     });
   }
@@ -548,7 +630,7 @@
       if (r.error){ note.className='pf-note note-bad'; note.textContent = "Couldn't add " + v + ': ' + r.error.message; return; }
       var d = r.data || {};
       if (d.immediate){ note.className='pf-note note-ok'; note.textContent = v + ' is now on.'; }
-      else { note.className='pf-note note-warn'; note.textContent = v + ' is queued — it starts delivering ' + fmtDay(d.effective_at) + '.'; }
+      else { note.className='pf-note note-warn'; note.textContent = v + ' is queued - it starts delivering ' + fmtDay(d.effective_at) + '.'; }
       reload();
     });
   }
@@ -583,11 +665,10 @@
   function renderSchedule(){
     var sel = profile.drop_days; // int[] ISO 1..7; null/empty handled as all-on for display
     var set = Array.isArray(sel) ? sel.map(Number) : [];
-    var allOn = !set.length; // empty array on owner overflow accounts shows as none; agents normally have days
     var row = document.getElementById('dayRow');
     row.innerHTML = DAYS.map(function(d){
       var on = set.indexOf(d[1]) > -1;
-      return '<span class="day' + (on?' on':'') + '" data-d="' + d[1] + '" onclick="this.classList.toggle(\'on\')">' + d[0] + '</span>';
+      return '<button type="button" class="day' + (on?' on':'') + '" data-d="' + d[1] + '" onclick="this.classList.toggle(\'on\')">' + d[0] + '</button>';
     }).join('');
     var tz = profile.agent_tz || 'America/Chicago';
     var tzSel = document.getElementById('tzSelect');
@@ -605,6 +686,7 @@
       if (r.error){ note.className='pf-note note-bad'; note.textContent = "Couldn't save: " + r.error.message; return; }
       profile.drop_days = days; profile.agent_tz = tz;
       note.className='pf-note note-ok'; note.textContent = 'Saved. ' + (days.length ? 'Drops will come on the selected days.' : 'No days selected.');
+      renderHubSummaries();
     });
   }
 
@@ -627,6 +709,7 @@
       if (patch.monthly_goal !== undefined) profile.monthly_goal = patch.monthly_goal;
       if (patch.weekly_investment !== undefined) profile.weekly_investment = patch.weekly_investment;
       note.className='pf-note note-ok'; note.textContent = 'Saved. Your Tracker uses these now.';
+      renderHubSummaries();
     });
   }
 
@@ -638,9 +721,58 @@
       var cents = Number(r.data.total_credited_cents || 0);
       var rows = r.data.rows || [];
       if (cents > 0){ el.innerHTML = '<span class="pill good">$' + (cents/100).toFixed(2) + ' credited</span>'; }
-      else { el.textContent = 'None — targets met so far'; }
+      else { el.textContent = 'None - targets met so far'; }
       if (rows.length && rows[0].reason){ el.title = rows[0].reason; }
+      if (window.BLtagMoney) window.BLtagMoney();
     });
+  }
+
+  /* ---------- hub card summaries ---------- */
+  function renderHubSummaries(){
+    // What your leads see - completion pill
+    var cardPill = document.getElementById('cardPill');
+    if (cardPill){
+      if (cardComplete()){ cardPill.className='pill ok'; cardPill.textContent='Complete'; cardPill.style.display=''; }
+      else { cardPill.className='pill warn'; cardPill.textContent='Action needed'; cardPill.style.display=''; }
+    }
+    // Availability pill
+    var availPill = document.getElementById('availPill');
+    if (availPill){
+      if (effectiveAvail()){ availPill.className='pill ok'; availPill.textContent='Available'; }
+      else { availPill.className='pill warn'; availPill.textContent='Paused'; }
+      availPill.style.display='';
+    }
+    // Coverage summary
+    var covEl = document.getElementById('covSummary');
+    if (covEl){
+      var st = currentActiveStates();
+      var vt = currentActiveVerticals();
+      var stTxt = st.length ? st.join(', ') : 'No states on';
+      var vtTxt = vt.length ? vt.join(', ') : 'No verticals on';
+      covEl.textContent = stTxt + ' · ' + vtTxt;
+    }
+    // Schedule summary
+    var schedEl = document.getElementById('schedSummary');
+    if (schedEl){
+      var set = Array.isArray(profile.drop_days) ? profile.drop_days.map(Number) : [];
+      var names = DAYS.filter(function(d){ return set.indexOf(d[1]) > -1; }).map(function(d){ return d[0]; });
+      var dayTxt = !set.length ? 'No days set' : (names.length === 7 ? 'Every day' : names.join(', '));
+      var tzShort = { 'America/New_York':'Eastern','America/Chicago':'Central','America/Denver':'Mountain','America/Phoenix':'Arizona','America/Los_Angeles':'Pacific','America/Anchorage':'Alaska','Pacific/Honolulu':'Hawaii' };
+      var tz = profile.agent_tz || 'America/Chicago';
+      schedEl.textContent = dayTxt + ' · ' + (tzShort[tz] || tz);
+    }
+    // Goals summary
+    var goalEl = document.getElementById('goalSummary');
+    if (goalEl){
+      goalEl.textContent = profile.monthly_goal ? ('$' + Number(profile.monthly_goal).toLocaleString() + ' / month') : 'Set your monthly premium goal';
+    }
+    // Account summary
+    var acctEl = document.getElementById('acctSummary');
+    if (acctEl){
+      var status = String(profile.subscription_status || 'none').toLowerCase();
+      var billTxt = (status==='active'||status==='trialing') ? 'billing active' : (status==='reserved' ? 'seat reserved' : (status==='past_due'||status==='unpaid' ? 'payment needs attention' : (status==='canceled' ? 'canceled' : 'not active')));
+      acctEl.textContent = (profile.tier || 'Silver') + ' tier · ' + billTxt + ' · manage your card';
+    }
   }
 
   /* ---------- what your leads see (agent card) ---------- */
@@ -688,7 +820,7 @@
   function onPickHeadshot(ev){
     var f = ev.target.files && ev.target.files[0];
     if (!f) return;
-    if (f.size > 5*1024*1024){ var n=document.getElementById('cardNote'); n.className='pf-note note-bad'; n.textContent='That image is over 5MB — please use a smaller photo.'; ev.target.value=''; return; }
+    if (f.size > 5*1024*1024){ var n=document.getElementById('cardNote'); n.className='pf-note note-bad'; n.textContent='That image is over 5MB - please use a smaller photo.'; ev.target.value=''; return; }
     var url = URL.createObjectURL(f);
     var t = document.getElementById('lcThumb'); t.src = url; t.style.display='';
     var photo = document.getElementById('lcPhoto'); photo.removeAttribute('crossorigin'); photo.src = url; photo.style.display=''; document.getElementById('lcPh').style.display='none';
@@ -735,7 +867,7 @@
     var hasPhoto = !!(profile.headshot_url) || input.dataset.dirty === '1';
     var phone = (document.getElementById('lcPhoneIn').value||'').replace(/\D/g,'');
     if (phone.length===11 && phone.charAt(0)==='1') phone = phone.slice(1);
-    if (!hasPhoto){ note.className='pf-note note-bad'; note.textContent='Add a headshot first — it is required.'; return; }
+    if (!hasPhoto){ note.className='pf-note note-bad'; note.textContent='Add a headshot first - it is required.'; return; }
     if (phone.length!==10){ note.className='pf-note note-bad'; note.textContent='Enter a valid 10-digit call-from number.'; return; }
     note.className='pf-note'; note.textContent='Saving your card…';
     uploadHeadshotIfNeeded().then(function(headUrl){
@@ -768,6 +900,9 @@
             note.className='pf-note note-ok';
             note.textContent = 'Saved. Your leads will meet you before you dial.' + (cardImg ? '' : ' (Card image will be generated on your next save.)');
             renderCardBanner();
+            renderHubSummaries();
+            // refresh avatar wherever it shows
+            if (headUrl){ document.getElementById('sideAvatar').src = headUrl; document.getElementById('phAvatar').src = headUrl; }
           });
         });
     }).catch(function(e){
@@ -779,7 +914,49 @@
     var b = document.getElementById('cardBanner'); if (!b) return;
     b.style.display = cardComplete() ? 'none' : 'block';
   }
+
+  /* ---------- hub <-> subpage navigation ---------- */
+  var hub = document.getElementById('hub');
+  var subs = [].slice.call(document.querySelectorAll('.subpage'));
+  var back = document.getElementById('back');
+  var ptitle = document.getElementById('ptitle');
+  var subTitles = {
+    'cardSection':'What your leads see',
+    'sub-availability':'Availability',
+    'sub-coverage':'Coverage',
+    'sub-schedule':'Drop schedule',
+    'sub-goals':'Goals & targets',
+    'sub-account':'Account & billing'
+  };
+  function openSub(id){
+    if (!document.getElementById(id)) return;
+    hub.classList.add('hidden');
+    subs.forEach(function(s){ s.classList.toggle('active', s.id===id); });
+    back.style.display = 'inline-flex';
+    ptitle.textContent = subTitles[id] || 'Profile';
+    window.scrollTo(0,0);
+    var side=document.getElementById('side'), scrim=document.getElementById('scrim');
+    if(side) side.classList.remove('open'); if(scrim) scrim.classList.remove('show');
+  }
+  function goHub(){
+    hub.classList.remove('hidden');
+    subs.forEach(function(s){ s.classList.remove('active'); });
+    back.style.display = 'none';
+    ptitle.textContent = 'Profile';
+  }
+  document.querySelectorAll('[data-open]').forEach(function(el){
+    el.addEventListener('click', function(e){ e.preventDefault(); openSub(el.getAttribute('data-open')); });
+  });
+  back.addEventListener('click', goHub);
+
+  // dashboard links here via profile.html#cardSection - land directly on the card editor
+  function maybeOpenFromHash(){
+    var h = (window.location.hash || '').replace('#','');
+    if (h && document.getElementById(h) && document.getElementById(h).classList.contains('subpage')){ openSub(h); }
+  }
+  window.addEventListener('hashchange', maybeOpenFromHash);
 </script>
+<script src="portal-shell.js"></script>
 <script src="avail-badge.js"></script>
 </body>
 </html>

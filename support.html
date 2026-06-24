@@ -3,111 +3,110 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Support — Black Label Leads Portal</title>
+<title>Support - Black Label Leads Portal</title>
 <meta name="robots" content="noindex">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="portal-redesign.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  .sp-search{width:100%;margin:6px 0 18px;padding:14px 16px;background:var(--card);border:1px solid var(--line);color:var(--ivory);font-family:'Mulish',sans-serif;font-size:14px}
-  .sp-search::placeholder{color:var(--mute)}
-  .faq{border:1px solid var(--line-soft);background:var(--card);margin-bottom:10px}
-  .faq summary{cursor:pointer;padding:16px 18px;font-weight:700;font-size:14px;color:var(--ivory);list-style:none;display:flex;justify-content:space-between;align-items:center}
-  .faq summary::-webkit-details-marker{display:none}
-  .faq summary::after{content:'+';color:var(--silver);font-size:18px;margin-left:12px}
-  .faq[open] summary::after{content:'\2212'}
-  .faq .a{padding:0 18px 16px;color:var(--soft);font-size:13.5px;line-height:1.6}
+  .sp-search{width:100%;margin:0 0 18px;background:var(--inset);border:1px solid var(--edge);color:var(--text);border-radius:9px;padding:12px 14px;font-size:14px;font-family:inherit}
+  .sp-search:focus{outline:none;border-color:var(--silver)}
+  .sp-search::placeholder{color:var(--muted)}
   .sp-hide{display:none !important}
-  .sp-form label{display:block;font-size:10.5px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--mute);margin:14px 0 6px}
-  .sp-form select,.sp-form textarea{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--ivory);font-family:'Mulish',sans-serif;font-size:14px;padding:12px 14px}
-  .sp-form textarea{min-height:120px;resize:vertical}
-  .sp-note{font-size:13px;color:var(--mute);margin-top:10px}
+  .sp-note{font-size:13px;color:var(--text-2);margin-top:12px}
   .sp-ok{color:var(--good)} .sp-err{color:var(--bad)}
 </style>
 </head>
 <body>
+<div class="app">
 
-<div class="topbar">
-  <div style="display:flex;align-items:center">
+  <!-- SIDEBAR -->
+  <aside class="side" id="side">
     <div class="brand">
-      <svg viewBox="0 0 170 170" aria-hidden="true">
+      <svg viewBox="0 0 100 100" aria-label="Black Label Leads">
         <defs>
-          <linearGradient id="pc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="0.38" stop-color="#c4cad2"/><stop offset="0.52" stop-color="#8e959f"/><stop offset="0.66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
-          <linearGradient id="pr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset="0.5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
+          <linearGradient id="lgChrome" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".38" stop-color="#c4cad2"/><stop offset=".52" stop-color="#8e959f"/><stop offset=".66" stop-color="#d6dbe1"/><stop offset="1" stop-color="#9ba1aa"/></linearGradient>
+          <linearGradient id="lgRing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset=".5" stop-color="#9aa1ab"/><stop offset="1" stop-color="#dfe3e7"/></linearGradient>
         </defs>
-        <circle cx="85" cy="85" r="66" fill="#101113" stroke="url(#pr)" stroke-width="2.2"/>
-        <circle cx="85" cy="85" r="58" fill="none" stroke="#aeb4bc" stroke-width="1" opacity="0.55"/>
-        <rect x="81.5" y="33.5" width="7" height="7" transform="rotate(45 85 37)" fill="url(#pr)"/>
-        <rect x="81.5" y="129.5" width="7" height="7" transform="rotate(45 85 133)" fill="url(#pr)"/>
-        <text x="85" y="104" text-anchor="middle" font-family="'Fraunces',Georgia,serif" font-size="54" font-weight="500" letter-spacing="3" fill="url(#pc)">BL</text>
+        <circle cx="50" cy="50" r="46" fill="#101113" stroke="url(#lgRing)" stroke-width="1.7"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="#aeb4bc" stroke-width="0.6" opacity=".55"/>
+        <rect x="46.5" y="11.5" width="6" height="6" transform="rotate(45 50 14.5)" fill="url(#lgRing)"/>
+        <rect x="46.5" y="82.5" width="6" height="6" transform="rotate(45 50 85.5)" fill="url(#lgRing)"/>
+        <text x="50" y="64" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="36" font-weight="500" letter-spacing="2" fill="url(#lgChrome)">BL</text>
       </svg>
-      <span>Black <span class="lbl">Label</span> Leads</span>
+      <div class="w"><div class="l1">BLACK LABEL</div><div class="l2">LEADS</div></div>
     </div>
-    <nav class="topnav">
-      <a href="home.html">Home</a>
-      <a href="portal.html">My Leads</a>
-      <a href="tracker.html">Tracker</a>
-      <a href="profile.html">Profile</a>
-      <a href="refer.html">Refer &amp; Earn</a>
-      <a href="support.html" class="active">Support</a>
+    <nav class="nav" id="nav">
+      <a href="home.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Dashboard</a>
+      <a href="portal.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 14h8"/></svg>My Leads</a>
+      <a href="tracker.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-8"/></svg>Tracker</a>
+      <a href="profile.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>Profile</a>
+      <a href="refer.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 12v8H4v-8M2 7h20v5H2zM12 22V7M12 7S9 2 6.5 4 9 7 12 7zM12 7s3-5 5.5-3-.5 3-3.5 3z"/></svg>Refer &amp; Earn</a>
+      <a href="support.html" class="active"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.4 9.3a2.6 2.6 0 1 1 3.9 2.4c-.9.6-1.3 1-1.3 2"/><circle cx="12" cy="16.6" r=".6" fill="currentColor" stroke="none"/></svg>Support</a>
     </nav>
-  </div>
-  <div class="who">
-    <span id="availBadge"></span>
-    <span id="whoami"></span>
-    <button class="signout" onclick="signOut()">Sign out</button>
-  </div>
-</div>
-
-<div class="shell">
-  <div class="home-hero">
-    <h1>How can we <em>help?</em></h1>
-    <p>Search the common questions below, or send us a note. You'll get a reply from a licensed agent — not a ticket queue.</p>
-  </div>
-
-  <input class="sp-search" id="faqSearch" type="text" placeholder="Search help — e.g. &quot;replacement&quot;, &quot;states&quot;, &quot;billing&quot;…" oninput="filterFaq()">
-
-  <div class="home-card" style="margin-bottom:22px">
-    <h2>Common questions</h2>
-    <div id="faqList">
-      <details class="faq"><summary>How are leads delivered to me?</summary><div class="a">Leads from the states and verticals you're licensed in and have switched on route to you automatically — no claiming, no racing. Each one shows up on your <a href="portal.html">My Leads</a> page and in your email within about two minutes of the customer hitting submit. Every lead is yours alone: one lead, one agent, forever.</div></details>
-      <details class="faq"><summary>What's the replacement / credit policy on a bad lead?</summary><div class="a">We hold a 24-hour replace-or-credit standard for genuinely bad leads — disconnected or wrong number, fake contact info, or someone who clearly never asked for a quote. Open the lead in My Leads and use the flag option to request a credit; we review every flag personally. It's not for "they didn't answer yet" — it's for leads that were never reachable.</div></details>
-      <details class="faq"><summary>How do I turn states or verticals on and off?</summary><div class="a">Head to the <a href="tracker.html">Tracker</a> page. Under "Where do you want leads?" you can switch any licensed state or vertical on or off — handy if you only want to write in a few of the states you hold. Changes apply to new leads right away. (Turning everything off pauses your leads until you turn something back on.)</div></details>
-      <details class="faq"><summary>How do I add or remove a licensed state?</summary><div class="a">Email us and we'll update it. Because routing is tied to where you're actually licensed, we verify license changes against your record before turning a new state on — it keeps everyone compliant.</div></details>
-      <details class="faq"><summary>How does billing work?</summary><div class="a">Silver is $400/week on the card you put on file. It bills automatically each week. If a payment fails or you cancel, your lead flow pauses right away and picks back up the moment your payment is current again — you never pay for a week of leads you didn't get.</div></details>
-      <details class="faq"><summary>Why am I not receiving leads right now?</summary><div class="a">Three quick things to check: (1) your states and verticals are switched on under the <a href="tracker.html">Tracker</a>; (2) you haven't hit your weekly cap yet; and (3) your subscription is active. If all three look right and it's still quiet, your state may just be between leads — send us a note and we'll look.</div></details>
-      <details class="faq"><summary>When do my numbers reset?</summary><div class="a">Your weekly lead count resets every Monday. The profit tracker — invested, premium written, deals, and your goal ring — resets on the 1st of each month so every month starts fresh. Your monthly goal target carries over so you don't have to re-enter it.</div></details>
-      <details class="faq"><summary>How do I log a sale so it shows in my tracker?</summary><div class="a">On <a href="portal.html">My Leads</a>, set the lead's status to "Sold" and enter the annual premium. It flows straight into your <a href="tracker.html">Profit Tracker</a> — return, cost per policy, and the goal ring all update automatically.</div></details>
+    <div class="side-foot">
+      <div class="who"><img class="av" id="sideAvatar" src="favicon.svg" alt=""><div><div class="nm" id="sideName">…</div><div class="tr" id="sideTier"></div></div></div>
+      <button class="signout" onclick="signOut()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/></svg>Sign out</button>
     </div>
-    <p class="sp-note sp-hide" id="noFaq">No matches. Try a different word, or just send us a note below.</p>
-  </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
 
-  <div class="home-card" style="margin-bottom:22px">
-    <h2>Still need a hand?</h2>
-    <p class="support-line">Send us the details and we'll get back to you. For anything about a specific lead, mention the lead's name.</p>
-    <div class="sp-form">
-      <label for="spTopic">Topic</label>
-      <select id="spTopic">
-        <option>A specific lead</option>
-        <option>Billing &amp; subscription</option>
-        <option>Licensed states / routing</option>
-        <option>I'm not getting leads</option>
-        <option>Something's broken</option>
-        <option>Other</option>
-      </select>
-      <label for="spMsg">Message</label>
-      <textarea id="spMsg" placeholder="Tell us what's going on…"></textarea>
-      <a class="home-cta" style="margin-top:14px;cursor:pointer" onclick="sendSupport()" id="spSend">Send to support</a>
-      <p class="sp-note" id="spStatus"></p>
+  <main class="main">
+    <div class="topbar">
+      <button class="hamb" id="hamb" aria-label="Open menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <h1>Support</h1>
+      <div class="right"><span id="availBadge"></span></div>
     </div>
-  </div>
 
-  <div class="home-card">
-    <h2>Prefer email?</h2>
-    <p class="support-line">Reach us any time at <a href="mailto:blacklabelleads@gmail.com?subject=Portal%20support">blacklabelleads@gmail.com</a>. We typically reply the same day.</p>
-    <p class="sp-note" style="margin-top:10px">An instant AI assistant for quick answers is on the way — for now the questions above cover the most common ones.</p>
-  </div>
+    <div class="content">
+      <div class="page-intro"><h2>How can we help?</h2><p>Quick answers below, or send us a note. You'll get a reply from a licensed agent, not a ticket queue.</p></div>
+
+      <input class="sp-search" id="faqSearch" type="text" placeholder="Search help - e.g. &quot;replacement&quot;, &quot;states&quot;, &quot;billing&quot;…" oninput="filterFaq()">
+
+      <div class="panel">
+        <h3>Common questions</h3>
+        <p class="sub">Tap a question to open it.</p>
+        <div class="faq" id="faqList">
+          <div class="item"><button class="q">How are leads delivered to me?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button><div class="a"><p>Leads from the states and verticals you're licensed in and have switched on route to you automatically - no claiming, no racing. Each one shows up on your <a href="portal.html">My Leads</a> page and in your email within about two minutes of the customer hitting submit. Every lead is yours alone: one lead, one agent, forever.</p></div></div>
+          <div class="item"><button class="q">What's the replacement / credit policy on a bad lead?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button><div class="a"><p>We hold a 24-hour replace-or-credit standard for genuinely bad leads - disconnected or wrong number, fake contact info, or someone who clearly never asked for a quote. Open the lead in My Leads and use the flag option to request a credit; we review every flag personally. It's not for "they didn't answer yet" - it's for leads that were never reachable.</p></div></div>
+          <div class="item"><button class="q">How do I turn states or verticals on and off?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button><div class="a"><p>Head to the <a href="tracker.html">Tracker</a> page. Under "Where do you want leads?" you can switch any licensed state or vertical on or off - handy if you only want to write in a few of the states you hold. Changes apply to new leads right away. (Turning everything off pauses your leads until you turn something back on.)</p></div></div>
+          <div class="item"><button class="q">How do I add or remove a licensed state?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button><div class="a"><p>Email us and we'll update it. Because routing is tied to where you're actually licensed, we verify license changes against your record before turning a new state on - it keeps everyone compliant.</p></div></div>
+          <div class="item"><button class="q">How does billing work?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button><div class="a"><p>Silver is $400/week on the card you put on file. It bills automatically each week. If a payment fails or you cancel, your lead flow pauses right away and picks back up the moment your payment is current again - you never pay for a week of leads you didn't get.</p></div></div>
+          <div class="item"><button class="q">Why am I not receiving leads right now?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button><div class="a"><p>Three quick things to check: (1) your states and verticals are switched on under the <a href="tracker.html">Tracker</a>; (2) you haven't hit your weekly cap yet; and (3) your subscription is active. If all three look right and it's still quiet, your state may just be between leads - send us a note and we'll look.</p></div></div>
+          <div class="item"><button class="q">When do my numbers reset?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button><div class="a"><p>Your weekly lead count resets every Monday. The profit tracker - invested, premium written, deals, and your goal ring - resets on the 1st of each month so every month starts fresh. Your monthly goal target carries over so you don't have to re-enter it.</p></div></div>
+          <div class="item"><button class="q">How do I log a sale so it shows in my tracker?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button><div class="a"><p>On <a href="portal.html">My Leads</a>, set the lead's status to "Sold" and enter the annual premium. It flows straight into your <a href="tracker.html">Profit Tracker</a> - return, cost per policy, and the goal ring all update automatically.</p></div></div>
+        </div>
+        <p class="sp-note sp-hide" id="noFaq">No matches. Try a different word, or just send us a note below.</p>
+      </div>
+
+      <div class="panel">
+        <h3>Still need a hand?</h3>
+        <p class="sub">Send us the details and we'll get back to you. For anything about a specific lead, mention the lead's name.</p>
+        <div class="field">
+          <label for="spTopic">Topic</label>
+          <select id="spTopic">
+            <option>A specific lead</option>
+            <option>Billing &amp; subscription</option>
+            <option>Licensed states / routing</option>
+            <option>I'm not getting leads</option>
+            <option>Something's broken</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="spMsg">Message</label>
+          <textarea id="spMsg" style="height:120px" placeholder="Tell us what's going on…"></textarea>
+        </div>
+        <div class="savebar"><button class="btn primary" onclick="sendSupport()" id="spSend">Send to support</button></div>
+        <p class="sp-note" id="spStatus"></p>
+      </div>
+
+      <div class="panel">
+        <h3>Prefer email?</h3>
+        <p class="sub" style="margin-bottom:0">Reach us any time at <a href="mailto:blacklabelleads@gmail.com?subject=Portal%20support">blacklabelleads@gmail.com</a>. We typically reply the same day. An instant assistant for quick answers is on the way; for now the questions above cover the most common ones.</p>
+      </div>
+    </div>
+  </main>
 </div>
 
 <script>
@@ -119,22 +118,31 @@
   db.auth.getSession().then(function(r){
     if (!r.data.session){ window.location.href = 'index.html'; return; }
     me = r.data.session.user;
-    db.from('agent_profiles').select('first_name, last_name').eq('id', me.id).single().then(function(p){
+    db.from('agent_profiles').select('first_name, last_name, tier, npn, headshot_url').eq('id', me.id).single().then(function(p){
       var d = p.data || {};
       var name = ((d.first_name||'') + ' ' + (d.last_name||'')).trim() || me.email;
-      document.getElementById('whoami').innerHTML = '<span class="email">' + esc(name) + '</span>';
+      var tier = d.tier || 'Silver';
+      document.getElementById('sideName').textContent = name;
+      document.getElementById('sideTier').textContent = tier + (d.npn ? ' · NPN ' + d.npn : '');
+      if (d.headshot_url) document.getElementById('sideAvatar').src = d.headshot_url;
     });
+  });
+
+  // FAQ accordion: clicking a .q toggles .open on its .item
+  document.querySelectorAll('#faqList .q').forEach(function(btn){
+    btn.setAttribute('aria-expanded', 'false');
+    btn.addEventListener('click', function(){ var open = btn.parentElement.classList.toggle('open'); btn.setAttribute('aria-expanded', open ? 'true' : 'false'); });
   });
 
   function filterFaq(){
     var q = (document.getElementById('faqSearch').value || '').toLowerCase().trim();
-    var items = document.querySelectorAll('#faqList .faq');
+    var items = document.querySelectorAll('#faqList .item');
     var shown = 0;
     items.forEach(function(it){
       var hit = !q || it.textContent.toLowerCase().indexOf(q) > -1;
       it.classList.toggle('sp-hide', !hit);
       if (hit) shown++;
-      if (q && hit) it.setAttribute('open',''); else if (q) it.removeAttribute('open');
+      if (q && hit) it.classList.add('open'); else if (q) it.classList.remove('open');
     });
     document.getElementById('noFaq').classList.toggle('sp-hide', shown !== 0);
   }
@@ -150,7 +158,7 @@
     db.from('support_requests').insert({ agent_id: me.id, agent_email: me.email, topic: topic, message: msg }).then(function(r){
       btn.style.pointerEvents = ''; btn.style.opacity = '';
       if (r.error){ status.className = 'sp-note sp-err'; status.textContent = "Couldn't send: " + r.error.message; return; }
-      status.className = 'sp-note sp-ok'; status.textContent = 'Got it — we\'ll be in touch shortly. You can close this page.';
+      status.className = 'sp-note sp-ok'; status.textContent = 'Got it - we\'ll be in touch shortly. You can close this page.';
       document.getElementById('spMsg').value = '';
     });
   }
@@ -158,6 +166,7 @@
   function esc(s){ var d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
   function signOut(){ db.auth.signOut().then(function(){ window.location.href = 'index.html'; }); }
 </script>
+<script src="portal-shell.js"></script>
 <script src="avail-badge.js"></script>
 </body>
 </html>
