@@ -826,7 +826,7 @@
     var t = document.getElementById('lcThumb'); t.src = url; t.style.display='';
     var photo = document.getElementById('lcPhoto'); photo.removeAttribute('crossorigin'); photo.src = url; photo.style.display=''; document.getElementById('lcPh').style.display='none';
     ev.target.dataset.dirty = '1';
-    lcHeadshotUrl = lcHeadshotUrl || 'pending';  // marks "has a photo" for validation; real URL set on upload
+    lcHeadshotUrl = url;  // show the just-picked photo in the live preview; validation keys off dataset.dirty, upload reads the file input
   }
   // Upload via a direct authenticated fetch so the user's access token is always sent (the
   // supabase-js storage client doesn't carry it reliably here, which trips the owner-folder RLS).
@@ -872,12 +872,15 @@
     if (phone.length!==10){ note.className='pf-note note-bad'; note.textContent='Enter a valid 10-digit call-from number.'; return; }
     note.className='pf-note'; note.textContent='Saving your card…';
     uploadHeadshotIfNeeded().then(function(headUrl){
-      lcHeadshotUrl = headUrl;
       var photo = document.getElementById('lcPhoto');
       photo.setAttribute('crossorigin','anonymous');
+      // Keep lcHeadshotUrl === the exact (cache-busted) src we load, so the paintCard() below
+      // does NOT reassign photo.src and kick off a 2nd, unawaited load that races html2canvas.
+      var bust = headUrl + (headUrl.indexOf('?')>-1?'&':'?') + 'cc=' + Date.now();
+      lcHeadshotUrl = bust;
       return new Promise(function(res){
         photo.onload = function(){ res(true); }; photo.onerror = function(){ res(false); };
-        photo.src = headUrl + (headUrl.indexOf('?')>-1?'&':'?') + 'cc=' + Date.now();
+        photo.src = bust;
       }).then(function(loaded){ paintCard(); if(!loaded) return ''; note.textContent='Building your card…'; return generateCardImage(); })
         .then(function(cardImg){
           return db.rpc('bl_save_agent_card', {
