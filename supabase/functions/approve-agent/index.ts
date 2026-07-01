@@ -14,9 +14,9 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const OWNER_EMAIL = "blacklabelleads@gmail.com";
-// Agent-facing sender. Defaults to the verified NCG domain with a Black Label display name; override
-// with the AGENT_INVITE_FROM secret once blacklabelleads.app is verified in Resend.
-const INVITE_FROM = Deno.env.get("AGENT_INVITE_FROM") || "Black Label Leads <hello@nationalcoveragegroup.com>";
+// Agent-facing sender. blacklabelleads.app is verified in Resend (confirmed 2026-07-01 via a live
+// test send), so invites come from the Black Label domain. Override with the AGENT_INVITE_FROM secret.
+const INVITE_FROM = Deno.env.get("AGENT_INVITE_FROM") || "Black Label Leads <hello@blacklabelleads.app>";
 const WELCOME_URL = "https://portal.blacklabelleads.app/welcome.html";
 
 const CORS: Record<string, string> = {
