@@ -35,6 +35,22 @@ const VERT: Record<string, string> = {
 };
 function vertLabel(v: string) { return VERT[v] || v || "coverage"; }
 
+// Truthfulness guard: may the card claim "Specializing in <the vertical this lead requested>"?
+// Only when the agent EXPLICITLY covers it. active_verticals/verticals store comma-separated
+// LABELS ("Final Expense, IUL"). An empty list is NOT treated as "covers all" here — we never
+// claim a specialty we can't point to (founder-fallback leads route on state license only and
+// can land on an agent who doesn't run that vertical). Falls back to just the trust checkmarks.
+function agentCoversVertical(agent: any, leadVertical: string): boolean {
+  const label = vertLabel(leadVertical).toLowerCase();
+  const raw = ((agent.active_verticals && String(agent.active_verticals)) ||
+               (agent.verticals && String(agent.verticals)) || "").trim();
+  if (!raw) return false;
+  return raw.split(/[,;/\n]+/).map((s: string) => s.trim().toLowerCase()).includes(label);
+}
+
+// Three fixed trust checkmarks — identical for every agent, every lead.
+const TRUST_LINES = ["Licensed in your state", "One agent, never a call center", "Free quote, no obligation"];
+
 function esc(s: unknown) {
   return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;");
 }
@@ -63,12 +79,6 @@ async function rpcClaim(leadId: string): Promise<boolean> {
 
 function firstName(n: unknown) { return String(n ?? "").trim() || "there"; }
 
-function specialtyList(agent: any): string[] {
-  const raw = (agent.active_verticals && String(agent.active_verticals).trim()) ||
-              (agent.verticals && String(agent.verticals).trim()) || "Final Expense";
-  return raw.split(",").map((s: string) => s.trim()).filter(Boolean).slice(0, 4);
-}
-
 function cardName(agent: any): string {
   const dn = (agent.display_title && String(agent.display_title).trim()) || "";
   if (dn) return dn;
@@ -84,16 +94,20 @@ function buildEmailHtml(lead: any, agent: any, dateStr: string): string {
   const npn = (agent.npn && String(agent.npn).trim()) || "";
   const vlabel = vertLabel(lead.vertical || "");
   const active = agent.card_status === "active" && agent.headshot_url;
-  const specs = specialtyList(agent);
 
   const head = active
     ? `<img src="${esc(agent.headshot_url)}" width="84" height="84" alt="${esc(name)}" style="display:block;margin:0 auto;border-radius:50%;border:3px solid #ffffff;object-fit:cover;">`
     : `<div style="width:84px;height:84px;border-radius:50%;background:#9bb8d6;color:#0f2747;font-size:30px;font-weight:bold;line-height:84px;text-align:center;margin:0 auto;font-family:Georgia,serif;">${esc((name[0] || "A").toUpperCase())}</div>`;
 
-  const specBlock = specs.length
-    ? `<div style="font-size:11px;font-weight:bold;color:#13294b;letter-spacing:1px;margin:10px 0 6px;">SPECIALIZING IN</div>` +
-      specs.map((s) => `<div style="font-size:13px;color:#1f2a37;margin:3px 0;">&#10003;&nbsp; ${esc(s)}</div>`).join("")
+  // Per-lead specialty line: only when the agent explicitly covers THIS lead's vertical.
+  const specialtyLine = agentCoversVertical(agent, lead.vertical || "")
+    ? `<div style="font-size:13px;font-weight:bold;color:#13294b;margin:10px 0 6px;">Specializing in ${esc(vlabel)}</div>`
     : "";
+  // Three fixed trust checkmarks (identical for every agent).
+  const trustBlock = TRUST_LINES.map((t) =>
+    `<div style="font-size:13px;color:#1f2a37;margin:4px 0;"><span style="color:#2f6fed;font-weight:bold;">&#10003;</span>&nbsp; ${esc(t)}</div>`
+  ).join("");
+  const specBlock = specialtyLine + trustBlock;
   const introBlock = intro ? `<div style="font-size:13px;color:#374151;line-height:1.5;margin-top:4px;">${esc(intro)}</div>` : "";
   const npnLine = npn
     ? `<div style="color:#c4d3e6;font-size:12px;margin-top:6px;">NPN ${esc(npn)} &middot; Licensed &amp; Trusted</div>`

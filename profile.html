@@ -55,8 +55,7 @@
   .lc-title{ font-size:11.5px; font-weight:800; letter-spacing:.03em; color:#13294b; margin-top:3px; text-transform:uppercase }
   .lc-rule{ height:2px; width:88px; background:#2f6fed; margin:8px 0 }
   .lc-tag{ font-size:11.5px; color:#374151; line-height:1.45 }
-  .lc-spec-h{ font-size:9.5px; font-weight:800; letter-spacing:.05em; color:#13294b; margin:10px 0 7px }
-  .lc-spec{ display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; margin-bottom:11px }
+  .lc-trust{ display:flex; flex-direction:column; gap:6px; margin:11px 0 }
   .lc-item{ display:flex; align-items:center; gap:7px; font-size:11.5px; color:#1f2a37 }
   .lc-chk{ width:15px; height:15px; border-radius:50%; background:#2f6fed; color:#fff; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; flex-shrink:0 }
   .lc-bar{ margin:auto -17px 0; background:#0f2747; display:flex; align-items:center; justify-content:space-between; padding:11px 17px; gap:12px }
@@ -186,7 +185,7 @@
 
               <div class="field">
                 <label for="lcPhoneIn">Call-from number <span style="color:var(--amber)">*</span></label>
-                <input type="text" id="lcPhoneIn" inputmode="tel" maxlength="20" placeholder="(555) 123-4567" oninput="paintCard()">
+                <input type="text" id="lcPhoneIn" inputmode="numeric" maxlength="12" placeholder="555-123-4567" oninput="onDialInput(event)">
                 <p class="lc-tip">This is the number your leads are told you'll call from - so make calls from it. If the text says one number and you ring from another, it backfires.</p>
               </div>
 
@@ -216,8 +215,11 @@
                   <div class="lc-title" id="lcTitle">Licensed Insurance Agent</div>
                   <div class="lc-rule"></div>
                   <div class="lc-tag" id="lcTag"></div>
-                  <div class="lc-spec-h">SPECIALIZING IN</div>
-                  <div class="lc-spec" id="lcSpec"></div>
+                  <div class="lc-trust">
+                    <div class="lc-item"><span class="lc-chk">&#10003;</span>Licensed in your state</div>
+                    <div class="lc-item"><span class="lc-chk">&#10003;</span>One agent, never a call center</div>
+                    <div class="lc-item"><span class="lc-chk">&#10003;</span>Free quote, no obligation</div>
+                  </div>
                   <div class="lc-bar">
                     <div class="lc-contact">
                       <div class="lc-c"><span class="lc-ci">&#9742;</span><span class="lc-big" id="lcPhone">—</span></div>
@@ -778,11 +780,15 @@
   /* ---------- what your leads see (agent card) ---------- */
   var lcHeadshotUrl = '';
 
-  function cardSpecialties(){
-    var raw = (profile.active_verticals && profile.active_verticals.trim())
-            || (profile.verticals && profile.verticals.trim()) || 'Final Expense';
-    return splitList(raw).slice(0,4);
+  // Digits-only US phone mask -> XXX-XXX-XXXX as the agent types. The card stores the
+  // dashed string (bl_save_agent_card also normalizes server-side, so storage stays dashed).
+  function formatUSPhone(v){
+    var d = String(v).replace(/\D/g,'').slice(0,10);
+    if (d.length <= 3) return d;
+    if (d.length <= 6) return d.slice(0,3) + '-' + d.slice(3);
+    return d.slice(0,3) + '-' + d.slice(3,6) + '-' + d.slice(6);
   }
+  function onDialInput(ev){ ev.target.value = formatUSPhone(ev.target.value); paintCard(); }
   function cardDisplayName(){
     var dn = (document.getElementById('lcNameIn').value || '').trim();
     if (dn) return dn;
@@ -813,9 +819,6 @@
     var photo = document.getElementById('lcPhoto'), phEl = document.getElementById('lcPh');
     if (lcHeadshotUrl){ if (photo.getAttribute('src')!==lcHeadshotUrl) photo.src = lcHeadshotUrl; photo.style.display=''; phEl.style.display='none'; }
     else { photo.style.display='none'; phEl.style.display=''; }
-    document.getElementById('lcSpec').innerHTML = cardSpecialties().map(function(s){
-      return '<div class="lc-item"><span class="lc-chk">&#10003;</span>' + esc(s) + '</div>';
-    }).join('');
   }
   function onPickHeadshot(ev){
     var f = ev.target.files && ev.target.files[0];
