@@ -224,7 +224,12 @@
 
         <!-- ===== AGENTS ===== -->
         <section class="view" id="view-agents">
-          <div class="page-intro"><h2>Agents</h2><p>Manage tier, weekly cap, billing, and status.</p></div>
+          <div class="page-intro"><h2>Agents</h2><p>Approve new applicants, then manage tier, weekly cap, billing, and status.</p></div>
+
+          <div class="opanel" id="applicantsPanel">
+            <h2>Pending applicants <span class="muted" style="font-size:11px;font-weight:400">&mdash; approve to create their account</span></h2>
+            <div id="applicantsWrap"><div class="owarn muted">Loading…</div></div>
+          </div>
 
           <div class="opanel">
             <h2>Agents</h2>
@@ -311,7 +316,7 @@
       }
       document.getElementById('dash').style.display = 'block';
       renderMetrics(r.data);
-      loadProfit(); loadBusinessPL(); loadAgentProfit(); loadVault(); loadRefunds(); loadAgents().then(loadLeads); loadActionLog();
+      loadProfit(); loadBusinessPL(); loadAgentProfit(); loadVault(); loadRefunds(); loadApplicants(); loadAgents().then(loadLeads); loadActionLog();
       ccLoadAll();
     });
   }
@@ -403,6 +408,52 @@
       });
       w.innerHTML = html + '</tbody></table>';
     });
+  }
+
+  function loadApplicants(){
+    return db.rpc('bl_owner_list_applicants').then(function(r){
+      var w = document.getElementById('applicantsWrap');
+      if(r.error){ w.innerHTML = '<div class="owarn muted">'+esc(r.error.message)+'</div>'; return; }
+      var rows = r.data || [];
+      if(!rows.length){ w.innerHTML = '<div class="owarn muted">No pending applicants. New applications from blacklabelleads.app show up here to approve.</div>'; return; }
+      var html = '<table class="otable"><thead><tr><th>Applicant</th><th>NPN</th><th>States</th><th>Applied</th><th></th></tr></thead><tbody>';
+      rows.forEach(function(a){
+        var name = ((a.first_name||'')+' '+(a.last_name||'')).trim() || '—';
+        html += '<tr>'
+          + '<td><b>'+esc(name)+'</b><div class="muted">'+esc(a.email||'')+'</div></td>'
+          + '<td>'+esc(a.npn||'—')+'</td>'
+          + '<td>'+esc(a.states_licensed||'—')+'</td>'
+          + '<td>'+esc(fmt(a.created_at))+'</td>'
+          + '<td><button class="obtn" onclick="approveApplicant(\''+a.id+'\', this)">Approve</button></td>'
+          + '</tr>';
+      });
+      w.innerHTML = html + '</tbody></table>';
+    });
+  }
+  function approveApplicant(id, btn){
+    var row = btn && btn.closest ? btn.closest('tr') : null;
+    var name = (row && row.querySelector('b')) ? row.querySelector('b').textContent : 'this applicant';
+    if(!confirm('Approve '+name+'?\n\nThis creates their agent account using their application email and sends them a Black Label invite to set their password. Their name and NPN fill in automatically.')) return;
+    if(btn){ btn.disabled = true; btn.textContent = 'Approving…'; }
+    var restore = function(){ if(btn){ btn.disabled=false; btn.textContent='Approve'; } };
+    db.auth.getSession().then(function(s){
+      var token = s && s.data && s.data.session && s.data.session.access_token;
+      if(!token){ alert('Your owner session expired — sign in again.'); restore(); return; }
+      return fetch(SUPABASE_URL + '/functions/v1/approve-agent', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+token, 'apikey':SUPABASE_KEY },
+        body: JSON.stringify({ waitlist_id: id })
+      }).then(function(res){ return res.json().catch(function(){return {};}).then(function(j){ return {status:res.status, body:j}; }); })
+        .then(function(r){
+          if(r.body && r.body.ok){
+            alert('Approved. '+(r.body.invite_email_sent ? ('Invite email sent to '+r.body.email+'.') : 'Account created, but the invite email did not send — have them use "Forgot your password?" on the sign-in page.'));
+          } else {
+            alert("Couldn't approve: " + ((r.body && (r.body.hint||r.body.detail||r.body.error)) || ('HTTP '+r.status)));
+            restore();
+          }
+          loadApplicants(); loadAgents();
+        });
+    }).catch(function(e){ alert('Error: '+(e&&e.message?e.message:String(e))); restore(); });
   }
 
   function billingPill(s, periodEnd){
