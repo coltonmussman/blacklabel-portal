@@ -167,8 +167,9 @@
               </div>
 
               <div class="field">
-                <label for="lcNameIn">Display name <span style="color:var(--muted);font-weight:500">(optional)</span></label>
-                <input type="text" id="lcNameIn" maxlength="60" placeholder="Defaults to your name on file" oninput="paintCard()">
+                <label>Name</label>
+                <input type="text" id="lcNameShown" readonly tabindex="-1" aria-readonly="true" style="opacity:.7;cursor:not-allowed">
+                <p class="lc-tip">Auto-filled from your license on file (NIPR) - your leads always see your real, licensed name. To change it, email support; we verify license details first.</p>
               </div>
 
               <div class="field">
@@ -788,12 +789,11 @@
   }
   function onDialInput(ev){ ev.target.value = formatUSPhone(ev.target.value); paintCard(); }
   function cardDisplayName(){
-    var dn = (document.getElementById('lcNameIn').value || '').trim();
-    if (dn) return dn;
+    // Always the agent's real licensed name (NIPR) - not agent-editable.
     return ((profile.first_name||'') + ' ' + (profile.last_name||'')).trim() || 'Your Name';
   }
   function renderCard(){
-    document.getElementById('lcNameIn').value  = profile.display_title || '';
+    document.getElementById('lcNameShown').value = cardDisplayName();
     document.getElementById('lcTitleIn').value = profile.agent_card_title || '';
     document.getElementById('lcTagIn').value   = profile.intro_line || '';
     document.getElementById('lcPhoneIn').value = profile.dial_number || '';
@@ -887,7 +887,7 @@
             p_headshot_url: headUrl,
             p_dial_number: document.getElementById('lcPhoneIn').value,
             p_agent_card_title: document.getElementById('lcTitleIn').value,
-            p_display_name: document.getElementById('lcNameIn').value,
+            p_display_name: '',  // name is not agent-editable; card + email derive it from the real NIPR name (first + last)
             p_intro_line: document.getElementById('lcTagIn').value,
             p_card_image_url: cardImg
           }).then(function(r){
@@ -896,7 +896,7 @@
             profile.headshot_url = headUrl;
             profile.dial_number = d.dial_number || document.getElementById('lcPhoneIn').value;
             profile.agent_card_title = d.agent_card_title || document.getElementById('lcTitleIn').value;
-            profile.display_title = (document.getElementById('lcNameIn').value||'').trim();
+            profile.display_title = null;
             profile.intro_line = (document.getElementById('lcTagIn').value||'').trim();
             profile.card_image_url = cardImg;
             profile.card_status = d.card_status || 'active';
