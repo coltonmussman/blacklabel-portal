@@ -35,20 +35,8 @@ const VERT: Record<string, string> = {
 };
 function vertLabel(v: string) { return VERT[v] || v || "coverage"; }
 
-// Truthfulness guard: may the card claim "Specializing in <the vertical this lead requested>"?
-// Only when the agent EXPLICITLY covers it. active_verticals/verticals store comma-separated
-// LABELS ("Final Expense, IUL"). An empty list is NOT treated as "covers all" here — we never
-// claim a specialty we can't point to (founder-fallback leads route on state license only and
-// can land on an agent who doesn't run that vertical). Falls back to just the trust checkmarks.
-function agentCoversVertical(agent: any, leadVertical: string): boolean {
-  const label = vertLabel(leadVertical).toLowerCase();
-  const raw = ((agent.active_verticals && String(agent.active_verticals)) ||
-               (agent.verticals && String(agent.verticals)) || "").trim();
-  if (!raw) return false;
-  return raw.split(/[,;/\n]+/).map((s: string) => s.trim().toLowerCase()).includes(label);
-}
-
-// Three fixed trust checkmarks — identical for every agent, every lead.
+// Three fixed trust checkmarks — used only in the no-image fallback card (the real card image
+// carries them baked in). Identical for every agent, every lead.
 const TRUST_LINES = ["Licensed in your state", "One agent, never a call center", "Free quote, no obligation"];
 
 function esc(s: unknown) {
@@ -88,51 +76,72 @@ function cardName(agent: any): string {
 function buildEmailHtml(lead: any, agent: any, dateStr: string): string {
   const name = cardName(agent);
   const title = (agent.agent_card_title && String(agent.agent_card_title).trim()) || "Licensed Insurance Agent";
-  const intro = (agent.intro_line && String(agent.intro_line).trim()) || "";
   const dialRaw = String(agent.dial_number || "").trim();
   const dial = esc(dialRaw);
   const npn = (agent.npn && String(agent.npn).trim()) || "";
   const vlabel = vertLabel(lead.vertical || "");
-  const active = agent.card_status === "active" && agent.headshot_url;
+  const cardImg = (agent.card_status === "active" && agent.card_image_url) ? String(agent.card_image_url) : "";
+  const hi = esc(firstName(lead.first_name));
 
+  const expectLine = dialRaw
+    ? `<b>Expect a call shortly</b> from ${dial}. You requested a ${esc(vlabel)} quote at NationalCoverageGroup.com on ${esc(dateStr)}.`
+    : `<b>Expect a call shortly.</b> You requested a ${esc(vlabel)} quote at NationalCoverageGroup.com on ${esc(dateStr)}.`;
+  const footerTd = `<tr><td style="background:#f4f7fb;padding:16px 24px;color:#7a87a0;font-size:11px;line-height:1.5;border-top:1px solid #e2e7f0;">&copy; 2026 National Coverage Group, a service of Black Label Leads. An insurance quote and referral service, not an insurance company. Reply STOP to opt out of texts. Opt out or questions: blacklabelleads@gmail.com</td></tr>`;
+
+  // PRIMARY: lead the email with the CARD IMAGE (the same PNG the site preview + MMS use), so the
+  // consumer sees the exact card the site shows. A slim real-text block follows so the email still
+  // conveys the agent's name/phone/NPN if the inbox blocks images.
+  if (cardImg) {
+    const altTxt = esc(`Your licensed agent, ${name}${dialRaw ? ` — ${dialRaw}` : ""}`);
+    const phoneBit = dialRaw ? `&#9742;&nbsp; ${dial}` : "";
+    const npnBit = npn ? `${dialRaw ? "&nbsp;&middot;&nbsp; " : ""}NPN ${esc(npn)}` : "";
+    const contactLine = (phoneBit || npnBit)
+      ? `<div style="color:#13294b;font-size:14px;font-weight:bold;margin-top:4px;">${phoneBit}${npnBit}</div>` : "";
+    return `<div style="margin:0;padding:0;background:#eef3fa;font-family:Arial,Helvetica,sans-serif;">` +
+      `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef3fa;padding:24px 0;"><tr><td align="center">` +
+      `<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #dfe3ea;">` +
+      `<tr><td style="padding:0;font-size:0;line-height:0;"><img src="${esc(cardImg)}" width="600" alt="${altTxt}" style="width:100%;max-width:600px;height:auto;display:block;border:0;"></td></tr>` +
+      `<tr><td style="padding:20px 24px 4px;color:#13233d;font-size:16px;">Hi ${hi},</td></tr>` +
+      `<tr><td style="padding:2px 24px 12px;color:#41506a;font-size:14px;line-height:1.55;">Your free quote request goes to <b>one licensed agent, and only you</b>. Here is who will reach out:</td></tr>` +
+      `<tr><td style="padding:0 24px 14px;"><div style="font-size:18px;font-weight:bold;color:#13294b;font-family:Georgia,serif;">${esc(name)}</div>` +
+      `<div style="font-size:13px;font-weight:bold;color:#13294b;letter-spacing:.3px;margin-top:2px;">${esc(title.toUpperCase())}</div>${contactLine}</td></tr>` +
+      `<tr><td style="padding:4px 24px 6px;color:#13233d;font-size:14px;line-height:1.55;">${expectLine}</td></tr>` +
+      `<tr><td style="padding:2px 24px 18px;color:#41506a;font-size:13px;line-height:1.55;">We never sell your information to call-center lists. One licensed agent contacts you, that is it.</td></tr>` +
+      footerTd +
+      `</table></td></tr></table></div>`;
+  }
+
+  // FALLBACK — no card image (incomplete card / founder-fallback edge): the original inline-HTML
+  // card so something still sends. No per-lead specialty line; keeps the 3 trust checkmarks.
+  const intro = (agent.intro_line && String(agent.intro_line).trim()) || "";
+  const active = agent.card_status === "active" && agent.headshot_url;
   const head = active
     ? `<img src="${esc(agent.headshot_url)}" width="84" height="84" alt="${esc(name)}" style="display:block;margin:0 auto;border-radius:50%;border:3px solid #ffffff;object-fit:cover;">`
     : `<div style="width:84px;height:84px;border-radius:50%;background:#9bb8d6;color:#0f2747;font-size:30px;font-weight:bold;line-height:84px;text-align:center;margin:0 auto;font-family:Georgia,serif;">${esc((name[0] || "A").toUpperCase())}</div>`;
-
-  // Per-lead specialty line: only when the agent explicitly covers THIS lead's vertical.
-  const specialtyLine = agentCoversVertical(agent, lead.vertical || "")
-    ? `<div style="font-size:13px;font-weight:bold;color:#13294b;margin:10px 0 6px;">Specializing in ${esc(vlabel)}</div>`
-    : "";
-  // Three fixed trust checkmarks (identical for every agent).
   const trustBlock = TRUST_LINES.map((t) =>
     `<div style="font-size:13px;color:#1f2a37;margin:4px 0;"><span style="color:#2f6fed;font-weight:bold;">&#10003;</span>&nbsp; ${esc(t)}</div>`
   ).join("");
-  const specBlock = specialtyLine + trustBlock;
   const introBlock = intro ? `<div style="font-size:13px;color:#374151;line-height:1.5;margin-top:4px;">${esc(intro)}</div>` : "";
   const npnLine = npn
     ? `<div style="color:#c4d3e6;font-size:12px;margin-top:6px;">NPN ${esc(npn)} &middot; Licensed &amp; Trusted</div>`
     : `<div style="color:#c4d3e6;font-size:12px;margin-top:6px;">Licensed &amp; Trusted</div>`;
-  // Phone line only when the agent has actually set a call-from number (graceful degrade otherwise).
   const phoneLine = dialRaw ? `<div style="color:#eef3fa;font-size:15px;font-weight:bold;">&#9742;&nbsp; ${dial}</div>` : "";
-  const expectLine = dialRaw
-    ? `<b>Expect a call shortly</b> from ${dial}. You requested a ${esc(vlabel)} quote at NationalCoverageGroup.com on ${esc(dateStr)}.`
-    : `<b>Expect a call shortly.</b> You requested a ${esc(vlabel)} quote at NationalCoverageGroup.com on ${esc(dateStr)}.`;
 
   return `<div style="margin:0;padding:0;background:#eef3fa;font-family:Arial,Helvetica,sans-serif;">` +
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef3fa;padding:24px 0;"><tr><td align="center">` +
     `<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #dfe3ea;">` +
     `<tr><td style="background:#0f2747;padding:16px 24px;"><span style="color:#ffffff;font-size:16px;font-weight:bold;letter-spacing:1px;">NATIONAL <span style="color:#5a8df0;">COVERAGE</span> GROUP</span><div style="color:#9fb3d0;font-size:10px;letter-spacing:3px;margin-top:2px;">LICENSED INSURANCE</div></td></tr>` +
-    `<tr><td style="padding:22px 24px 4px;color:#13233d;font-size:16px;">Hi ${esc(firstName(lead.first_name))},</td></tr>` +
+    `<tr><td style="padding:22px 24px 4px;color:#13233d;font-size:16px;">Hi ${hi},</td></tr>` +
     `<tr><td style="padding:2px 24px 14px;color:#41506a;font-size:14px;line-height:1.55;">Thanks for requesting your free quote from National Coverage Group. Your request goes to <b>one licensed agent, and only you</b>. Here is who will reach out:</td></tr>` +
     `<tr><td style="padding:0 24px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e7f0;border-radius:12px;overflow:hidden;"><tr>` +
     `<td width="130" valign="top" style="background:#cfe2f3;padding:18px 12px;text-align:center;">${head}</td>` +
     `<td valign="top" style="padding:16px 18px;"><div style="font-size:21px;font-weight:bold;color:#13294b;font-family:Georgia,serif;">${esc(name)}</div>` +
     `<div style="font-size:13px;font-weight:bold;color:#13294b;letter-spacing:.3px;margin-top:2px;">${esc(title.toUpperCase())}</div>` +
-    `<div style="height:2px;width:90px;background:#2f6fed;margin:8px 0;"></div>${introBlock}${specBlock}</td>` +
+    `<div style="height:2px;width:90px;background:#2f6fed;margin:8px 0;"></div>${introBlock}${trustBlock}</td>` +
     `</tr><tr><td colspan="2" style="background:#0f2747;padding:13px 18px;">${phoneLine}${npnLine}</td></tr></table></td></tr>` +
     `<tr><td style="padding:16px 24px 4px;color:#13233d;font-size:14px;line-height:1.55;">${expectLine}</td></tr>` +
     `<tr><td style="padding:6px 24px 18px;color:#41506a;font-size:13px;line-height:1.55;">We never sell your information to call-center lists. One licensed agent contacts you, that is it.</td></tr>` +
-    `<tr><td style="background:#f4f7fb;padding:16px 24px;color:#7a87a0;font-size:11px;line-height:1.5;border-top:1px solid #e2e7f0;">&copy; 2026 National Coverage Group, a service of Black Label Leads. An insurance quote and referral service, not an insurance company. Reply STOP to opt out of texts. Opt out or questions: blacklabelleads@gmail.com</td></tr>` +
+    footerTd +
     `</table></td></tr></table></div>`;
 }
 

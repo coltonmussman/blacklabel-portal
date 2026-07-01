@@ -41,9 +41,9 @@
   .lc-preview{ flex:1 1 320px; min-width:300px }
   .lc-cap{ color:var(--muted); font-size:11px; margin-bottom:12px; text-transform:uppercase; letter-spacing:.12em; font-weight:600 }
   /* the generated NCG-branded card (kept exact: html2canvas renders this DOM, do not restyle internals) */
-  .lc-card{ width:100%; max-width:520px; background:#fff; border-radius:14px; overflow:hidden; display:grid; grid-template-columns:148px 1fr; box-shadow:0 18px 50px rgba(19,41,75,.30); font-family:'Inter',Arial,sans-serif }
-  .lc-left{ position:relative; background:#cfe2f3; display:flex; align-items:center; justify-content:center; min-height:232px }
-  .lc-photo{ width:100%; height:100%; min-height:232px; object-fit:cover; display:block }
+  .lc-card{ width:100%; max-width:520px; background:#fff; border-radius:14px; overflow:hidden; display:grid; grid-template-columns:44% 1fr; box-shadow:0 18px 50px rgba(19,41,75,.30); font-family:'Inter',Arial,sans-serif }
+  .lc-left{ position:relative; background:#cfe2f3; display:flex; align-items:center; justify-content:center; min-height:250px }
+  .lc-photo{ width:100%; height:100%; min-height:250px; object-fit:cover; display:block }
   .lc-ph{ color:#5f7fa3; font-size:11px; text-align:center; padding:10px; line-height:1.4 }
   .lc-arc{ position:absolute; top:0; right:0; height:100%; width:9px; background:#2f6fed }
   .lc-right{ padding:15px 17px 0; display:flex; flex-direction:column }
@@ -223,9 +223,8 @@
                   <div class="lc-bar">
                     <div class="lc-contact">
                       <div class="lc-c"><span class="lc-ci">&#9742;</span><span class="lc-big" id="lcPhone">—</span></div>
-                      <div class="lc-c" id="lcNpnRow" style="display:none"><span class="lc-ci">&#10003;</span><span id="lcNpn"></span></div>
                     </div>
-                    <div class="lc-shield">LICENSED &amp;<br>TRUSTED</div>
+                    <div class="lc-shield"><span id="lcNpnLine" style="display:none">NPN <span id="lcNpn"></span><br></span>LICENSED &amp;<br>TRUSTED</div>
                   </div>
                 </div>
               </div>
@@ -813,9 +812,9 @@
     tagEl.textContent = tag; tagEl.style.display = tag ? '' : 'none';
     var ph = (document.getElementById('lcPhoneIn').value || '').trim();
     document.getElementById('lcPhone').textContent = ph || '—';
-    var npnRow = document.getElementById('lcNpnRow');
-    if (profile.npn){ document.getElementById('lcNpn').textContent = 'NPN ' + profile.npn; npnRow.style.display=''; }
-    else { npnRow.style.display='none'; }
+    var npnLine = document.getElementById('lcNpnLine');
+    if (profile.npn){ document.getElementById('lcNpn').textContent = profile.npn; npnLine.style.display=''; }
+    else { npnLine.style.display='none'; }
     var photo = document.getElementById('lcPhoto'), phEl = document.getElementById('lcPh');
     if (lcHeadshotUrl){ if (photo.getAttribute('src')!==lcHeadshotUrl) photo.src = lcHeadshotUrl; photo.style.display=''; phEl.style.display='none'; }
     else { photo.style.display='none'; phEl.style.display=''; }
