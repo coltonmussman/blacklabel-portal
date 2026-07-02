@@ -30,7 +30,7 @@ function's live `ezbr_sha256` (from `list_edge_functions`) to the value below.
 |---|---|---|
 | stripe-webhook | 13 | bc4b1690196d330a557553c059e1d825af55e7c82b34a1dafa92d8509cb106b4 |
 | start-agent-billing | 5 | faa49dafb7c29aab36b64b8e0691c3c42f893a20acc582d32b67db945794eda0 |
-| capture-lead | 7 | ab9f8ef18c524c22f1c8eadbe90ae9fafefa43ee90a5548a1d4d0afb4ad74e21 |
+| capture-lead | 10 | ff1f9b79bb3f1f0d311948f273bcd1a07d5c7d06cbd83892ca1e9ea2cabb4857 |
 | capture-waitlist | 4 | f3eba6b0f8adf940815efd1d2b6fcbb7c3b6df84dc6c5ea316f9884966808158 |
 | create-reserve-checkout | 4 | d858a7847bfdd3a5ea208298f761724af22e73403c1731e6b7a4a78816d2e9e7 |
 | billing-portal | 4 | 59de968d5e29956ca83097474b8a61bce6091f192fc5b0681e147c1c19fc674b |

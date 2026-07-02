@@ -4,9 +4,13 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // Pipeline: Turnstile -> honeypot (soft when Turnstile passed, hard otherwise) -> consent gate
 // -> rate limit + dedup -> SILENT contact validation (Twilio Lookup for phone, format +
 // disposable-domain + optional verifier for email) -> insert via service role with server-stamped
-// ip_address + timestamp -> optional Meta Conversions API 'Lead' on the BILLABLE signal.
+// ip_address + timestamp -> then, in parallel: optional TrustedForm RETAIN of the consent cert
+// (v9) + optional Meta Conversions API 'Lead' on the BILLABLE signal.
 // All external checks fail OPEN (an API outage never drops a real lead).
 // verify_jwt = false. Each check activates only when its secret is configured.
+// v9 (2026-07-01): + TrustedForm Retain API v4.0 call on every inserted lead that carries a cert.
+//   Dormant until the TRUSTEDFORM_API_KEY secret is set. Insert now uses return=representation
+//   so the lead UUID becomes the retain `reference` (shows on the stored certificate).
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -14,6 +18,7 @@ const TURNSTILE_SECRET = Deno.env.get("TURNSTILE_SECRET") ?? "";
 const TWILIO_SID = Deno.env.get("TWILIO_ACCOUNT_SID") ?? "";
 const TWILIO_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN") ?? "";
 const EMAIL_VERIFY_KEY = Deno.env.get("EMAIL_VERIFY_KEY") ?? ""; // ZeroBounce-style (optional)
+const TRUSTEDFORM_API_KEY = Deno.env.get("TRUSTEDFORM_API_KEY") ?? ""; // TrustedForm Retain (optional; dormant until set)
 const META_PIXEL_ID = Deno.env.get("META_PIXEL_ID") ?? "";       // Meta CAPI (optional; dormant until set)
 const META_CAPI_TOKEN = Deno.env.get("META_CAPI_TOKEN") ?? "";   // Meta CAPI access token (optional)
 
@@ -80,6 +85,51 @@ async function phoneValid(raw: string): Promise<boolean> {
 async function sha256Hex(s: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Retain the TrustedForm certificate into our account (Retain API v4.0; ~5-year consent proof).
+// DORMANT until the TRUSTEDFORM_API_KEY edge secret is set. Retains EVERY inserted lead that
+// carries a cert, not just billable ones (cheap insurance: consent proof should outlive filters).
+// Fail-open and time-bounded: a retain error or slow API never blocks lead intake.
+// Outcomes are logged so edge logs show success (with the stored cert's expiry) or the exact
+// failure (403 bad key / 402 billing / 404 expired cert / match failure) for fast diagnosis.
+async function retainTrustedFormCert(lead: Record<string, any>, leadId: string | null) {
+  if (!TRUSTEDFORM_API_KEY) return;
+  const certUrl = String(lead.trustedform_cert_url || "").trim();
+  if (!/^https:\/\/cert\.trustedform\.com\/[a-z0-9]{8,}$/i.test(certUrl)) return;
+  const email = String(lead.email || "").trim().toLowerCase();
+  const phoneDigits = String(lead.phone || "").replace(/\D/g, "");
+  const match_lead: Record<string, string> = {};
+  if (email && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) match_lead.email = email;
+  if (phoneDigits.length >= 10) match_lead.phone = phoneDigits.length === 10 ? "1" + phoneDigits : phoneDigits;
+  if (!match_lead.email && !match_lead.phone) { console.warn("tf-retain skipped: no match data", leadId ?? ""); return; }
+  try {
+    const r = await fetch(certUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "api-version": "4.0",
+        "Authorization": "Basic " + btoa(`API:${TRUSTEDFORM_API_KEY}`),
+      },
+      body: JSON.stringify({
+        retain: {
+          reference: leadId ?? `${lead.vertical ?? "lead"}|${lead.submitted_at ?? ""}`,
+          vendor: "Black Label Leads (first-party)",
+        },
+        match_lead,
+      }),
+      signal: AbortSignal.timeout(5000),
+    });
+    const out = await r.json().catch(() => ({}));
+    if (r.ok && out?.outcome !== "failure") {
+      console.log("tf-retain ok", r.status, leadId ?? "", String(out?.retain?.results?.expires_at ?? out?.results?.expires_at ?? ""));
+    } else {
+      console.error("tf-retain FAILED", r.status, leadId ?? "", JSON.stringify(out).slice(0, 400));
+    }
+  } catch (e) {
+    console.error("tf-retain error (fail-open)", leadId ?? "", String(e));
+  }
 }
 
 // Fire a Meta Conversions API 'Lead' on the BILLABLE signal (consent + cert + reachable phone),
@@ -190,13 +240,21 @@ Deno.serve(async (req: Request) => {
 
   const resp = await fetch(`${SUPABASE_URL}/rest/v1/leads`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "apikey": SERVICE_KEY, "Authorization": `Bearer ${SERVICE_KEY}`, "Prefer": "return=minimal" },
+    headers: { "Content-Type": "application/json", "apikey": SERVICE_KEY, "Authorization": `Bearer ${SERVICE_KEY}`, "Prefer": "return=representation" },
     body: JSON.stringify(lead),
   });
   if (!resp.ok) { console.error("insert failed", resp.status, await resp.text()); return new Response(JSON.stringify({ error: "insert_failed" }), { status: 502, headers }); }
 
-  // Optional Meta CAPI 'Lead' on the billable signal (dormant until META_PIXEL_ID + META_CAPI_TOKEN set).
-  await fireCapiLead(lead, ip, origin);
+  // Lead UUID for the TrustedForm retain reference (guarded parse; never fatal).
+  let leadId: string | null = null;
+  try { const rows = await resp.json(); leadId = rows?.[0]?.id ?? null; } catch (_e) { /* non-fatal */ }
+
+  // Post-insert integrations, in parallel, each dormant until its secret is set and each fail-open:
+  // TrustedForm Retain (consent-cert storage) + Meta CAPI 'Lead' (billable signal).
+  await Promise.allSettled([
+    retainTrustedFormCert(lead, leadId),
+    fireCapiLead(lead, ip, origin),
+  ]);
 
   return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
 });
